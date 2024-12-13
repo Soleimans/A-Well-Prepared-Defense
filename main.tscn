@@ -1,0 +1,85 @@
+[gd_scene load_steps=11 format=3 uid="uid://brvwkj40l6c42"]
+
+[ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://image-cache.jpeg" id="1_4m1r6"]
+[ext_resource type="Script" path="res://button.gd" id="1_d0gsr"]
+[ext_resource type="Script" path="res://grid.gd" id="1_d6757"]
+[ext_resource type="PackedScene" uid="uid://23oobmg40yue" path="res://build_menu.tscn" id="2_760as"]
+[ext_resource type="Texture2D" uid="uid://c3axlpmewg4x6" path="res://Grass.png" id="2_enqgi"]
+[ext_resource type="Script" path="res://tile_map.gd" id="3_61wyy"]
+[ext_resource type="Script" path="res://camera_control.gd" id="4_gq3ax"]
+[ext_resource type="Script" path="res://turn_button.gd" id="6_dye0f"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hhyts"]
+texture = ExtResource("2_enqgi")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_kb2ph"]
+tile_size = Vector2i(128, 128)
+sources/4 = SubResource("TileSetAtlasSource_hhyts")
+
+[node name="Main" type="Node2D"]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="ColorRect" type="ColorRect" parent="UILayer"]
+custom_minimum_size = Vector2(0, 32)
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+color = Color(0.13421, 0.133114, 0, 1)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UILayer/ColorRect"]
+layout_mode = 0
+offset_right = 53.0
+offset_bottom = 32.0
+
+[node name="Button" type="Button" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "Build"
+script = ExtResource("1_d0gsr")
+
+[node name="Label" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1000"
+
+[node name="build_menu" parent="UILayer/ColorRect" instance=ExtResource("2_760as")]
+layout_mode = 1
+
+[node name="TurnButton" type="Button" parent="UILayer"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -86.0
+offset_top = -31.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Next Turn"
+script = ExtResource("6_dye0f")
+
+[node name="Background" type="Node2D" parent="."]
+
+[node name="Sprite2D" type="Sprite2D" parent="Background"]
+position = Vector2(977, 339)
+scale = Vector2(5.70215, 4.95182)
+texture = ExtResource("1_4m1r6")
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = SubResource("TileSet_kb2ph")
+format = 2
+layer_0/tile_data = PackedInt32Array(0, 4, 0, 1, 4, 0, 2, 4, 0, 3, 4, 0, 4, 4, 0, 5, 4, 0, 6, 4, 0, 7, 4, 0, 8, 4, 0, 9, 4, 0, 10, 4, 0, 11, 4, 0, 12, 4, 0, 13, 4, 0, 14, 4, 0, 65550, 4, 0, 262148, 4, 0, 262145, 4, 0, 262144, 4, 0, 262146, 4, 0, 262147, 4, 0, 196608, 4, 0, 131072, 4, 0, 65536, 4, 0, 65537, 4, 0, 131073, 4, 0, 196609, 4, 0, 196610, 4, 0, 196614, 4, 0, 65549, 4, 0, 196621, 4, 0, 196620, 4, 0, 131074, 4, 0, 131080, 4, 0, 262149, 4, 0, 262150, 4, 0, 262151, 4, 0, 262152, 4, 0, 262153, 4, 0, 262154, 4, 0, 262155, 4, 0, 262156, 4, 0, 262157, 4, 0, 262158, 4, 0, 196622, 4, 0, 131086, 4, 0, 131085, 4, 0, 131084, 4, 0, 131083, 4, 0, 131082, 4, 0, 131081, 4, 0, 131079, 4, 0, 131078, 4, 0, 131077, 4, 0, 131076, 4, 0, 131075, 4, 0, 65539, 4, 0, 65538, 4, 0, 65540, 4, 0, 65541, 4, 0, 65542, 4, 0, 65543, 4, 0, 65544, 4, 0, 65545, 4, 0, 65546, 4, 0, 65547, 4, 0, 196618, 4, 0, 196617, 4, 0, 196616, 4, 0, 196615, 4, 0, 196613, 4, 0, 196612, 4, 0, 196611, 4, 0, 196619, 4, 0, 65548, 4, 0)
+script = ExtResource("3_61wyy")
+
+[node name="Grid" type="Node2D" parent="."]
+script = ExtResource("1_d6757")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(960, 320)
+drag_horizontal_enabled = true
+drag_vertical_enabled = true
+script = ExtResource("4_gq3ax")
