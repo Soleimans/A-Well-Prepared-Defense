@@ -7,6 +7,7 @@ var selected_unit_type = ""
 var selected_unit = null
 var valid_move_tiles = []
 var unit_start_pos = null
+var placing_enemy = false
 
 var unit_scenes = {
 	"infantry": preload("res://infantry.tscn"),
@@ -56,10 +57,11 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	print("Current military points: ", resource_manager.military_points)
 	print("Current units_in_cells state: ", units_in_cells)
 	
-	# Check if position is in first column
-	if grid_pos.x != 0:
-		print("Units can only be placed in the first column")
-		return false
+	# Check first column only for regular units
+	if !placing_enemy:
+		if grid_pos.x != 0:
+			print("Units can only be placed in the first column")
+			return false
 		
 	# Check if position is within grid bounds
 	if grid_pos.y < 0 or grid_pos.y >= grid.grid_size.y:
@@ -71,15 +73,22 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 		print("Cell is full")
 		return false
 		
-	# Check if enough military points
-	var cost = UNIT_COSTS[selected_unit_type]
-	if resource_manager.military_points < cost:
-		print("Not enough military points! Cost: ", cost, " Available: ", resource_manager.military_points)
-		return false
+	# Check if enough military points (only for regular units)
+	if !placing_enemy:
+		var cost = UNIT_COSTS[selected_unit_type]
+		if resource_manager.military_points < cost:
+			print("Not enough military points! Cost: ", cost, " Available: ", resource_manager.military_points)
+			return false
 		
 	# Create and place the unit
 	var unit = unit_scenes[selected_unit_type].instantiate()
 	grid.add_child(unit)
+	
+	# Set enemy status if placing enemy
+	if placing_enemy:
+		unit.is_enemy = true
+		if unit.has_node("Sprite2D"):
+			unit.get_node("Sprite2D").modulate = Color.RED
 	
 	# Position the unit within the cell
 	var base_pos = grid.grid_to_world(grid_pos)
@@ -89,8 +98,9 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	# Add unit to tracking
 	units_in_cells[grid_pos].append(unit)
 	
-	# Deduct points
-	resource_manager.military_points -= cost
+	# Deduct points only for non-enemy units
+	if !placing_enemy:
+		resource_manager.military_points -= UNIT_COSTS[selected_unit_type]
 	
 	print("Successfully placed ", selected_unit_type, " at ", grid_pos)
 	print("Remaining military points: ", resource_manager.military_points)

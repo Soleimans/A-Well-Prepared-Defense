@@ -2,6 +2,7 @@ extends Node2D
 
 var movement_points = 1
 var has_moved = false
+var is_enemy = false
 
 func reset_movement():
 	has_moved = false

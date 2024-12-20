@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=18 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://button.gd" id="1_d0gsr"]
@@ -13,6 +13,8 @@
 [ext_resource type="Script" path="res://building_manager.gd" id="10_tbqb7"]
 [ext_resource type="Script" path="res://unit_manager.gd" id="11_hwsqy"]
 [ext_resource type="Script" path="res://resource_manager.gd" id="12_t0fja"]
+[ext_resource type="PackedScene" uid="uid://g5wu0q7kkb3c" path="res://debug.tscn" id="14_4peq5"]
+[ext_resource type="Script" path="res://debug.gd" id="15_m3oiu"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hhyts"]
 texture = ExtResource("2_enqgi")
@@ -77,6 +79,9 @@ grow_horizontal = 0
 grow_vertical = 0
 text = "Next Turn"
 script = ExtResource("6_dye0f")
+
+[node name="Debug" parent="UILayer" instance=ExtResource("14_4peq5")]
+script = ExtResource("15_m3oiu")
 
 [node name="Background" type="Node2D" parent="."]
 
