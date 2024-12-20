@@ -29,6 +29,8 @@ var buildings_under_construction = {}
 # Points system
 var points = 10800  # Starting points
 var points_label = null  # Reference to points label
+var military_points = 0  # Starting military points
+var military_points_label = null  # Reference to military points label
 
 # Dictionary to store grid occupancy and fort levels
 var grid_cells = {}
@@ -74,11 +76,22 @@ func _ready():
 	else:
 		print("Points label not found!")
 		push_error("Points label not found at /root/Main/UILayer/ColorRect/HBoxContainer/Label")
+		
+	# Initialize military points label reference
+	military_points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label2")
+	if military_points_label:
+		print("Military points label found")
+		military_points_label.text = str(military_points)
+	else:
+		print("Military points label not found!")
+		push_error("Military points label not found at /root/Main/UILayer/ColorRect/HBoxContainer/Label2")
 
 func _process(_delta):
 	queue_redraw()
 	if points_label:
 		points_label.text = str(points)
+	if military_points_label:
+		military_points_label.text = str(military_points)
 
 func _on_building_selected(type: String):
 	selected_building_type = type

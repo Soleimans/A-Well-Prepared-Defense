@@ -1,11 +1,13 @@
-[gd_scene load_steps=11 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=13 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://button.gd" id="1_d0gsr"]
 [ext_resource type="Script" path="res://grid.gd" id="1_d6757"]
 [ext_resource type="PackedScene" uid="uid://23oobmg40yue" path="res://build_menu.tscn" id="2_760as"]
+[ext_resource type="Script" path="res://button_2.gd" id="2_e41tu"]
 [ext_resource type="Texture2D" uid="uid://c3axlpmewg4x6" path="res://Grass.png" id="2_enqgi"]
 [ext_resource type="Script" path="res://tile_map.gd" id="3_61wyy"]
+[ext_resource type="PackedScene" uid="uid://dec3l5yegbipi" path="res://army_menu.tscn" id="3_abfub"]
 [ext_resource type="Script" path="res://camera_control.gd" id="4_gq3ax"]
 [ext_resource type="Script" path="res://turn_button.gd" id="6_dye0f"]
 
@@ -46,7 +48,19 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "50000"
 
+[node name="Button2" type="Button" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+text = "Army"
+script = ExtResource("2_e41tu")
+
+[node name="Label2" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+text = "0"
+
 [node name="build_menu" parent="UILayer/ColorRect" instance=ExtResource("2_760as")]
+layout_mode = 1
+
+[node name="army_menu" parent="UILayer/ColorRect" instance=ExtResource("3_abfub")]
 layout_mode = 1
 
 [node name="TurnButton" type="Button" parent="UILayer"]
