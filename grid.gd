@@ -8,12 +8,28 @@ var tile_size = Vector2(128, 128)  # 128x128 pixels per tile
 var factory_columns = [0, 1]  # First two columns for factories
 var defense_column = 2  # Third column for defensive buildings
 
-# Dictionary to store grid occupancy
+# Building costs and properties
+var building_costs = {
+	"civilian_factory": 10800,
+	"military_factory": 7200,
+	"fort": 500
+}
+
+# Points system
+var points = 50000  # Starting points
+var points_label = null  # Reference to points label
+
+# Dictionary to store grid occupancy and fort levels
 var grid_cells = {}
+var fort_levels = {}
+
+# Currently selected building type
+var selected_building_type = ""
 
 # Preload building scenes
-var factory_scene = preload("res://factory.tscn")  # You'll need to create this
-var defense_scene = preload("res://defense.tscn")  # You'll need to create this
+var civilian_factory_scene = preload("res://civilian_factory.tscn")
+var military_factory_scene = preload("res://military_factory.tscn")
+var fort_scene = preload("res://fort.tscn")
 
 var playable_area = Vector2(15, 5)
 var total_grid_size = Vector2(15, 5)  # Now matches playable area
@@ -33,40 +49,51 @@ func _ready():
 	
 	# Set grid position
 	position = Vector2(x_offset, y_offset)
+	
+	# Connect to build menu signal
+	print("Connecting to build menu")  # Debug print
+	get_node("/root/Main/UILayer/ColorRect/build_menu").building_selected.connect(_on_building_selected)
+	print("Connected to build menu")   # Debug print
+	
+	# Initialize points label reference
+	points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label")
+	if points_label:
+		print("Points label found")
+		points_label.text = str(points)
+	else:
+		print("Points label not found!")
+		push_error("Points label not found at /root/Main/UILayer/ColorRect/HBoxContainer/Label")
 
 func _process(_delta):
 	queue_redraw()
+	if points_label:
+		points_label.text = str(points)
+
+func _on_building_selected(type: String):
+	selected_building_type = type
+	print("Selected building type: ", type) # Debug print
 	
 func _input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var mouse_pos = get_global_mouse_position()
 		var grid_pos = world_to_grid(mouse_pos)
 		print("Clicked grid position: ", grid_pos)
+		print("Current selected building type: ", selected_building_type) # Debug print
 		
-		# Determine building type based on column
-		var building_type = ""
-		if factory_columns.has(int(grid_pos.x)):
-			building_type = "factory"
-			print("Should be factory position - column: ", grid_pos.x)
-		elif grid_pos.x == defense_column:
-			building_type = "defense"
-			print("Should be defense position - column: ", grid_pos.x)
-			
-		print("Building type selected: ", building_type)
-		print("Is position valid?: ", is_valid_build_position(grid_pos, building_type))
-		
-		if building_type != "" and is_valid_build_position(grid_pos, building_type):
-			place_building(grid_pos, building_type)
+		if selected_building_type != "" and is_valid_build_position(grid_pos, selected_building_type):
+			place_building(grid_pos, selected_building_type)
 
 func initialize_grid():
-	# Create empty grid
+	# Create empty grid and initialize fort levels
 	for x in range(grid_size.x):
 		for y in range(grid_size.y):
 			grid_cells[Vector2(x, y)] = null
+			fort_levels[Vector2(x, y)] = 0
 
 func world_to_grid(world_pos: Vector2) -> Vector2:
-	var x = floor(world_pos.x / tile_size.x)
-	var y = floor(world_pos.y / tile_size.y)
+	var local_pos = world_pos - position  # Adjust for grid position offset
+	var x = floor(local_pos.x / tile_size.x)
+	var y = floor(local_pos.y / tile_size.y)
 	return Vector2(x, y)
 
 func grid_to_world(grid_pos: Vector2) -> Vector2:
@@ -74,38 +101,67 @@ func grid_to_world(grid_pos: Vector2) -> Vector2:
 	var y = grid_pos.y * tile_size.y + tile_size.y / 2
 	return Vector2(x, y)
 
+func get_building_cost(building_type: String, grid_pos: Vector2) -> int:
+	if building_type == "fort":
+		return building_costs[building_type] * (fort_levels[grid_pos] + 1)
+	return building_costs[building_type]
+
 func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 	# Check if position is within grid bounds
 	if grid_pos.x < 0 or grid_pos.x >= grid_size.x or \
 	   grid_pos.y < 0 or grid_pos.y >= grid_size.y:
 		return false
 	
-	# Check if cell is already occupied
-	if grid_cells[grid_pos] != null:
-		return false
-	
-	# Check building type restrictions
+	# Check building type restrictions and costs
 	match building_type:
-		"factory":
-			return factory_columns.has(int(grid_pos.x))
-		"defense":
-			return grid_pos.x == defense_column
+		"civilian_factory", "military_factory":
+			if !factory_columns.has(int(grid_pos.x)):
+				print("Invalid column for factory")
+				return false
+			if grid_cells[grid_pos] != null:
+				print("Cell already occupied")
+				return false
+		"fort":
+			if grid_pos.x != defense_column:
+				print("Invalid column for fort")
+				return false
+			if fort_levels[grid_pos] >= 10:
+				print("Maximum fort level reached")
+				return false
 	
-	return false
+	# Check if enough points
+	var cost = get_building_cost(building_type, grid_pos)
+	if points < cost:
+		print("Not enough points! Cost: ", cost, " Available: ", points)
+		return false
+		
+	return true
 
 func place_building(grid_pos: Vector2, building_type: String):
+	var cost = get_building_cost(building_type, grid_pos)
+	print("Before placement - Points: ", points) # Debug print
 	var building
+	
 	match building_type:
-		"factory":
-			building = factory_scene.instantiate()
-		"defense":
-			building = defense_scene.instantiate()
+		"civilian_factory":
+			building = civilian_factory_scene.instantiate()
+		"military_factory":
+			building = military_factory_scene.instantiate()
+		"fort":
+			building = fort_scene.instantiate()
+			fort_levels[grid_pos] += 1
+			if building.has_method("set_level"):
+				building.set_level(fort_levels[grid_pos])
 	
 	if building:
+		points -= cost
+		print("After deduction - Points: ", points) # Debug print
+		if building_type == "fort" and grid_cells[grid_pos]:
+			grid_cells[grid_pos].queue_free()
 		building.position = grid_to_world(grid_pos)
 		add_child(building)
 		grid_cells[grid_pos] = building
-		print("Placed ", building_type, " at ", grid_pos)
+		print("Placed ", building_type, " at ", grid_pos, " Cost: ", cost, " Remaining points: ", points)
 
 func _draw():
 	# Draw background area (darker green)
@@ -130,12 +186,14 @@ func _draw():
 		var to = Vector2(grid_size.x * tile_size.x, y * tile_size.y)
 		draw_line(from, to, Color.BLACK, 2.0)
 		
-	# Draw building zones (optional visual feedback)
+	# Draw building zones with colors
+	# Factory zone (green tint)
 	for x in factory_columns:
 		for y in range(grid_size.y):
 			var rect = Rect2(x * tile_size.x, y * tile_size.y, tile_size.x, tile_size.y)
 			draw_rect(rect, Color(0, 1, 0, 0.2))
 	
+	# Defense zone (red tint)
 	for y in range(grid_size.y):
 		var rect = Rect2(defense_column * tile_size.x, y * tile_size.y, tile_size.x, tile_size.y)
 		draw_rect(rect, Color(1, 0, 0, 0.2))

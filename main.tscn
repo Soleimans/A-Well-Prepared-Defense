@@ -44,7 +44,7 @@ script = ExtResource("1_d0gsr")
 [node name="Label" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "1000"
+text = "50000"
 
 [node name="build_menu" parent="UILayer/ColorRect" instance=ExtResource("2_760as")]
 layout_mode = 1
