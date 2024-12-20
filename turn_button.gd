@@ -21,20 +21,10 @@ func _ready():
 func _on_button_pressed():
 	print("Turn button pressed!")
 	
-	# Increment build value
-	value += 100
-	label.text = "Build " + str(value)
+	# Calculate and add points BEFORE processing construction
+	var civilian_factory_count = count_completed_civilian_factories()
+	print("Found completed civilian factories: ", civilian_factory_count)
 	
-	# Try to find grid node if not found initially
-	if !grid_node:
-		grid_node = get_node("/root/Main/Grid")
-		print("Trying to find grid node again: ", grid_node != null)
-	
-	# Debug print for civilian factories
-	var civilian_factory_count = count_civilian_factories()
-	print("Found civilian factories: ", civilian_factory_count)
-	
-	# Calculate and add points from civilian factories
 	if grid_node and "points" in grid_node:
 		var points_generated = civilian_factory_count * points_per_civilian_factory
 		print("Current points before: ", grid_node.points)
@@ -45,16 +35,31 @@ func _on_button_pressed():
 		# Update points display
 		if points_label:
 			points_label.text = str(grid_node.points)
-	else:
-		print("Grid node or points variable not found!")
+	
+	# Process construction progress AFTER points generation
+	if grid_node and grid_node.has_method("process_construction"):
+		grid_node.process_construction()
+	
+	# Increment build value
+	value += 100
+	label.text = "Build " + str(value)
 
-func count_civilian_factories() -> int:
+func count_completed_civilian_factories() -> int:
 	var count = 0
 	if grid_node and "grid_cells" in grid_node:
-		for cell in grid_node.grid_cells.values():
+		# First get all positions that are under construction
+		var construction_positions = []
+		if "buildings_under_construction" in grid_node:
+			construction_positions = grid_node.buildings_under_construction.keys()
+		
+		# Only count factories that are completed (not under construction)
+		for pos in grid_node.grid_cells:
+			var cell = grid_node.grid_cells[pos]
 			if cell and cell.scene_file_path == "res://civilian_factory.tscn":
-				count += 1
-				print("Found a civilian factory")  # Debug print
+				# Only count if the position is not under construction
+				if not pos in construction_positions:
+					count += 1
+					print("Found a completed civilian factory")  # Debug print
 	else:
 		print("No grid_cells found in grid node!")  # Debug print
 	return count

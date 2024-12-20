@@ -15,8 +15,19 @@ var building_costs = {
 	"fort": 500
 }
 
+# Construction times
+var construction_times = {
+	"civilian_factory": 6,
+	"military_factory": 4,
+	"fort": 1  # Base time for first 5 levels, will be 2 for levels 6-10
+}
+
+# Dictionary to track buildings under construction
+# Format: Vector2(grid_pos) : {"type": string, "turns_left": int, "total_turns": int}
+var buildings_under_construction = {}
+
 # Points system
-var points = 50000  # Starting points
+var points = 10800  # Starting points
 var points_label = null  # Reference to points label
 
 # Dictionary to store grid occupancy and fort levels
@@ -112,6 +123,11 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 	   grid_pos.y < 0 or grid_pos.y >= grid_size.y:
 		return false
 	
+	# Check if there's already a building under construction at this position
+	if grid_pos in buildings_under_construction:
+		print("Construction already in progress at this position")
+		return false
+	
 	# Check building type restrictions and costs
 	match building_type:
 		"civilian_factory", "military_factory":
@@ -139,29 +155,59 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 
 func place_building(grid_pos: Vector2, building_type: String):
 	var cost = get_building_cost(building_type, grid_pos)
-	print("Before placement - Points: ", points) # Debug print
-	var building
 	
-	match building_type:
-		"civilian_factory":
-			building = civilian_factory_scene.instantiate()
-		"military_factory":
-			building = military_factory_scene.instantiate()
-		"fort":
-			building = fort_scene.instantiate()
-			fort_levels[grid_pos] += 1
-			if building.has_method("set_level"):
-				building.set_level(fort_levels[grid_pos])
+	# Start construction instead of instant placement
+	if building_type == "fort":
+		var current_level = fort_levels[grid_pos]
+		var construction_time = 2 if current_level >= 5 else 1  # 2 turns for levels 6-10
+		buildings_under_construction[grid_pos] = {
+			"type": building_type,
+			"turns_left": construction_time,
+			"total_turns": construction_time,
+			"target_level": current_level + 1
+		}
+	else:
+		buildings_under_construction[grid_pos] = {
+			"type": building_type,
+			"turns_left": construction_times[building_type],
+			"total_turns": construction_times[building_type]
+		}
 	
-	if building:
-		points -= cost
-		print("After deduction - Points: ", points) # Debug print
-		if building_type == "fort" and grid_cells[grid_pos]:
-			grid_cells[grid_pos].queue_free()
-		building.position = grid_to_world(grid_pos)
-		add_child(building)
-		grid_cells[grid_pos] = building
-		print("Placed ", building_type, " at ", grid_pos, " Cost: ", cost, " Remaining points: ", points)
+	points -= cost
+	print("Construction started: ", building_type, " at ", grid_pos)
+
+func process_construction():
+	var completed_positions = []
+	
+	for grid_pos in buildings_under_construction:
+		var construction = buildings_under_construction[grid_pos]
+		construction.turns_left -= 1
+		
+		if construction.turns_left <= 0:
+			# Construction complete - create the building
+			var building
+			match construction.type:
+				"civilian_factory":
+					building = civilian_factory_scene.instantiate()
+				"military_factory":
+					building = military_factory_scene.instantiate()
+				"fort":
+					building = fort_scene.instantiate()
+					fort_levels[grid_pos] = construction.target_level
+					if building.has_method("set_level"):
+						building.set_level(fort_levels[grid_pos])
+			
+			if building:
+				if construction.type == "fort" and grid_cells[grid_pos]:
+					grid_cells[grid_pos].queue_free()
+				building.position = grid_to_world(grid_pos)
+				add_child(building)
+				grid_cells[grid_pos] = building
+				completed_positions.append(grid_pos)
+	
+	# Remove completed constructions
+	for pos in completed_positions:
+		buildings_under_construction.erase(pos)
 
 func _draw():
 	# Draw background area (darker green)
@@ -197,3 +243,26 @@ func _draw():
 	for y in range(grid_size.y):
 		var rect = Rect2(defense_column * tile_size.x, y * tile_size.y, tile_size.x, tile_size.y)
 		draw_rect(rect, Color(1, 0, 0, 0.2))
+	
+	# Draw construction progress
+	for grid_pos in buildings_under_construction:
+		var construction = buildings_under_construction[grid_pos]
+		var progress = float(construction.total_turns - construction.turns_left) / construction.total_turns
+		var rect = Rect2(
+			grid_pos.x * tile_size.x,
+			grid_pos.y * tile_size.y,
+			tile_size.x,
+			tile_size.y
+		)
+		
+		# Draw construction indicator (checkerboard pattern)
+		draw_rect(rect, Color(0.7, 0.7, 0.2, 0.3))  # Light yellow tint
+		
+		# Draw progress bar
+		var progress_rect = Rect2(
+			rect.position.x,
+			rect.position.y + rect.size.y - 10,
+			rect.size.x * progress,
+			10
+		)
+		draw_rect(progress_rect, Color(1, 1, 0, 0.8))  # Yellow progress bar
