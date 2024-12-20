@@ -1,7 +1,10 @@
-[gd_scene load_steps=3 format=3 uid="uid://dec3l5yegbipi"]
+[gd_scene load_steps=6 format=3 uid="uid://dec3l5yegbipi"]
 
 [ext_resource type="Script" path="res://army_menu.gd" id="1_5n487"]
 [ext_resource type="Script" path="res://panel.gd" id="1_l270i"]
+[ext_resource type="Texture2D" uid="uid://dwyeu5dp1tqw1" path="res://Images/Infantry.png" id="3_1iiqj"]
+[ext_resource type="Texture2D" uid="uid://baic1d3kc1pii" path="res://Images/Medium_tank.png" id="4_j8vap"]
+[ext_resource type="Texture2D" uid="uid://fjpb7i3qagh3" path="res://Images/Militia.png" id="5_am7h7"]
 
 [node name="army_menu" type="Control"]
 layout_mode = 3
@@ -31,39 +34,51 @@ layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
+texture = ExtResource("3_1iiqj")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
-text = "Soldier"
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+text = "Infantry Division"
 
 [node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
+text = "1000"
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
 layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
+texture = ExtResource("4_j8vap")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
-text = "Tank"
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+text = "Armoured Division"
 
 [node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
+text = "500"
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
 layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
+texture = ExtResource("5_am7h7")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
-text = "Cavalry"
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+text = "Garrison Division"
 
 [node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
+text = "3000"
 
 [node name="Button" type="Button" parent="."]
 layout_mode = 0

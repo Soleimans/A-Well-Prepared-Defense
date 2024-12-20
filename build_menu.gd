@@ -1,8 +1,6 @@
 extends Control
-
 # Signal to notify when a building is selected
 signal building_selected(building_type)
-
 # Building costs
 const BUILDING_COSTS = {
 	"civilian_factory": 10800,
@@ -37,16 +35,16 @@ func _on_civilian_factory_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		print("Civilian factory clicked - SENDING SIGNAL") # Debug print
 		building_selected.emit("civilian_factory")
-		hide()
+		# Removed hide() to keep menu open
 
 func _on_military_factory_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		print("Military factory clicked") # Debug print
 		building_selected.emit("military_factory")
-		hide()
+		# Removed hide() to keep menu open
 
 func _on_fort_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		print("Fort clicked") # Debug print
 		building_selected.emit("fort")
-		hide()
+		# Removed hide() to keep menu open

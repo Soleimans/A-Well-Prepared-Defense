@@ -1,11 +1,12 @@
 extends Button
+
 @onready var label = %Label  # Path to Build label
 @onready var points_label = get_node("../ColorRect/HBoxContainer/Label")  # Based on your path
 @onready var military_points_label = get_node("../ColorRect/HBoxContainer/Label2")  # Military points label
 @onready var grid_node = get_node("/root/Main/Grid")  # The Grid node path
 
 var value = 1000  # Starting value
-var points_per_civilian_factory = 2060
+var points_per_civilian_factory = 2160
 var points_per_military_factory = 1000  # Military points per military factory
 
 func _ready():
@@ -55,10 +56,22 @@ func _on_button_pressed():
 			# Update military points display
 			if military_points_label:
 				military_points_label.text = str(grid_node.military_points)
+		
+		# Reset unit movements
+		for pos in grid_node.units_in_cells:
+			for unit in grid_node.units_in_cells[pos]:
+				if unit.has_method("reset_movement"):
+					unit.reset_movement()
+					print("Reset movement for unit at position: ", pos)
 	
 	# Process construction progress AFTER points generation
 	if grid_node and grid_node.has_method("process_construction"):
 		grid_node.process_construction()
+	
+	# Clear any selected unit and valid move tiles
+	if grid_node:
+		grid_node.selected_unit = null
+		grid_node.valid_move_tiles.clear()
 	
 	# Increment build value
 	value += 100

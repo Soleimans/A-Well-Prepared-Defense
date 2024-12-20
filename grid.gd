@@ -39,6 +39,27 @@ var fort_levels = {}
 # Currently selected building type
 var selected_building_type = ""
 
+# Unit management
+var units_in_cells = {}
+const MAX_UNITS_PER_CELL = 3
+var selected_unit_type = ""
+var unit_scenes = {
+	"infantry": preload("res://infantry.tscn"),
+	"armoured": preload("res://armoured.tscn"),
+	"garrison": preload("res://garrison.tscn")
+}
+
+const UNIT_COSTS = {
+	"infantry": 1000,
+	"armoured": 3000,
+	"garrison": 500
+}
+
+# Unit movement
+var selected_unit = null  # Currently selected unit
+var valid_move_tiles = []  # Tiles where the selected unit can move
+var unit_start_pos = null  # Starting position of the selected unit
+
 # Preload building scenes
 var civilian_factory_scene = preload("res://civilian_factory.tscn")
 var military_factory_scene = preload("res://military_factory.tscn")
@@ -63,10 +84,17 @@ func _ready():
 	# Set grid position
 	position = Vector2(x_offset, y_offset)
 	
+	# Initialize unit tracking
+	for y in range(grid_size.y):
+		units_in_cells[Vector2(0, y)] = []
+	
 	# Connect to build menu signal
 	print("Connecting to build menu")  # Debug print
 	get_node("/root/Main/UILayer/ColorRect/build_menu").building_selected.connect(_on_building_selected)
 	print("Connected to build menu")   # Debug print
+	
+	# Connect to army menu signal
+	get_node("/root/Main/UILayer/ColorRect/army_menu").unit_selected.connect(_on_unit_selected)
 	
 	# Initialize points label reference
 	points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label")
@@ -95,17 +123,31 @@ func _process(_delta):
 
 func _on_building_selected(type: String):
 	selected_building_type = type
+	selected_unit_type = ""  # Clear unit selection when building is selected
+	selected_unit = null  # Clear unit selection
+	valid_move_tiles.clear()  # Clear valid move tiles
 	print("Selected building type: ", type) # Debug print
-	
+
+func _on_unit_selected(type: String):
+	selected_unit_type = type
+	selected_building_type = ""  # Clear building selection when unit is selected
+	selected_unit = null  # Clear unit selection
+	valid_move_tiles.clear()  # Clear valid move tiles
+	print("Selected unit type: ", type)
+
 func _input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var mouse_pos = get_global_mouse_position()
 		var grid_pos = world_to_grid(mouse_pos)
-		print("Clicked grid position: ", grid_pos)
-		print("Current selected building type: ", selected_building_type) # Debug print
 		
 		if selected_building_type != "" and is_valid_build_position(grid_pos, selected_building_type):
 			place_building(grid_pos, selected_building_type)
+		elif selected_unit_type != "":
+			try_place_unit(grid_pos, selected_unit_type)
+		elif selected_unit == null:
+			select_unit(grid_pos)
+		elif grid_pos in valid_move_tiles:
+			move_unit(unit_start_pos, grid_pos)
 
 func initialize_grid():
 	# Create empty grid and initialize fort levels
@@ -222,6 +264,115 @@ func process_construction():
 	for pos in completed_positions:
 		buildings_under_construction.erase(pos)
 
+func try_place_unit(grid_pos: Vector2, unit_type: String) -> bool:
+	# Check if position is in first column
+	if grid_pos.x != 0:
+		print("Units can only be placed in the first column")
+		return false
+		
+	# Check if position is within grid bounds
+	if grid_pos.y < 0 or grid_pos.y >= grid_size.y:
+		return false
+		
+	# Check if cell has reached unit limit
+	if units_in_cells[grid_pos].size() >= MAX_UNITS_PER_CELL:
+		print("Cell is full")
+		return false
+		
+	# Check if enough military points
+	var cost = UNIT_COSTS[unit_type]
+	if military_points < cost:
+		print("Not enough military points! Cost: ", cost, " Available: ", military_points)
+		return false
+		
+	# Create and place the unit
+	var unit = unit_scenes[unit_type].instantiate()
+	add_child(unit)
+	
+	# Position the unit within the cell
+	var base_pos = grid_to_world(grid_pos)
+	var offset = Vector2(0, -20 * units_in_cells[grid_pos].size())  # Stack units vertically
+	unit.position = base_pos + offset
+	
+	# Add unit to tracking
+	units_in_cells[grid_pos].append(unit)
+	
+	# Deduct points
+	military_points -= cost
+	
+	print("Placed ", unit_type, " at ", grid_pos, ". Cost: ", cost, " Points remaining: ", military_points)
+	return true
+
+func select_unit(grid_pos: Vector2):
+	if grid_pos not in units_in_cells or units_in_cells[grid_pos].size() == 0:
+		return
+		
+	var unit = units_in_cells[grid_pos][0]  # Select the first unit in the stack
+	if unit and unit.has_method("can_move") and unit.can_move():
+		selected_unit = unit
+		unit_start_pos = grid_pos
+		highlight_valid_moves(grid_pos)
+	else:
+		print("Unit has already moved this turn")
+
+func highlight_valid_moves(from_pos: Vector2):
+	valid_move_tiles.clear()
+	
+	var is_armoured = selected_unit.get_parent().name.begins_with("armoured")
+	var move_points = 2 if is_armoured else 1  # 2 for armoured, 1 for others
+	
+	# Calculate valid moves
+	for x in range(max(0, from_pos.x - move_points), min(grid_size.x, from_pos.x + move_points + 1)):
+		for y in range(max(0, from_pos.y - move_points), min(grid_size.y, from_pos.y + move_points + 1)):
+			var test_pos = Vector2(x, y)
+			if test_pos == from_pos:
+				continue
+				
+			if is_armoured:
+				# Armoured units can move diagonally and up to 2 tiles
+				var distance = (test_pos - from_pos).length()
+				if distance <= 2.0:  # Using floating-point distance for diagonal movement
+					if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
+						valid_move_tiles.append(test_pos)
+			else:
+				# Infantry and garrison can only move 1 tile orthogonally
+				if manhattan_distance(from_pos, test_pos) <= move_points:
+					if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
+						valid_move_tiles.append(test_pos)
+
+func manhattan_distance(from: Vector2, to: Vector2) -> int:
+	return int(abs(from.x - to.x) + abs(from.y - to.y))
+
+func move_unit(from_pos: Vector2, to_pos: Vector2):
+	if !selected_unit or !selected_unit.has_method("can_move") or !selected_unit.can_move():
+		return false
+		
+	var unit_index = units_in_cells[from_pos].find(selected_unit)
+	if unit_index == -1:
+		return false
+		
+	# Remove unit from old position
+	units_in_cells[from_pos].remove_at(unit_index)
+	
+	# Add unit to new position
+	if to_pos not in units_in_cells:
+		units_in_cells[to_pos] = []
+	units_in_cells[to_pos].append(selected_unit)
+	
+	# Update unit position
+	var base_pos = grid_to_world(to_pos)
+	var offset = Vector2(0, -20 * (units_in_cells[to_pos].size() - 1))
+	selected_unit.position = base_pos + offset
+	
+	# Mark the unit as moved
+	selected_unit.has_moved = true
+	
+	# Clear selection
+	selected_unit = null
+	valid_move_tiles.clear()
+	print("Unit moved from ", from_pos, " to ", to_pos)
+	return true
+
 func _draw():
 	# Draw background area (darker green)
 	var full_width = total_grid_size.x * tile_size.x
@@ -279,3 +430,22 @@ func _draw():
 			10
 		)
 		draw_rect(progress_rect, Color(1, 1, 0, 0.8))  # Yellow progress bar
+		
+	# Draw unit count indicators for first column
+	for y in range(grid_size.y):
+		var pos = Vector2(0, y)
+		if pos in units_in_cells:
+			var unit_count = units_in_cells[pos].size()
+			if unit_count > 0:
+				var text_pos = grid_to_world(pos) + Vector2(-tile_size.x/2 + 10, -tile_size.y/2 + 20)
+				draw_string(ThemeDB.fallback_font, text_pos, str(unit_count) + "/" + str(MAX_UNITS_PER_CELL))
+	
+	# Draw valid move tiles
+	for pos in valid_move_tiles:
+		var rect = Rect2(
+			pos.x * tile_size.x,
+			pos.y * tile_size.y,
+			tile_size.x,
+			tile_size.y
+		)
+		draw_rect(rect, Color(0, 1, 1, 0.3))  # Cyan highlight for valid moves
