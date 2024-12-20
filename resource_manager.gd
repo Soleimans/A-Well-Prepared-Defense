@@ -1,7 +1,7 @@
 extends Node
 
 var points = 10800
-var military_points = 0
+var military_points = 10000
 
 @onready var points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label")
 @onready var military_points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label2")

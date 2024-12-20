@@ -1,6 +1,9 @@
 extends Control
 # Signal to notify when a building is selected
 signal building_selected(building_type)
+# Signal for when menu is closed
+signal menu_closed
+
 # Building costs
 const BUILDING_COSTS = {
 	"civilian_factory": 10800,
@@ -30,21 +33,20 @@ func _ready():
 
 func _on_close_button_pressed():
 	hide()
+	building_selected.emit("")  # Clear building selection
+	menu_closed.emit()
 
 func _on_civilian_factory_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		print("Civilian factory clicked - SENDING SIGNAL") # Debug print
+		print("Civilian factory clicked - SENDING SIGNAL")
 		building_selected.emit("civilian_factory")
-		# Removed hide() to keep menu open
 
 func _on_military_factory_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		print("Military factory clicked") # Debug print
+		print("Military factory clicked")
 		building_selected.emit("military_factory")
-		# Removed hide() to keep menu open
 
 func _on_fort_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		print("Fort clicked") # Debug print
+		print("Fort clicked")
 		building_selected.emit("fort")
-		# Removed hide() to keep menu open

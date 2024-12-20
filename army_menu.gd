@@ -1,6 +1,9 @@
 extends Control
 # Signal to notify when a unit is selected
 signal unit_selected(unit_type)
+# Signal for when menu is closed
+signal menu_closed
+
 # Unit costs
 const UNIT_COSTS = {
 	"infantry": 1000,
@@ -30,21 +33,20 @@ func _ready():
 
 func _on_close_button_pressed():
 	hide()
+	unit_selected.emit("")  # Clear unit selection
+	menu_closed.emit()
 
 func _on_infantry_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		print("Infantry division clicked - SENDING SIGNAL") # Debug print
+		print("Infantry division clicked - SENDING SIGNAL")
 		unit_selected.emit("infantry")
-		# Removed hide() to keep menu open
 
 func _on_armoured_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		print("Armoured division clicked") # Debug print
+		print("Armoured division clicked")
 		unit_selected.emit("armoured")
-		# Removed hide() to keep menu open
 
 func _on_garrison_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		print("Garrison division clicked") # Debug print
+		print("Garrison division clicked")
 		unit_selected.emit("garrison")
-		# Removed hide() to keep menu open

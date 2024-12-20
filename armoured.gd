@@ -1,4 +1,3 @@
-# armoured.gd
 extends Node2D
 
 var movement_points = 2
@@ -9,3 +8,6 @@ func reset_movement():
 
 func can_move():
 	return !has_moved
+
+func _ready():
+	$Label.text = "Armoured"

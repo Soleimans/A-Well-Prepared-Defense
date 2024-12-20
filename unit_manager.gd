@@ -22,11 +22,15 @@ const UNIT_COSTS = {
 
 @onready var grid = get_parent()
 @onready var resource_manager = get_parent().get_node("ResourceManager")
+@onready var building_manager = get_parent().get_node("BuildingManager")
 
 func initialize(size: Vector2):
-	# Initialize unit tracking for the first column
-	for y in range(size.y):
-		units_in_cells[Vector2(0, y)] = []
+	# Initialize unit tracking for all cells
+	for x in range(size.x):
+		for y in range(size.y):
+			units_in_cells[Vector2(x, y)] = []
+	print("UnitManager initialized with grid size: ", size)
+	print("Initial units_in_cells: ", units_in_cells)
 
 func has_selected_unit_type() -> bool:
 	return selected_unit_type != ""
@@ -41,9 +45,17 @@ func _on_unit_selected(type: String):
 	selected_unit_type = type
 	selected_unit = null
 	valid_move_tiles.clear()
+	# Clear building selection when unit is selected
+	if building_manager:
+		building_manager.selected_building_type = ""
 	print("Selected unit type: ", type)
 
 func try_place_unit(grid_pos: Vector2) -> bool:
+	print("Attempting to place unit: ", selected_unit_type)
+	print("At position: ", grid_pos)
+	print("Current military points: ", resource_manager.military_points)
+	print("Current units_in_cells state: ", units_in_cells)
+	
 	# Check if position is in first column
 	if grid_pos.x != 0:
 		print("Units can only be placed in the first column")
@@ -51,6 +63,7 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 		
 	# Check if position is within grid bounds
 	if grid_pos.y < 0 or grid_pos.y >= grid.grid_size.y:
+		print("Position out of bounds")
 		return false
 		
 	# Check if cell has reached unit limit
@@ -79,27 +92,53 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	# Deduct points
 	resource_manager.military_points -= cost
 	
-	print("Placed ", selected_unit_type, " at ", grid_pos)
+	print("Successfully placed ", selected_unit_type, " at ", grid_pos)
+	print("Remaining military points: ", resource_manager.military_points)
 	return true
 
 func try_select_unit(grid_pos: Vector2):
+	print("Trying to select unit at: ", grid_pos)
+	print("Units at this position: ", units_in_cells.get(grid_pos, []))
+	
 	if grid_pos not in units_in_cells or units_in_cells[grid_pos].size() == 0:
+		print("No units at position: ", grid_pos)
 		return
 		
-	var unit = units_in_cells[grid_pos][0]  # Select first unit in stack
-	if unit and unit.has_method("can_move") and unit.can_move():
-		selected_unit = unit
-		unit_start_pos = grid_pos
-		highlight_valid_moves(grid_pos)
+	# Get the first unit in the stack
+	var unit = units_in_cells[grid_pos][0]
+	print("Found unit: ", unit)
+	
+	# Check if the unit can move
+	if unit and is_instance_valid(unit):  # Check if unit exists and is valid
+		if unit.has_method("can_move"):
+			if unit.can_move():
+				selected_unit = unit
+				unit_start_pos = grid_pos
+				highlight_valid_moves(grid_pos)
+				print("Selected unit at position: ", grid_pos)
+			else:
+				print("Unit has already moved this turn")
+		else:
+			print("Unit doesn't have can_move method")
 	else:
-		print("Unit has already moved this turn")
+		print("Invalid unit reference")
 
 func highlight_valid_moves(from_pos: Vector2):
 	valid_move_tiles.clear()
 	
-	var is_armoured = selected_unit.get_parent().name.begins_with("armoured")
-	var move_points = 2 if is_armoured else 1
+	# Make sure we have a selected unit
+	if not selected_unit:
+		print("No unit selected")
+		return
+		
+	print("Selected unit: ", selected_unit)
 	
+	# Determine unit type by checking the scene name
+	var is_armoured = selected_unit.scene_file_path.contains("armoured")
+	var move_points = 2 if is_armoured else 1
+	print("Move points: ", move_points, " (Armoured: ", is_armoured, ")")
+	
+	# Calculate valid moves
 	for x in range(max(0, from_pos.x - move_points), min(grid.grid_size.x, from_pos.x + move_points + 1)):
 		for y in range(max(0, from_pos.y - move_points), min(grid.grid_size.y, from_pos.y + move_points + 1)):
 			var test_pos = Vector2(x, y)
@@ -107,24 +146,30 @@ func highlight_valid_moves(from_pos: Vector2):
 				continue
 				
 			if is_armoured:
+				# Armoured units can move diagonally and up to 2 tiles
 				var distance = (test_pos - from_pos).length()
 				if distance <= 2.0:
 					if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
 						valid_move_tiles.append(test_pos)
+						print("Added valid move tile: ", test_pos)
 			else:
+				# Infantry and garrison can only move 1 tile orthogonally
 				if manhattan_distance(from_pos, test_pos) <= move_points:
 					if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
 						valid_move_tiles.append(test_pos)
+						print("Added valid move tile: ", test_pos)
 
 func manhattan_distance(from: Vector2, to: Vector2) -> int:
 	return int(abs(from.x - to.x) + abs(from.y - to.y))
 
 func execute_move(to_pos: Vector2):
 	if !selected_unit or !selected_unit.has_method("can_move") or !selected_unit.can_move():
+		print("Invalid unit or unit cannot move")
 		return false
 		
 	var unit_index = units_in_cells[unit_start_pos].find(selected_unit)
 	if unit_index == -1:
+		print("Unit not found in starting position")
 		return false
 		
 	# Remove unit from old position
@@ -150,15 +195,6 @@ func execute_move(to_pos: Vector2):
 	return true
 
 func draw(grid_node: Node2D):
-	# Draw unit count indicators for first column
-	for y in range(grid.grid_size.y):
-		var pos = Vector2(0, y)
-		if pos in units_in_cells:
-			var unit_count = units_in_cells[pos].size()
-			if unit_count > 0:
-				var text_pos = grid.grid_to_world(pos) + Vector2(-grid.tile_size.x/2 + 10, -grid.tile_size.y/2 + 20)
-				grid_node.draw_string(ThemeDB.fallback_font, text_pos, str(unit_count) + "/" + str(MAX_UNITS_PER_CELL))
-	
 	# Draw valid move tiles
 	for pos in valid_move_tiles:
 		var rect = Rect2(

@@ -61,6 +61,10 @@ func _on_button_pressed():
 	value += 100
 	label.text = "Build " + str(value)
 
+func _unhandled_input(event):
+	if event.is_action_pressed("ui_accept"):  # This catches the space bar press
+		_on_button_pressed()
+
 func count_completed_civilian_factories() -> int:
 	var count = 0
 	if grid_node:

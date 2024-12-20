@@ -58,7 +58,6 @@ script = ExtResource("2_e41tu")
 
 [node name="Label2" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
 layout_mode = 2
-text = "0"
 
 [node name="build_menu" parent="UILayer/ColorRect" instance=ExtResource("2_760as")]
 layout_mode = 1

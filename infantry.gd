@@ -1,4 +1,3 @@
-# infantry.gd / garrison.gd
 extends Node2D
 
 var movement_points = 1
@@ -9,3 +8,6 @@ func reset_movement():
 
 func can_move():
 	return !has_moved
+
+func _ready():
+	$Label.text = "Infantry"

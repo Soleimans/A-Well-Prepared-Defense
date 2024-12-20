@@ -11,24 +11,32 @@ var building_costs = {
 	"fort": 500
 }
 
+# Construction times
 var construction_times = {
 	"civilian_factory": 6,
 	"military_factory": 4,
-	"fort": 1
+	"fort": 1  # Base time for first 5 levels, will be 2 for levels 6-10
 }
 
+# Dictionary to track buildings under construction
+# Format: Vector2(grid_pos) : {"type": string, "turns_left": int, "total_turns": int}
 var buildings_under_construction = {}
+
+# Dictionary to store grid occupancy and fort levels
 var grid_cells = {}
 var fort_levels = {}
+
+# Currently selected building type
 var selected_building_type = ""
 
-# Preloaded scenes
+# Preload building scenes
 var civilian_factory_scene = preload("res://civilian_factory.tscn")
 var military_factory_scene = preload("res://military_factory.tscn")
 var fort_scene = preload("res://fort.tscn")
 
 @onready var grid = get_parent()
 @onready var resource_manager = get_parent().get_node("ResourceManager")
+@onready var unit_manager = get_parent().get_node("UnitManager")
 
 func initialize(size: Vector2):
 	# Initialize grid cells and fort levels
@@ -36,12 +44,18 @@ func initialize(size: Vector2):
 		for y in range(size.y):
 			grid_cells[Vector2(x, y)] = null
 			fort_levels[Vector2(x, y)] = 0
+	print("BuildingManager initialized")
 
 func has_selected_building() -> bool:
 	return selected_building_type != ""
 
 func _on_building_selected(type: String):
 	selected_building_type = type
+	# Clear unit selection when building is selected
+	if unit_manager:
+		unit_manager.selected_unit_type = ""
+		unit_manager.selected_unit = null
+		unit_manager.valid_move_tiles.clear()
 	print("Selected building type: ", type)
 
 func get_building_cost(building_type: String, grid_pos: Vector2) -> int:
@@ -50,9 +64,12 @@ func get_building_cost(building_type: String, grid_pos: Vector2) -> int:
 	return building_costs[building_type]
 
 func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
+	print("Checking build position for ", building_type, " at ", grid_pos)
+	
 	# Check if position is within grid bounds
 	if grid_pos.x < 0 or grid_pos.x >= grid.grid_size.x or \
 	   grid_pos.y < 0 or grid_pos.y >= grid.grid_size.y:
+		print("Position out of bounds")
 		return false
 	
 	# Check if there's already a building under construction
@@ -83,6 +100,7 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 		print("Not enough points! Cost: ", cost, " Available: ", resource_manager.points)
 		return false
 		
+	print("Valid build position")
 	return true
 
 func try_place_building(grid_pos: Vector2):
@@ -91,6 +109,7 @@ func try_place_building(grid_pos: Vector2):
 
 func place_building(grid_pos: Vector2, building_type: String):
 	var cost = get_building_cost(building_type, grid_pos)
+	print("Starting construction of ", building_type, " at ", grid_pos)
 	
 	# Start construction
 	if building_type == "fort":
@@ -111,13 +130,16 @@ func place_building(grid_pos: Vector2, building_type: String):
 	
 	resource_manager.points -= cost
 	print("Construction started: ", building_type, " at ", grid_pos)
+	print("Points remaining: ", resource_manager.points)
 
 func process_construction():
+	print("Processing construction progress")
 	var completed_positions = []
 	
 	for grid_pos in buildings_under_construction:
 		var construction = buildings_under_construction[grid_pos]
 		construction.turns_left -= 1
+		print("Construction at ", grid_pos, " has ", construction.turns_left, " turns left")
 		
 		if construction.turns_left <= 0:
 			# Construction complete - create the building
@@ -125,13 +147,16 @@ func process_construction():
 			match construction.type:
 				"civilian_factory":
 					building = civilian_factory_scene.instantiate()
+					print("Completed civilian factory")
 				"military_factory":
 					building = military_factory_scene.instantiate()
+					print("Completed military factory")
 				"fort":
 					building = fort_scene.instantiate()
 					fort_levels[grid_pos] = construction.target_level
 					if building.has_method("set_level"):
 						building.set_level(fort_levels[grid_pos])
+					print("Completed fort level ", fort_levels[grid_pos])
 			
 			if building:
 				if construction.type == "fort" and grid_cells[grid_pos]:
@@ -144,9 +169,11 @@ func process_construction():
 	# Remove completed constructions
 	for pos in completed_positions:
 		buildings_under_construction.erase(pos)
+		print("Removed completed construction at ", pos)
 
 func draw(grid_node: Node2D):
 	# Draw building zones
+	# Factory zone (green tint)
 	for x in factory_columns:
 		for y in range(grid.grid_size.y):
 			var rect = Rect2(
@@ -157,7 +184,7 @@ func draw(grid_node: Node2D):
 			)
 			grid_node.draw_rect(rect, Color(0, 1, 0, 0.2))
 	
-	# Draw defense zone
+	# Defense zone (red tint)
 	for y in range(grid.grid_size.y):
 		var rect = Rect2(
 			defense_column * grid.tile_size.x,
@@ -178,7 +205,7 @@ func draw(grid_node: Node2D):
 			grid.tile_size.y
 		)
 		
-		# Draw construction indicator
+		# Draw construction indicator (checkerboard pattern)
 		grid_node.draw_rect(rect, Color(0.7, 0.7, 0.2, 0.3))
 		
 		# Draw progress bar
