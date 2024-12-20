@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=16 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://button.gd" id="1_d0gsr"]
@@ -10,6 +10,9 @@
 [ext_resource type="PackedScene" uid="uid://dec3l5yegbipi" path="res://army_menu.tscn" id="3_abfub"]
 [ext_resource type="Script" path="res://camera_control.gd" id="4_gq3ax"]
 [ext_resource type="Script" path="res://turn_button.gd" id="6_dye0f"]
+[ext_resource type="Script" path="res://building_manager.gd" id="10_tbqb7"]
+[ext_resource type="Script" path="res://unit_manager.gd" id="11_hwsqy"]
+[ext_resource type="Script" path="res://resource_manager.gd" id="12_t0fja"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hhyts"]
 texture = ExtResource("2_enqgi")
@@ -91,6 +94,15 @@ script = ExtResource("3_61wyy")
 
 [node name="Grid" type="Node2D" parent="."]
 script = ExtResource("1_d6757")
+
+[node name="BuildingManager" type="Node2D" parent="Grid"]
+script = ExtResource("10_tbqb7")
+
+[node name="UnitManager" type="Node2D" parent="Grid"]
+script = ExtResource("11_hwsqy")
+
+[node name="ResourceManager" type="Node2D" parent="Grid"]
+script = ExtResource("12_t0fja")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(960, 320)
