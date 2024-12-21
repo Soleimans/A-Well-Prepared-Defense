@@ -1,9 +1,9 @@
 [gd_scene load_steps=2 format=3 uid="uid://dfgmtosoasthv"]
 
-[ext_resource type="Script" path="res://civilian_factory.gd" id="1_43w8s"]
+[ext_resource type="Script" path="res://scripts/civilian_factory.gd" id="1_t5hdm"]
 
 [node name="Node2D" type="Node2D"]
-script = ExtResource("1_43w8s")
+script = ExtResource("1_t5hdm")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 

@@ -8,3 +8,4 @@ func _ready():
 func increment_turn():
 	current_turn += 1
 	text = "Turn: " + str(current_turn)
+	print("Turn incremented to: ", current_turn)

@@ -1,10 +1,10 @@
 [gd_scene load_steps=6 format=3 uid="uid://23oobmg40yue"]
 
-[ext_resource type="Script" path="res://build_menu.gd" id="1_jbuco"]
-[ext_resource type="Script" path="res://panel.gd" id="2_0stii"]
-[ext_resource type="Texture2D" uid="uid://dlp06pu174io0" path="res://Images/22px-Civilian_factories.png" id="3_35m6j"]
-[ext_resource type="Texture2D" uid="uid://b45rp5jt6ptgs" path="res://Images/22px-Military_factories.png" id="4_jy0fa"]
-[ext_resource type="Texture2D" uid="uid://c3eoamcxx3n5" path="res://Images/Land_fort.png" id="5_e4wuq"]
+[ext_resource type="Script" path="res://scripts/build_menu.gd" id="1_jbuco"]
+[ext_resource type="Script" path="res://scripts/panel.gd" id="2_0stii"]
+[ext_resource type="Texture2D" uid="uid://dlp06pu174io0" path="res://images/22px-Civilian_factories.png" id="3_35m6j"]
+[ext_resource type="Texture2D" uid="uid://b45rp5jt6ptgs" path="res://images/22px-Military_factories.png" id="4_jy0fa"]
+[ext_resource type="Texture2D" uid="uid://c3eoamcxx3n5" path="res://images/Land_fort.png" id="5_e4wuq"]
 
 [node name="build_menu" type="Control"]
 layout_mode = 3

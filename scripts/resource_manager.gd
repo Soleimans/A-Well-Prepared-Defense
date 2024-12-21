@@ -8,6 +8,7 @@ var military_points = 10000
 
 func initialize():
 	update_labels()
+	print("ResourceManager initialized")
 
 func update_labels():
 	if points_label:

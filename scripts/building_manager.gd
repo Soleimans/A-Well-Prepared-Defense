@@ -29,9 +29,9 @@ var fort_levels = {}
 var selected_building_type = ""
 
 # Preload building scenes
-var civilian_factory_scene = preload("res://civilian_factory.tscn")
-var military_factory_scene = preload("res://military_factory.tscn")
-var fort_scene = preload("res://fort.tscn")
+var civilian_factory_scene = preload("res://scenes/civilian_factory.tscn")
+var military_factory_scene = preload("res://scenes/military_factory.tscn")
+var fort_scene = preload("res://scenes/fort.tscn")
 
 @onready var grid = get_parent()
 @onready var resource_manager = get_parent().get_node("ResourceManager")

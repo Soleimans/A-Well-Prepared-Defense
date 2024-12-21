@@ -10,9 +10,9 @@ const UNIT_COSTS = {
 
 # Preloaded scenes
 var unit_scenes = {
-	"infantry": preload("res://infantry.tscn"),
-	"armoured": preload("res://armoured.tscn"),
-	"garrison": preload("res://garrison.tscn")
+	"infantry": preload("res://scenes/infantry.tscn"),
+	"armoured": preload("res://scenes/armoured.tscn"),
+	"garrison": preload("res://scenes/garrison.tscn")
 }
 
 # State variables

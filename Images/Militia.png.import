@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://fjpb7i3qagh3"
-path="res://.godot/imported/Militia.png-6b3501e191918d2afc442674670ab598.ctex"
+path="res://.godot/imported/Militia.png-4b2a27f42c761887f0c76f6b90cf7a88.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/Militia.png"
-dest_files=["res://.godot/imported/Militia.png-6b3501e191918d2afc442674670ab598.ctex"]
+source_file="res://images/Militia.png"
+dest_files=["res://.godot/imported/Militia.png-4b2a27f42c761887f0c76f6b90cf7a88.ctex"]
 
 [params]
 

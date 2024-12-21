@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://yvq3k48ienvs"]
+
+[ext_resource type="Script" path="res://scripts/infantry.gd" id="1_2o26r"]
+[ext_resource type="Texture2D" uid="uid://dwyeu5dp1tqw1" path="res://images/Infantry.png" id="2_1avm7"]
+
+[node name="Infantry" type="Node2D"]
+script = ExtResource("1_2o26r")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_1avm7")
+
+[node name="Label" type="Label" parent="."]
+offset_right = 40.0
+offset_bottom = 23.0

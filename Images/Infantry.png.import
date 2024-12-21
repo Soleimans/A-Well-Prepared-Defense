@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dwyeu5dp1tqw1"
-path="res://.godot/imported/Infantry.png-d86a39b1d3b0e86feb29d313f167f430.ctex"
+path="res://.godot/imported/Infantry.png-ad3d4abb640a1518b8074390e6510bde.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Images/Infantry.png"
-dest_files=["res://.godot/imported/Infantry.png-d86a39b1d3b0e86feb29d313f167f430.ctex"]
+source_file="res://images/Infantry.png"
+dest_files=["res://.godot/imported/Infantry.png-ad3d4abb640a1518b8074390e6510bde.ctex"]
 
 [params]
 

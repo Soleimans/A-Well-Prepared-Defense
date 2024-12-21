@@ -20,80 +20,79 @@ func _ready():
 	print("Grid node found: ", grid_node != null)
 
 func _on_button_pressed():
-	print("Turn button pressed!")
-	
-	# Calculate and add points BEFORE processing construction
-	var civilian_factory_count = count_completed_civilian_factories()
-	var military_factory_count = count_completed_military_factories()
-	
-	print("Found completed civilian factories: ", civilian_factory_count)
-	print("Found completed military factories: ", military_factory_count)
+	print("\n=== TURN BUTTON PRESSED ===")
+	print("Processing turn effects...")
 	
 	if grid_node:
 		var unit_manager = grid_node.get_node("UnitManager")
 		var building_manager = grid_node.get_node("BuildingManager")
 		var resource_manager = grid_node.get_node("ResourceManager")
 		
-		# Generate regular points from civilian factories
-		var points_generated = civilian_factory_count * points_per_civilian_factory
-		resource_manager.points += points_generated
-		print("Generated points: ", points_generated)
+		print("Found building manager: ", building_manager != null)
 		
-		# Generate military points from military factories
-		var military_points_generated = military_factory_count * points_per_military_factory
-		resource_manager.military_points += military_points_generated
+		# Get factory counts and generate points
+		var factory_counts = get_factory_counts()
+		var points_generated = factory_counts["civilian"] * points_per_civilian_factory
+		var military_points_generated = factory_counts["military"] * points_per_military_factory
+		
+		print("Civilian factories: ", factory_counts["civilian"])
+		print("Military factories: ", factory_counts["military"])
+		print("Generated points: ", points_generated)
 		print("Generated military points: ", military_points_generated)
 		
-		# Reset unit movements - Now using UnitManager
+		# Add generated points
+		resource_manager.points += points_generated
+		resource_manager.military_points += military_points_generated
+		
+		# Reset unit movements
 		for pos in unit_manager.units_in_cells:
 			for unit in unit_manager.units_in_cells[pos]:
 				if unit.has_method("reset_movement"):
 					unit.reset_movement()
 					print("Reset movement for unit at position: ", pos)
 		
-		# Process construction progress - Now using BuildingManager
+		# Process construction progress
 		building_manager.process_construction()
+		print("Construction processing complete")
 		
 		# Clear any selected unit and valid move tiles
 		unit_manager.selected_unit = null
 		unit_manager.valid_move_tiles.clear()
+	else:
+		print("ERROR: Grid node not found!")
 	
 	# Update turn count
 	if turn_count_label:
 		turn_count_label.increment_turn()
+		print("Turn count updated")
+	else:
+		print("ERROR: Turn count label not found!")
 	
 	# Increment build value
 	value += 100
 	label.text = "Build " + str(value)
+	print("Build value updated to: ", value)
+	print("=== TURN PROCESSING COMPLETE ===\n")
 
 func _unhandled_input(event):
 	if event.is_action_pressed("ui_accept"):  # This catches the space bar press
 		_on_button_pressed()
 
-func count_completed_civilian_factories() -> int:
-	var count = 0
+func get_factory_counts() -> Dictionary:
+	var counts = {"civilian": 0, "military": 0}
+	
 	if grid_node:
 		var building_manager = grid_node.get_node("BuildingManager")
 		var construction_positions = building_manager.buildings_under_construction.keys()
 		
 		for pos in building_manager.grid_cells:
 			var cell = building_manager.grid_cells[pos]
-			if cell and cell.scene_file_path == "res://civilian_factory.tscn":
-				if not pos in construction_positions:
-					count += 1
+			if cell and not pos in construction_positions:
+				if cell.scene_file_path == "res://scenes/civilian_factory.tscn":
+					counts["civilian"] += 1
 					print("Found a completed civilian factory")
-	return count
-
-func count_completed_military_factories() -> int:
-	var count = 0
-	if grid_node:
-		var building_manager = grid_node.get_node("BuildingManager")
-		var construction_positions = building_manager.buildings_under_construction.keys()
-		
-		for pos in building_manager.grid_cells:
-			var cell = building_manager.grid_cells[pos]
-			if cell and cell.scene_file_path == "res://military_factory.tscn":
-				if not pos in construction_positions:
-					count += 1
+				elif cell.scene_file_path == "res://scenes/military_factory.tscn":
+					counts["military"] += 1
 					print("Found a completed military factory")
-	return count
+	
+	return counts

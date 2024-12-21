@@ -1,20 +1,21 @@
-[gd_scene load_steps=18 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=19 format=3 uid="uid://brvwkj40l6c42"]
 
-[ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://images/image-cache.jpeg" id="1_4m1r6"]
-[ext_resource type="Script" path="res://scripts/button.gd" id="1_d0gsr"]
-[ext_resource type="Script" path="res://scripts/grid.gd" id="1_d6757"]
-[ext_resource type="PackedScene" uid="uid://23oobmg40yue" path="res://scenes/build_menu.tscn" id="2_760as"]
-[ext_resource type="Script" path="res://scripts/button_2.gd" id="2_e41tu"]
-[ext_resource type="Texture2D" uid="uid://c3axlpmewg4x6" path="res://images/Grass.png" id="2_enqgi"]
-[ext_resource type="PackedScene" uid="uid://dec3l5yegbipi" path="res://scenes/army_menu.tscn" id="3_abfub"]
-[ext_resource type="Script" path="res://scripts/camera_control.gd" id="4_gq3ax"]
-[ext_resource type="Script" path="res://scripts/turn_count.gd" id="5_r0qd4"]
-[ext_resource type="Script" path="res://scripts/turn_button.gd" id="6_rwev8"]
-[ext_resource type="Script" path="res://scripts/building_manager.gd" id="10_tbqb7"]
-[ext_resource type="Script" path="res://scripts/unit_manager.gd" id="11_f7f17"]
-[ext_resource type="Script" path="res://scripts/resource_manager.gd" id="12_4rgbg"]
-[ext_resource type="PackedScene" uid="uid://g5wu0q7kkb3c" path="res://scenes/debug.tscn" id="14_4peq5"]
-[ext_resource type="Script" path="res://scripts/debug.gd" id="15_m3oiu"]
+[ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://image-cache.jpeg" id="1_4m1r6"]
+[ext_resource type="Script" path="res://button.gd" id="1_d0gsr"]
+[ext_resource type="Script" path="res://grid.gd" id="1_d6757"]
+[ext_resource type="PackedScene" uid="uid://23oobmg40yue" path="res://build_menu.tscn" id="2_760as"]
+[ext_resource type="Script" path="res://button_2.gd" id="2_e41tu"]
+[ext_resource type="Texture2D" uid="uid://c3axlpmewg4x6" path="res://Grass.png" id="2_enqgi"]
+[ext_resource type="PackedScene" uid="uid://dec3l5yegbipi" path="res://army_menu.tscn" id="3_abfub"]
+[ext_resource type="Script" path="res://camera_control.gd" id="4_gq3ax"]
+[ext_resource type="Script" path="res://turn_count.gd" id="5_pgehi"]
+[ext_resource type="Script" path="res://turn_button.gd" id="6_dye0f"]
+[ext_resource type="Script" path="res://building_manager.gd" id="10_tbqb7"]
+[ext_resource type="Script" path="res://unit_manager.gd" id="11_hwsqy"]
+[ext_resource type="Script" path="res://resource_manager.gd" id="12_t0fja"]
+[ext_resource type="PackedScene" uid="uid://g5wu0q7kkb3c" path="res://debug.tscn" id="14_4peq5"]
+[ext_resource type="Script" path="res://debug.gd" id="15_m3oiu"]
+[ext_resource type="PackedScene" uid="uid://cd8dc2p01a00g" path="res://unit_selection_menu.tscn" id="16_c8y1m"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hhyts"]
 texture = ExtResource("2_enqgi")
@@ -60,7 +61,6 @@ script = ExtResource("2_e41tu")
 
 [node name="Label2" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
 layout_mode = 2
-text = "0"
 
 [node name="build_menu" parent="UILayer/ColorRect" instance=ExtResource("2_760as")]
 layout_mode = 1
@@ -74,7 +74,7 @@ offset_top = 586.0
 offset_right = 1920.0
 offset_bottom = 609.0
 text = "Turn: 0"
-script = ExtResource("5_r0qd4")
+script = ExtResource("5_pgehi")
 
 [node name="TurnButton" type="Button" parent="UILayer"]
 anchors_preset = 3
@@ -87,7 +87,7 @@ offset_top = -31.0
 grow_horizontal = 0
 grow_vertical = 0
 text = "Next Turn"
-script = ExtResource("6_rwev8")
+script = ExtResource("6_dye0f")
 
 [node name="Debug" parent="UILayer" instance=ExtResource("14_4peq5")]
 script = ExtResource("15_m3oiu")
@@ -111,13 +111,16 @@ script = ExtResource("1_d6757")
 script = ExtResource("10_tbqb7")
 
 [node name="UnitManager" type="Node2D" parent="Grid"]
-script = ExtResource("11_f7f17")
+script = ExtResource("11_hwsqy")
 
 [node name="ResourceManager" type="Node2D" parent="Grid"]
-script = ExtResource("12_4rgbg")
+script = ExtResource("12_t0fja")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(960, 320)
 drag_horizontal_enabled = true
 drag_vertical_enabled = true
 script = ExtResource("4_gq3ax")
+
+[node name="unit_selection_menu" parent="." instance=ExtResource("16_c8y1m")]
+visible = false
