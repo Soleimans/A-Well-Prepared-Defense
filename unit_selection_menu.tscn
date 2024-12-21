@@ -1,0 +1,28 @@
+[gd_scene load_steps=2 format=3 uid="uid://cd8dc2p01a00g"]
+
+[ext_resource type="Script" path="res://unit_selection_menu.gd" id="1_uwpoo"]
+
+[node name="unit_selection_menu" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_uwpoo")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel"]
+layout_mode = 0
+offset_right = 221.0
+offset_bottom = 31.0
+
+[node name="Button1" type="Button" parent="Panel/HBoxContainer"]
+layout_mode = 2
+text = "Infantry"
+
+[node name="Button2" type="Button" parent="Panel/HBoxContainer"]
+layout_mode = 2
+text = "Infantry"
+
+[node name="Button3" type="Button" parent="Panel/HBoxContainer"]
+layout_mode = 2
+text = "Infantry"

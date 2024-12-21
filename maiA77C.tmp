@@ -92,6 +92,9 @@ script = ExtResource("6_dye0f")
 [node name="Debug" parent="UILayer" instance=ExtResource("14_4peq5")]
 script = ExtResource("15_m3oiu")
 
+[node name="unit_selection_menu" parent="UILayer" instance=ExtResource("16_c8y1m")]
+visible = false
+
 [node name="Background" type="Node2D" parent="."]
 
 [node name="Sprite2D" type="Sprite2D" parent="Background"]
@@ -121,6 +124,3 @@ position = Vector2(960, 320)
 drag_horizontal_enabled = true
 drag_vertical_enabled = true
 script = ExtResource("4_gq3ax")
-
-[node name="unit_selection_menu" parent="." instance=ExtResource("16_c8y1m")]
-visible = false

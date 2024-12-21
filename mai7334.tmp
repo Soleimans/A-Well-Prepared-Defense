@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=20 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://button.gd" id="1_d0gsr"]
@@ -16,6 +16,7 @@
 [ext_resource type="PackedScene" uid="uid://g5wu0q7kkb3c" path="res://debug.tscn" id="14_4peq5"]
 [ext_resource type="Script" path="res://debug.gd" id="15_m3oiu"]
 [ext_resource type="PackedScene" uid="uid://cd8dc2p01a00g" path="res://unit_selection_menu.tscn" id="16_c8y1m"]
+[ext_resource type="Script" path="res://unit_selection_menu.gd" id="17_fjevn"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hhyts"]
 texture = ExtResource("2_enqgi")
@@ -123,4 +124,4 @@ drag_vertical_enabled = true
 script = ExtResource("4_gq3ax")
 
 [node name="unit_selection_menu" parent="." instance=ExtResource("16_c8y1m")]
-visible = false
+script = ExtResource("17_fjevn")
