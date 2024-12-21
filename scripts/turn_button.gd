@@ -75,7 +75,10 @@ func _on_button_pressed():
 	print("=== TURN PROCESSING COMPLETE ===\n")
 
 func _unhandled_input(event):
-	if event.is_action_pressed("ui_accept"):  # This catches the space bar press
+	if has_focus():  # Prevent processing if the button is focused
+		return
+	
+	if event.is_action_pressed("ui_accept"):  # Catch the spacebar press
 		_on_button_pressed()
 
 func get_factory_counts() -> Dictionary:
