@@ -8,5 +8,6 @@ script = ExtResource("1_m7elr")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 
 [node name="Label" type="Label" parent="Sprite2D"]
+offset_top = 21.0
 offset_right = 40.0
-offset_bottom = 23.0
+offset_bottom = 44.0

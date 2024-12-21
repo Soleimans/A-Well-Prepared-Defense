@@ -1,8 +1,7 @@
 extends Node
 
 # Building zones
-var factory_columns = [0, 1]
-var defense_column = 2
+var buildable_columns = [0, 1, 2]  # First 3 columns are buildable
 
 # Building properties
 var building_costs = {
@@ -78,18 +77,15 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 		return false
 	
 	# Check building type restrictions and costs
+	# Check if position is in buildable columns
+	if !buildable_columns.has(int(grid_pos.x)):
+		print("Position not in buildable columns")
+		return false
+		
 	match building_type:
 		"civilian_factory", "military_factory":
-			if !factory_columns.has(int(grid_pos.x)):
-				print("Invalid column for factory")
-				return false
-			if grid_cells[grid_pos] != null:
-				print("Cell already occupied")
-				return false
+			pass  # No additional restrictions for factories
 		"fort":
-			if grid_pos.x != defense_column:
-				print("Invalid column for fort")
-				return false
 			if fort_levels[grid_pos] >= 10:
 				print("Maximum fort level reached")
 				return false
@@ -160,6 +156,10 @@ func process_construction():
 			
 			if building:
 				if construction.type == "fort" and grid_cells[grid_pos]:
+					# Don't remove existing buildings when placing a fort
+					pass
+				elif construction.type != "fort" and grid_cells[grid_pos]:
+					# Remove existing factory if placing a new factory
 					grid_cells[grid_pos].queue_free()
 				building.position = grid.grid_to_world(grid_pos)
 				grid.add_child(building)
@@ -172,9 +172,8 @@ func process_construction():
 		print("Removed completed construction at ", pos)
 
 func draw(grid_node: Node2D):
-	# Draw building zones
-	# Factory zone (green tint)
-	for x in factory_columns:
+	# Draw buildable zones (blue tint)
+	for x in buildable_columns:
 		for y in range(grid.grid_size.y):
 			var rect = Rect2(
 				x * grid.tile_size.x,
@@ -182,17 +181,7 @@ func draw(grid_node: Node2D):
 				grid.tile_size.x,
 				grid.tile_size.y
 			)
-			grid_node.draw_rect(rect, Color(0, 1, 0, 0.2))
-	
-	# Defense zone (red tint)
-	for y in range(grid.grid_size.y):
-		var rect = Rect2(
-			defense_column * grid.tile_size.x,
-			y * grid.tile_size.y,
-			grid.tile_size.x,
-			grid.tile_size.y
-		)
-		grid_node.draw_rect(rect, Color(1, 0, 0, 0.2))
+			grid_node.draw_rect(rect, Color(0, 0.5, 1, 0.2))
 	
 	# Draw construction progress
 	for grid_pos in buildings_under_construction:
