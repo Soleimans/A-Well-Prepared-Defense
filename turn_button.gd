@@ -4,6 +4,7 @@ extends Button
 @onready var points_label = get_node("../ColorRect/HBoxContainer/Label")
 @onready var military_points_label = get_node("../ColorRect/HBoxContainer/Label2")
 @onready var grid_node = get_node("/root/Main/Grid")
+@onready var turn_count_label = get_node("../TurnCount")
 
 var value = 1000  # Starting value
 var points_per_civilian_factory = 2160
@@ -56,6 +57,10 @@ func _on_button_pressed():
 		# Clear any selected unit and valid move tiles
 		unit_manager.selected_unit = null
 		unit_manager.valid_move_tiles.clear()
+	
+	# Update turn count
+	if turn_count_label:
+		turn_count_label.increment_turn()
 	
 	# Increment build value
 	value += 100
