@@ -97,11 +97,45 @@ func _draw():
 	var background_rect = Rect2(0, 0, full_width, full_height)
 	draw_rect(background_rect, Color(0.2, 0.4, 0.2, 1.0))
 	
-	# Draw playable area (lighter green)
-	var playable_rect = Rect2(0, 0, playable_area.x * tile_size.x, playable_area.y * tile_size.y)
-	draw_rect(playable_rect, Color(0.3, 0.6, 0.3, 1.0))
+	# Get the next column that can be unlocked
+	var next_unlockable = building_manager.buildable_columns.size()
 	
-	# Draw grid lines only for playable area
+	# Draw columns with different colors based on their state
+	for x in range(playable_area.x):
+		var column_rect = Rect2(
+			x * tile_size.x,
+			0,
+			tile_size.x,
+			playable_area.y * tile_size.y
+		)
+		
+		if x in building_manager.buildable_columns:
+			# Already unlocked columns
+			draw_rect(column_rect, Color(0.3, 0.6, 0.3, 1.0))
+		elif x == next_unlockable and x <= building_manager.max_unlockable_column:
+			# Next column to unlock - highlight in a different color
+			draw_rect(column_rect, Color(0.4, 0.5, 0.2, 1.0))
+			
+			# Draw cost text if hovering over this column
+			var mouse_pos = get_global_mouse_position()
+			var grid_pos = world_to_grid(mouse_pos)
+			if grid_pos.x == x:
+				var cost = building_manager.get_next_column_cost()
+				# Draw cost text above the column
+				draw_string(
+					ThemeDB.fallback_font,
+					Vector2(x * tile_size.x + 10, tile_size.y - 10),
+					"Cost: " + str(cost),
+					HORIZONTAL_ALIGNMENT_LEFT,
+					-1,
+					16,
+					Color.WHITE
+				)
+		else:
+			# Locked columns
+			draw_rect(column_rect, Color(0.2, 0.3, 0.2, 1.0))
+	
+	# Draw grid lines
 	for x in range(playable_area.x + 1):
 		var from = Vector2(x * tile_size.x, 0)
 		var to = Vector2(x * tile_size.x, playable_area.y * tile_size.y)
@@ -112,7 +146,7 @@ func _draw():
 		var to = Vector2(playable_area.x * tile_size.x, y * tile_size.y)
 		draw_line(from, to, Color.BLACK, 2.0)
 	
-	# Draw mouse hover highlight only within playable area
+	# Draw mouse hover highlight
 	var mouse_pos = get_global_mouse_position()
 	var grid_pos = world_to_grid(mouse_pos)
 	if grid_pos.x >= 0 and grid_pos.x < playable_area.x and grid_pos.y >= 0 and grid_pos.y < playable_area.y:

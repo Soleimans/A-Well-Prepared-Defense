@@ -22,6 +22,9 @@ func _ready():
 	$Panel/GridContainer/VBoxContainer/HBoxContainer3/Label.gui_input.connect(
 		_on_fort_input
 	)
+	$Panel/GridContainer/VBoxContainer/HBoxContainer4/Label.gui_input.connect(
+		_on_unlock_column_input
+	)
 	
 	# Connect close button
 	$CloseButton.pressed.connect(_on_close_button_pressed)
@@ -30,6 +33,9 @@ func _ready():
 	$Panel/GridContainer/VBoxContainer/HBoxContainer/Label2.text = "10800"
 	$Panel/GridContainer/VBoxContainer/HBoxContainer2/Label2.text = "7200"
 	$Panel/GridContainer/VBoxContainer/HBoxContainer3/Label2.text = "500/level"
+	
+	# Initialize unlock label
+	update_unlock_label()
 
 func _on_close_button_pressed():
 	hide()
@@ -50,3 +56,29 @@ func _on_fort_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		print("Fort clicked")
 		building_selected.emit("fort")
+
+func _on_unlock_column_input(event):
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		print("Unlock column clicked - SENDING SIGNAL")
+		var building_manager = get_node("/root/Main/Grid/BuildingManager")
+		if building_manager.can_unlock_next_column():
+			building_selected.emit("unlock_column")
+
+func update_unlock_label():
+	var cost_label = $Panel/GridContainer/VBoxContainer/HBoxContainer4/Label2
+	var building_manager = get_node("/root/Main/Grid/BuildingManager")
+	
+	if !building_manager:
+		print("ERROR: BuildingManager not found!")
+		return
+	
+	if building_manager.buildable_columns.size() > building_manager.max_unlockable_column:
+		cost_label.text = "All Unlocked"
+	else:
+		var cost = building_manager.get_next_column_cost()
+		cost_label.text = str(cost)
+
+# Function to refresh the UI when the menu is shown
+func _on_visibility_changed():
+	if visible:
+		update_unlock_label()

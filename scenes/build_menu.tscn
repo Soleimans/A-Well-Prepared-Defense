@@ -83,6 +83,21 @@ text = "Fort"
 [node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
 
+[node name="HBoxContainer4" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 2
+text = "Next Column"
+
+[node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer4"]
+layout_mode = 2
+
 [node name="CloseButton" type="Button" parent="."]
 layout_mode = 0
 offset_right = 50.0

@@ -17,6 +17,11 @@ var construction_times = {
 	"fort": 1  # Base time for first 5 levels, will be 2 for levels 6-10
 }
 
+# Column unlocking properties
+var max_unlockable_column = 11  # Up to column 12 (0-11)
+var base_column_cost = 5000  # Starting cost
+var column_cost_multiplier = 1.5  # Each new column costs 1.5x more
+
 # Dictionary to track buildings under construction
 # Format: Vector2(grid_pos) : {"type": string, "turns_left": int, "total_turns": int}
 var buildings_under_construction = {}
@@ -50,6 +55,12 @@ func has_selected_building() -> bool:
 
 func _on_building_selected(type: String):
 	selected_building_type = type
+	if type == "unlock_column":
+		if unlock_next_column():
+			selected_building_type = ""  # Clear selection after unlocking
+			var build_menu = get_node("/root/Main/UILayer/ColorRect/build_menu")
+			if build_menu:
+				build_menu.update_unlock_label()
 	# Clear unit selection when building is selected
 	if unit_manager:
 		unit_manager.selected_unit_type = ""
@@ -61,6 +72,27 @@ func get_building_cost(building_type: String, grid_pos: Vector2) -> int:
 	if building_type == "fort":
 		return building_costs[building_type] * (fort_levels[grid_pos] + 1)
 	return building_costs[building_type]
+
+func get_next_column_cost() -> int:
+	if buildable_columns.size() >= max_unlockable_column + 1:
+		return 0  # All columns unlocked
+	return int(base_column_cost * pow(column_cost_multiplier, buildable_columns.size() - 3))
+
+func can_unlock_next_column() -> bool:
+	if buildable_columns.size() >= max_unlockable_column + 1:
+		return false
+	return resource_manager.points >= get_next_column_cost()
+
+func unlock_next_column() -> bool:
+	if !can_unlock_next_column():
+		return false
+		
+	var cost = get_next_column_cost()
+	var next_column = buildable_columns.size()
+	
+	resource_manager.points -= cost
+	buildable_columns.append(next_column)
+	return true
 
 func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 	print("Checking build position for ", building_type, " at ", grid_pos)
