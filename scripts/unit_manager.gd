@@ -61,6 +61,21 @@ func _on_unit_selected(type: String):
 	if building_manager:
 		building_manager.selected_building_type = ""
 
+func deselect_current_unit():
+	if currently_highlighted_unit:
+		set_unit_highlight(currently_highlighted_unit, false)
+		currently_highlighted_unit = null
+	
+	selected_unit = null
+	valid_move_tiles.clear()
+	current_unit_index = -1
+	last_clicked_pos = Vector2(-1, -1)
+
+func _input(event):
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+			deselect_current_unit()
+
 func try_place_unit(grid_pos: Vector2) -> bool:
 	print("UnitManager: Attempting to place unit at: ", grid_pos)
 	
@@ -105,6 +120,12 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	return true
 
 func try_select_unit(grid_pos: Vector2):
+	# If we click outside valid move tiles while having a unit selected,
+	# deselect the current unit
+	if selected_unit and !is_valid_move(grid_pos):
+		deselect_current_unit()
+		return
+		
 	print("UnitManager: Attempting to select unit at position: ", grid_pos)
 	print("UnitManager: Last clicked position was: ", last_clicked_pos)
 	print("UnitManager: Current unit index is: ", current_unit_index)
