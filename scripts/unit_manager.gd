@@ -22,6 +22,9 @@ var selected_unit = null
 var valid_move_tiles: Array = []
 var unit_start_pos = null
 var placing_enemy: bool = false
+var current_unit_index: int = -1
+var last_clicked_pos: Vector2 = Vector2(-1, -1)
+var currently_highlighted_unit = null
 
 # Node references
 @onready var grid = get_parent()
@@ -45,6 +48,10 @@ func has_selected_unit() -> bool:
 
 func is_valid_move(grid_pos: Vector2) -> bool:
 	return grid_pos in valid_move_tiles
+
+func set_unit_highlight(unit: Node2D, highlight: bool):
+	if unit and unit.has_method("set_highlighted"):
+		unit.set_highlighted(highlight)
 
 func _on_unit_selected(type: String):
 	print("UnitManager: Unit type selected: ", type)
@@ -99,9 +106,21 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 
 func try_select_unit(grid_pos: Vector2):
 	print("UnitManager: Attempting to select unit at position: ", grid_pos)
-	selected_unit = null
-	valid_move_tiles.clear()
+	print("UnitManager: Last clicked position was: ", last_clicked_pos)
+	print("UnitManager: Current unit index is: ", current_unit_index)
 	
+	# Clear previous highlight if exists
+	if currently_highlighted_unit:
+		set_unit_highlight(currently_highlighted_unit, false)
+		currently_highlighted_unit = null
+	
+	# Clear selection if clicking on a different tile
+	if grid_pos != last_clicked_pos:
+		print("UnitManager: New tile clicked, resetting selection")
+		selected_unit = null
+		valid_move_tiles.clear()
+		current_unit_index = -1
+		
 	if grid_pos not in units_in_cells or units_in_cells[grid_pos].size() == 0:
 		print("UnitManager: No units found at position")
 		return
@@ -109,13 +128,41 @@ func try_select_unit(grid_pos: Vector2):
 	var units = units_in_cells[grid_pos]
 	print("UnitManager: Found ", units.size(), " units at position")
 	
-	# Always select the last placed unit in the cell
-	var unit = units[units.size() - 1]
-	if unit and is_instance_valid(unit) and unit.has_method("can_move") and unit.can_move():
-		print("UnitManager: Selected unit")
-		selected_unit = unit
-		unit_start_pos = grid_pos
-		highlight_valid_moves(grid_pos)
+	# If clicking the same tile, cycle to next unit
+	if grid_pos == last_clicked_pos:
+		print("UnitManager: Same tile clicked, cycling units")
+		current_unit_index = (current_unit_index + 1) % units.size()
+		print("UnitManager: New current_unit_index: ", current_unit_index)
+	else:
+		# If clicking a new tile, start with the first unit
+		current_unit_index = 0
+		print("UnitManager: New tile, starting with first unit")
+		
+	last_clicked_pos = grid_pos
+	
+	# Try to find a movable unit starting from current_unit_index
+	var tried_units = 0
+	while tried_units < units.size():
+		var unit = units[current_unit_index]
+		print("UnitManager: Checking unit at index ", current_unit_index)
+		
+		if unit and is_instance_valid(unit) and unit.has_method("can_move") and unit.can_move():
+			print("UnitManager: Selected unit index ", current_unit_index)
+			selected_unit = unit
+			currently_highlighted_unit = unit
+			set_unit_highlight(unit, true)
+			unit_start_pos = grid_pos
+			highlight_valid_moves(grid_pos)
+			break
+		
+		current_unit_index = (current_unit_index + 1) % units.size()
+		tried_units += 1
+	
+	# If no movable units found, clear selection
+	if !selected_unit:
+		current_unit_index = -1
+		valid_move_tiles.clear()
+		print("UnitManager: No movable units found")
 
 func highlight_valid_moves(from_pos: Vector2):
 	print("UnitManager: Highlighting valid moves from position: ", from_pos)
@@ -163,6 +210,11 @@ func manhattan_distance(from: Vector2, to: Vector2) -> int:
 func execute_move(to_pos: Vector2) -> bool:
 	print("UnitManager: Executing unit move to ", to_pos)
 	
+	# Clear highlight of the moving unit
+	if currently_highlighted_unit:
+		set_unit_highlight(currently_highlighted_unit, false)
+		currently_highlighted_unit = null
+	
 	if !selected_unit or !selected_unit.has_method("can_move") or !selected_unit.can_move():
 		print("UnitManager: Cannot move - invalid unit state")
 		return false
@@ -195,6 +247,8 @@ func execute_move(to_pos: Vector2) -> bool:
 	
 	selected_unit = null
 	valid_move_tiles.clear()
+	current_unit_index = -1  # Reset the current unit index after move
+	last_clicked_pos = Vector2(-1, -1)  # Reset the last clicked position
 	
 	print("UnitManager: Unit move complete")
 	return true
