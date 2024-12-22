@@ -5,10 +5,10 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 815.0
-offset_top = -286.0
-offset_right = 815.0
-offset_bottom = -286.0
+offset_left = 762.0
+offset_top = -279.0
+offset_right = 762.0
+offset_bottom = -279.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -41,4 +41,20 @@ text = "Enemy Garrison"
 
 [node name="Button3" type="Button" parent="Panel/GridContainer/VBoxContainer"]
 layout_mode = 2
-text = "Enemy Arnoured "
+text = "Enemy Armoured "
+
+[node name="Button4" type="Button" parent="Panel/GridContainer/VBoxContainer"]
+layout_mode = 2
+text = "Enemy Civilian Factory"
+
+[node name="Button5" type="Button" parent="Panel/GridContainer/VBoxContainer"]
+layout_mode = 2
+text = "Enemy Military Factory"
+
+[node name="Button6" type="Button" parent="Panel/GridContainer/VBoxContainer"]
+layout_mode = 2
+text = "Enemy Fort"
+
+[node name="Button7" type="Button" parent="Panel/GridContainer/VBoxContainer"]
+layout_mode = 2
+text = "Enemy Next Column"
