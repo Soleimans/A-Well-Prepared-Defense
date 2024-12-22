@@ -84,7 +84,9 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 		
 	match building_type:
 		"civilian_factory", "military_factory":
-			pass  # No additional restrictions for factories
+			if grid_cells[grid_pos] != null:
+				print("Position already occupied")
+				return false
 		"fort":
 			if fort_levels[grid_pos] >= 10:
 				print("Maximum fort level reached")
@@ -130,7 +132,7 @@ func place_building(grid_pos: Vector2, building_type: String):
 
 func process_construction():
 	print("Processing construction progress")
-	var completed_positions = []
+	var finished_positions = []
 	
 	for grid_pos in buildings_under_construction:
 		var construction = buildings_under_construction[grid_pos]
@@ -138,7 +140,6 @@ func process_construction():
 		print("Construction at ", grid_pos, " has ", construction.turns_left, " turns left")
 		
 		if construction.turns_left <= 0:
-			# Construction complete - create the building
 			var building
 			match construction.type:
 				"civilian_factory":
@@ -155,19 +156,28 @@ func process_construction():
 					print("Completed fort level ", fort_levels[grid_pos])
 			
 			if building:
-				if construction.type == "fort" and grid_cells[grid_pos]:
-					# Don't remove existing buildings when placing a fort
-					pass
-				elif construction.type != "fort" and grid_cells[grid_pos]:
-					# Remove existing factory if placing a new factory
-					grid_cells[grid_pos].queue_free()
-				building.position = grid.grid_to_world(grid_pos)
-				grid.add_child(building)
-				grid_cells[grid_pos] = building
-				completed_positions.append(grid_pos)
+				if construction.type == "fort":
+					if grid_cells[grid_pos]:
+						# If there's an existing building, add the fort as a child
+						grid_cells[grid_pos].add_child(building)
+						building.position = Vector2.ZERO  # Reset the local position to zero
+					else:
+						# If no existing building, place fort directly in grid cell
+						grid.add_child(building)
+						grid_cells[grid_pos] = building
+						building.position = grid.grid_to_world(grid_pos)
+				else:
+					# For factories, remove any existing factory (but not forts)
+					if grid_cells[grid_pos] and not grid_cells[grid_pos].has_node("Fort"):
+						grid_cells[grid_pos].queue_free()
+					grid.add_child(building)
+					grid_cells[grid_pos] = building
+					building.position = grid.grid_to_world(grid_pos)
+					
+				finished_positions.append(grid_pos)
 	
 	# Remove completed constructions
-	for pos in completed_positions:
+	for pos in finished_positions:
 		buildings_under_construction.erase(pos)
 		print("Removed completed construction at ", pos)
 
