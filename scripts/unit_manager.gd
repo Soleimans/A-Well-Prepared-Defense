@@ -76,6 +76,59 @@ func _input(event):
 		if event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			deselect_current_unit()
 
+func get_movable_units_at_position(grid_pos: Vector2) -> Array:
+	var movable_units = []
+	print("\nChecking movable units at position: ", grid_pos)
+	if grid_pos in units_in_cells:
+		for unit in units_in_cells[grid_pos]:
+			print("Unit found: ", unit)
+			print("Can move?: ", unit.has_method("can_move") and unit.can_move())
+			if unit.has_method("can_move"):
+				print("Movement points: ", unit.movement_points)
+				print("Has moved: ", unit.has_moved)
+			if unit and is_instance_valid(unit) and unit.has_method("can_move") and unit.can_move():
+				movable_units.append(unit)
+	print("Total movable units found: ", movable_units.size())
+	return movable_units
+
+func cycle_through_units(grid_pos: Vector2) -> bool:
+	var movable_units = get_movable_units_at_position(grid_pos)
+	print("\nCycling through units")
+	print("Total movable units: ", movable_units.size())
+	print("Currently selected unit: ", selected_unit)
+	
+	if movable_units.size() == 0:
+		print("No movable units found")
+		return false
+		
+	var next_unit
+	if !selected_unit:
+		print("No unit currently selected, selecting first unit")
+		next_unit = movable_units[0]
+	else:
+		print("Finding current unit in movable units array")
+		var current_index = movable_units.find(selected_unit)
+		print("Current index: ", current_index)
+		if current_index != -1:
+			current_index = (current_index + 1) % movable_units.size()
+			print("New index after cycling: ", current_index)
+			next_unit = movable_units[current_index]
+		else:
+			print("Current unit not found in movable units, selecting first")
+			next_unit = movable_units[0]
+	
+	# Update selection and highlighting
+	if currently_highlighted_unit:
+		set_unit_highlight(currently_highlighted_unit, false)
+	
+	selected_unit = next_unit
+	currently_highlighted_unit = next_unit
+	set_unit_highlight(next_unit, true)
+	unit_start_pos = grid_pos
+	highlight_valid_moves(grid_pos)
+	
+	return true
+
 func try_place_unit(grid_pos: Vector2) -> bool:
 	print("UnitManager: Attempting to place unit at: ", grid_pos)
 	
@@ -120,70 +173,21 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	return true
 
 func try_select_unit(grid_pos: Vector2):
-	# If we click outside valid move tiles while having a unit selected,
-	# deselect the current unit
-	if selected_unit and !is_valid_move(grid_pos):
+	print("UnitManager: Attempting to select unit at position: ", grid_pos)
+	
+	# If we have a selected unit and click outside valid moves, deselect
+	if selected_unit and !is_valid_move(grid_pos) and grid_pos != last_clicked_pos:
 		deselect_current_unit()
 		return
-		
-	print("UnitManager: Attempting to select unit at position: ", grid_pos)
-	print("UnitManager: Last clicked position was: ", last_clicked_pos)
-	print("UnitManager: Current unit index is: ", current_unit_index)
 	
-	# Clear previous highlight if exists
-	if currently_highlighted_unit:
-		set_unit_highlight(currently_highlighted_unit, false)
-		currently_highlighted_unit = null
-	
-	# Clear selection if clicking on a different tile
-	if grid_pos != last_clicked_pos:
-		print("UnitManager: New tile clicked, resetting selection")
-		selected_unit = null
-		valid_move_tiles.clear()
-		current_unit_index = -1
-		
-	if grid_pos not in units_in_cells or units_in_cells[grid_pos].size() == 0:
-		print("UnitManager: No units found at position")
-		return
-		
-	var units = units_in_cells[grid_pos]
-	print("UnitManager: Found ", units.size(), " units at position")
-	
-	# If clicking the same tile, cycle to next unit
+	# If clicking the same tile, cycle through units
 	if grid_pos == last_clicked_pos:
 		print("UnitManager: Same tile clicked, cycling units")
-		current_unit_index = (current_unit_index + 1) % units.size()
-		print("UnitManager: New current_unit_index: ", current_unit_index)
+		cycle_through_units(grid_pos)
 	else:
-		# If clicking a new tile, start with the first unit
-		current_unit_index = 0
-		print("UnitManager: New tile, starting with first unit")
-		
-	last_clicked_pos = grid_pos
-	
-	# Try to find a movable unit starting from current_unit_index
-	var tried_units = 0
-	while tried_units < units.size():
-		var unit = units[current_unit_index]
-		print("UnitManager: Checking unit at index ", current_unit_index)
-		
-		if unit and is_instance_valid(unit) and unit.has_method("can_move") and unit.can_move():
-			print("UnitManager: Selected unit index ", current_unit_index)
-			selected_unit = unit
-			currently_highlighted_unit = unit
-			set_unit_highlight(unit, true)
-			unit_start_pos = grid_pos
-			highlight_valid_moves(grid_pos)
-			break
-		
-		current_unit_index = (current_unit_index + 1) % units.size()
-		tried_units += 1
-	
-	# If no movable units found, clear selection
-	if !selected_unit:
-		current_unit_index = -1
-		valid_move_tiles.clear()
-		print("UnitManager: No movable units found")
+		# New tile clicked
+		last_clicked_pos = grid_pos
+		cycle_through_units(grid_pos)
 
 func highlight_valid_moves(from_pos: Vector2):
 	print("UnitManager: Highlighting valid moves from position: ", from_pos)

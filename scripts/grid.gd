@@ -67,7 +67,7 @@ func _input(event):
 		var mouse_pos = get_global_mouse_position()
 		var grid_pos = world_to_grid(mouse_pos)
 		
-		print("Click at grid position: ", grid_pos) # Add this debug line
+		print("Click at grid position: ", grid_pos)
 		
 		if building_manager.has_selected_building():
 			print("Attempting to place building")
@@ -77,14 +77,15 @@ func _input(event):
 			print("Attempting to place unit")
 			unit_manager.try_place_unit(grid_pos)
 			
-		elif unit_manager.has_selected_unit():
-			print("Unit selected, checking for movement")
-			if unit_manager.is_valid_move(grid_pos):
-				unit_manager.execute_move(grid_pos)
-				
 		else:
-			print("Attempting to select unit")
-			unit_manager.try_select_unit(grid_pos)
+			# If we have a selected unit and click is on a valid move tile
+			if unit_manager.has_selected_unit() and unit_manager.is_valid_move(grid_pos):
+				print("Executing move")
+				unit_manager.execute_move(grid_pos)
+			# Otherwise try to select/cycle units
+			else:
+				print("Attempting to select/cycle units")
+				unit_manager.try_select_unit(grid_pos)
 
 func _process(_delta):
 	queue_redraw()
