@@ -44,6 +44,11 @@ func _on_button_pressed():
 		resource_manager.points += points_generated
 		resource_manager.military_points += military_points_generated
 		
+		# Add political power
+		var political_power_gain = resource_manager.calculate_political_power_gain()
+		resource_manager.political_power += political_power_gain
+		print("Generated political power: ", political_power_gain)
+		
 		# Reset unit movements
 		for pos in unit_manager.units_in_cells:
 			for unit in unit_manager.units_in_cells[pos]:
