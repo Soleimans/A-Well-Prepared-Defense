@@ -91,6 +91,10 @@ func get_factory_counts() -> Dictionary:
 		for pos in building_manager.grid_cells:
 			var cell = building_manager.grid_cells[pos]
 			if cell and not pos in construction_positions:
+				# Skip enemy buildings
+				if cell.has_node("Sprite2D") and cell.get_node("Sprite2D").modulate == Color.RED:
+					continue
+					
 				# Check if this is a factory by its scene path
 				if cell.scene_file_path == "res://scenes/civilian_factory.tscn":
 					counts["civilian"] += 1
@@ -101,10 +105,12 @@ func get_factory_counts() -> Dictionary:
 				
 				# If there are multiple nodes at this position, check them too
 				for child in cell.get_children():
-					if child.scene_file_path == "res://scenes/civilian_factory.tscn":
+					if child.scene_file_path == "res://scenes/civilian_factory.tscn" and \
+					   not (child.has_node("Sprite2D") and child.get_node("Sprite2D").modulate == Color.RED):
 						counts["civilian"] += 1
 						print("Found a completed civilian factory")
-					elif child.scene_file_path == "res://scenes/military_factory.tscn":
+					elif child.scene_file_path == "res://scenes/military_factory.tscn" and \
+						 not (child.has_node("Sprite2D") and child.get_node("Sprite2D").modulate == Color.RED):
 						counts["military"] += 1
 						print("Found a completed military factory")
 	

@@ -2,6 +2,7 @@ extends Node
 
 # Building zones
 var buildable_columns = [0, 1, 2]  # First 3 columns are buildable
+var enemy_buildable_columns = [12, 13, 14]  # Enemy columns start from right side
 
 # Building properties
 var building_costs = {
@@ -32,6 +33,7 @@ var fort_levels = {}
 
 # Currently selected building type
 var selected_building_type = ""
+var placing_enemy = false
 
 # Preload building scenes
 var civilian_factory_scene = preload("res://scenes/civilian_factory.tscn")
@@ -94,6 +96,12 @@ func unlock_next_column() -> bool:
 	buildable_columns.append(next_column)
 	return true
 
+func unlock_next_enemy_column():
+	var next_column = enemy_buildable_columns[0] - 1
+	if next_column >= grid.grid_size.x / 2:  # Don't allow unlocking past middle
+		enemy_buildable_columns.push_front(next_column)
+		print("Enemy unlocked column: ", next_column)
+
 func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 	print("Checking build position for ", building_type, " at ", grid_pos)
 	
@@ -108,12 +116,23 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 		print("Construction already in progress at this position")
 		return false
 	
-	# Check building type restrictions and costs
-	# Check if position is in buildable columns
-	if !buildable_columns.has(int(grid_pos.x)):
-		print("Position not in buildable columns")
-		return false
+	# Different rules for enemy buildings
+	if placing_enemy:
+		if !enemy_buildable_columns.has(int(grid_pos.x)):
+			print("Position not in enemy buildable columns")
+			return false
+	else:
+		# Original player building checks
+		if !buildable_columns.has(int(grid_pos.x)):
+			print("Position not in buildable columns")
+			return false
 		
+		# Check resource cost only for player buildings
+		var cost = get_building_cost(building_type, grid_pos)
+		if resource_manager.points < cost:
+			print("Not enough points!")
+			return false
+	
 	match building_type:
 		"civilian_factory", "military_factory":
 			if grid_cells[grid_pos] != null:
@@ -124,12 +143,6 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 				print("Maximum fort level reached")
 				return false
 	
-	# Check if enough points
-	var cost = get_building_cost(building_type, grid_pos)
-	if resource_manager.points < cost:
-		print("Not enough points! Cost: ", cost, " Available: ", resource_manager.points)
-		return false
-		
 	print("Valid build position")
 	return true
 
@@ -149,16 +162,20 @@ func place_building(grid_pos: Vector2, building_type: String):
 			"type": building_type,
 			"turns_left": construction_time,
 			"total_turns": construction_time,
-			"target_level": current_level + 1
+			"target_level": current_level + 1,
+			"is_enemy": placing_enemy
 		}
 	else:
 		buildings_under_construction[grid_pos] = {
 			"type": building_type,
 			"turns_left": construction_times[building_type],
-			"total_turns": construction_times[building_type]
+			"total_turns": construction_times[building_type],
+			"is_enemy": placing_enemy
 		}
 	
-	resource_manager.points -= cost
+	if !placing_enemy:
+		resource_manager.points -= cost
+	
 	print("Construction started: ", building_type, " at ", grid_pos)
 	print("Points remaining: ", resource_manager.points)
 
@@ -188,18 +205,19 @@ func process_construction():
 					print("Completed fort level ", fort_levels[grid_pos])
 			
 			if building:
+				# Set enemy color if it's an enemy building
+				if construction.is_enemy and building.has_node("Sprite2D"):
+					building.get_node("Sprite2D").modulate = Color.RED
+				
 				if construction.type == "fort":
 					if grid_cells[grid_pos]:
-						# If there's an existing building, add the fort as a child
 						grid_cells[grid_pos].add_child(building)
-						building.position = Vector2.ZERO  # Reset the local position to zero
+						building.position = Vector2.ZERO
 					else:
-						# If no existing building, place fort directly in grid cell
 						grid.add_child(building)
 						grid_cells[grid_pos] = building
 						building.position = grid.grid_to_world(grid_pos)
 				else:
-					# For factories, remove any existing factory (but not forts)
 					if grid_cells[grid_pos] and not grid_cells[grid_pos].has_node("Fort"):
 						grid_cells[grid_pos].queue_free()
 					grid.add_child(building)
@@ -214,7 +232,7 @@ func process_construction():
 		print("Removed completed construction at ", pos)
 
 func draw(grid_node: Node2D):
-	# Draw buildable zones (blue tint)
+	# Draw buildable zones (blue tint for player, red tint for enemy)
 	for x in buildable_columns:
 		for y in range(grid.grid_size.y):
 			var rect = Rect2(
@@ -224,6 +242,16 @@ func draw(grid_node: Node2D):
 				grid.tile_size.y
 			)
 			grid_node.draw_rect(rect, Color(0, 0.5, 1, 0.2))
+	
+	for x in enemy_buildable_columns:
+		for y in range(grid.grid_size.y):
+			var rect = Rect2(
+				x * grid.tile_size.x,
+				y * grid.tile_size.y,
+				grid.tile_size.x,
+				grid.tile_size.y
+			)
+			grid_node.draw_rect(rect, Color(1, 0, 0, 0.2))
 	
 	# Draw construction progress
 	for grid_pos in buildings_under_construction:
@@ -237,7 +265,8 @@ func draw(grid_node: Node2D):
 		)
 		
 		# Draw construction indicator (checkerboard pattern)
-		grid_node.draw_rect(rect, Color(0.7, 0.7, 0.2, 0.3))
+		var construction_color = Color(0.7, 0.2, 0.2, 0.3) if construction.is_enemy else Color(0.7, 0.7, 0.2, 0.3)
+		grid_node.draw_rect(rect, construction_color)
 		
 		# Draw progress bar
 		var progress_rect = Rect2(
@@ -246,4 +275,5 @@ func draw(grid_node: Node2D):
 			rect.size.x * progress,
 			10
 		)
-		grid_node.draw_rect(progress_rect, Color(1, 1, 0, 0.8))
+		var progress_color = Color(1, 0, 0, 0.8) if construction.is_enemy else Color(1, 1, 0, 0.8)
+		grid_node.draw_rect(progress_rect, progress_color)
