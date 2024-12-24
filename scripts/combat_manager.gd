@@ -1,4 +1,3 @@
-# combat_manager.gd
 extends Node2D
 
 var combat_tiles = {}  # Dictionary to track which tiles are in combat
@@ -152,10 +151,16 @@ func cleanup_destroyed_units(tile_pos: Vector2):
 		if unit.soft_health <= 0 or unit.hard_health <= 0 or unit.equipment <= 0:
 			units.remove_at(i)
 			unit.queue_free()
+			
+			# If all units on one side are destroyed, remove combat status
+			if units.size() == 0:
+				var opposing_tile = combat_tiles[tile_pos]
+				combat_tiles.erase(tile_pos)
+				combat_tiles.erase(opposing_tile)
 		i -= 1
 
 func draw(grid_node: Node2D):
-	# Draw combat tiles with red outline
+	# Draw combat tiles with black color
 	for pos in combat_tiles.keys():
 		var rect = Rect2(
 			pos.x * grid_node.tile_size.x,
@@ -163,4 +168,5 @@ func draw(grid_node: Node2D):
 			grid_node.tile_size.x,
 			grid_node.tile_size.y
 		)
-		grid_node.draw_rect(rect, Color(1, 0, 0, 0.3))
+		# Using black color with some transparency
+		grid_node.draw_rect(rect, Color(0, 0, 0, 0.5))

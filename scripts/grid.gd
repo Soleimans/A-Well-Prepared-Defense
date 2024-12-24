@@ -168,3 +168,8 @@ func _draw():
 	# Let managers draw their content
 	building_manager.draw(self)
 	unit_manager.draw(self)
+
+	# Draw combat tiles if combat manager exists
+	var combat_manager = get_node("CombatManager")
+	if combat_manager:
+		combat_manager.draw(self)

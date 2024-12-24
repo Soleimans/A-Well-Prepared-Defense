@@ -284,6 +284,42 @@ func get_enemy_units_at(pos: Vector2) -> Array:
 				enemy_units.append(unit)
 	return enemy_units
 
+func get_line_points(start: Vector2, end: Vector2) -> Array:
+	var points = []
+	var x0 = int(start.x)
+	var y0 = int(start.y)
+	var x1 = int(end.x)
+	var y1 = int(end.y)
+	
+	var dx = abs(x1 - x0)
+	var dy = abs(y1 - y0)
+	var x = x0
+	var y = y0
+	var sx = 1 if x0 < x1 else -1
+	var sy = 1 if y0 < y1 else -1
+	
+	if dx > dy:
+		var err = dx / 2
+		while x != x1:
+			points.append(Vector2(x, y))
+			err -= dy
+			if err < 0:
+				y += sy
+				err += dx
+			x += sx
+	else:
+		var err = dy / 2
+		while y != y1:
+			points.append(Vector2(x, y))
+			err -= dx
+			if err < 0:
+				x += sx
+				err += dy
+			y += sy
+	
+	points.append(Vector2(x1, y1))
+	return points
+
 func highlight_valid_moves(from_pos: Vector2):
 	print("UnitManager: Highlighting valid moves from position: ", from_pos)
 	valid_move_tiles.clear()
@@ -296,22 +332,37 @@ func highlight_valid_moves(from_pos: Vector2):
 	var remaining_points = selected_unit.movement_points
 	
 	if is_armoured:
-		# Check all positions within a 2-tile radius
-		for x in range(max(0, from_pos.x - 2), min(grid.grid_size.x, from_pos.x + 3)):
-			for y in range(max(0, from_pos.y - 2), min(grid.grid_size.y, from_pos.y + 3)):
-				var test_pos = Vector2(x, y)
-				if test_pos == from_pos:
-					continue
-					
-				var dx = abs(test_pos.x - from_pos.x)
-				var dy = abs(test_pos.y - from_pos.y)
-				var max_dist = max(dx, dy)
+		# Get all possible directions (horizontal, vertical, and diagonal)
+		var directions = [
+			Vector2(1, 0),   # right
+			Vector2(-1, 0),  # left
+			Vector2(0, 1),   # down
+			Vector2(0, -1),  # up
+			Vector2(1, 1),   # down-right
+			Vector2(-1, 1),  # down-left
+			Vector2(1, -1),  # up-right
+			Vector2(-1, -1)  # up-left
+		]
+		
+		# Check each direction up to 2 tiles away
+		for direction in directions:
+			for distance in range(1, remaining_points + 1):
+				var test_pos = from_pos + direction * distance
 				
-				if max_dist <= 2 and max_dist <= remaining_points:
-					# Check territory restrictions before war
-					if is_position_in_territory(test_pos, selected_unit.is_enemy):
-						if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
-							valid_move_tiles.append(test_pos)
+				# Check if position is within grid bounds
+				if test_pos.x < 0 or test_pos.x >= grid.grid_size.x or \
+				   test_pos.y < 0 or test_pos.y >= grid.grid_size.y:
+					break
+				
+				# Check territory restrictions before war
+				if !is_position_in_territory(test_pos, selected_unit.is_enemy):
+					break
+				
+				# Check if tile is occupied
+				if test_pos in units_in_cells and units_in_cells[test_pos].size() >= MAX_UNITS_PER_CELL:
+					break
+				
+				valid_move_tiles.append(test_pos)
 	else:
 		# Infantry and garrison movement (1 tile orthogonally)
 		for x in range(max(0, from_pos.x - 1), min(grid.grid_size.x, from_pos.x + 2)):
@@ -331,18 +382,39 @@ func highlight_valid_moves(from_pos: Vector2):
 func manhattan_distance(from: Vector2, to: Vector2) -> int:
 	return int(abs(from.x - to.x) + abs(from.y - to.y))
 
-func check_territory_capture(to_pos: Vector2):
+
+func check_territory_capture(from_pos: Vector2, to_pos: Vector2):
 	var territory_manager = get_parent().get_node("TerritoryManager")
 	if territory_manager and selected_unit and territory_manager.war_active:
-		# Get current territory owner
-		var current_owner = territory_manager.get_territory_owner(to_pos)
 		var capturing_player = "enemy" if selected_unit.is_enemy else "player"
 		
-		# Only capture if moving to enemy or neutral territory
-		if (selected_unit.is_enemy and current_owner != "enemy") or \
-		   (!selected_unit.is_enemy and current_owner != "player"):
-			print("UnitManager: Capturing territory at ", to_pos, " for ", capturing_player)
-			territory_manager.capture_territory(to_pos, capturing_player)
+		# For armoured units, capture all tiles along the path
+		if selected_unit.scene_file_path.contains("armoured"):
+			var path_points = get_line_points(from_pos, to_pos)
+			
+			# Skip the first point (starting position)
+			for i in range(1, path_points.size()):
+				var grid_pos = path_points[i]
+				
+				# Verify the position is within grid bounds
+				if grid_pos.x >= 0 and grid_pos.x < grid.grid_size.x and \
+				   grid_pos.y >= 0 and grid_pos.y < grid.grid_size.y:
+					# Get current territory owner
+					var current_owner = territory_manager.get_territory_owner(grid_pos)
+					
+					# Only capture if moving to enemy or neutral territory
+					if (selected_unit.is_enemy and current_owner != "enemy") or \
+					   (!selected_unit.is_enemy and current_owner != "player"):
+						print("UnitManager: Capturing territory at ", grid_pos, " for ", capturing_player)
+						territory_manager.capture_territory(grid_pos, capturing_player)
+		else:
+			# For infantry and garrison, just capture the destination tile
+			var current_owner = territory_manager.get_territory_owner(to_pos)
+			if (selected_unit.is_enemy and current_owner != "enemy") or \
+			   (!selected_unit.is_enemy and current_owner != "player"):
+				print("UnitManager: Capturing territory at ", to_pos, " for ", capturing_player)
+				territory_manager.capture_territory(to_pos, capturing_player)
+
 
 func execute_move(to_pos: Vector2) -> bool:
 	print("UnitManager: Executing unit move to ", to_pos)
@@ -361,6 +433,7 @@ func execute_move(to_pos: Vector2) -> bool:
 		print("UnitManager: Cannot move - unit not found in starting position")
 		return false
 		
+	# Calculate movement cost based on actual distance moved
 	var movement_cost = 1
 	if selected_unit.scene_file_path.contains("armoured"):
 		var dx = abs(to_pos.x - unit_start_pos.x)
@@ -368,7 +441,7 @@ func execute_move(to_pos: Vector2) -> bool:
 		movement_cost = max(dx, dy)
 	
 	# Check territory capture before moving
-	check_territory_capture(to_pos)
+	check_territory_capture(unit_start_pos, to_pos)
 	
 	selected_unit.movement_points -= movement_cost
 	
@@ -387,8 +460,8 @@ func execute_move(to_pos: Vector2) -> bool:
 	
 	selected_unit = null
 	valid_move_tiles.clear()
-	current_unit_index = -1  # Reset the current unit index after move
-	last_clicked_pos = Vector2(-1, -1)  # Reset the last clicked position
+	current_unit_index = -1
+	last_clicked_pos = Vector2(-1, -1)
 	
 	print("UnitManager: Unit move complete")
 	return true
