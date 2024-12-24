@@ -33,7 +33,7 @@ func _on_button_pressed():
 		
 		# Process combat first
 		if combat_manager:
-			combat_manager.process_turn()
+			combat_manager.process_turn ()
 		
 		# Get factory counts and generate points
 		var factory_counts = get_factory_counts()

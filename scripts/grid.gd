@@ -78,12 +78,31 @@ func _input(event):
 			unit_manager.try_place_unit(grid_pos)
 			
 		else:
-			# If we have a selected unit and click is on a valid move tile
-			if unit_manager.has_selected_unit() and unit_manager.is_valid_move(grid_pos):
-				print("Executing move")
-				unit_manager.execute_move(grid_pos)
-			# Otherwise try to select/cycle units
+			# Check if we have a selected unit
+			if unit_manager.selected_unit != null:
+				# Check if there are enemy units at the clicked position
+				var enemy_units = unit_manager.get_enemy_units_at(grid_pos)
+				
+				if enemy_units.size() > 0:
+					print("Enemy units found at click position")
+					# Check if the position is adjacent to our selected unit
+					if unit_manager.is_adjacent(unit_manager.unit_start_pos, grid_pos):
+						print("Position is adjacent, initiating combat!")
+						var combat_manager = get_node("CombatManager")
+						combat_manager.initiate_combat(unit_manager.unit_start_pos, grid_pos)
+						unit_manager.deselect_current_unit()
+						return
+					else:
+						print("Enemy found but not in adjacent tile")
+				
+				# If no combat was initiated and the move is valid, execute the move
+				elif unit_manager.is_valid_move(grid_pos):
+					print("Executing move")
+					unit_manager.execute_move(grid_pos)
+				else:
+					print("Invalid move location")
 			else:
+				# No unit selected, try to select one
 				print("Attempting to select/cycle units")
 				unit_manager.try_select_unit(grid_pos)
 

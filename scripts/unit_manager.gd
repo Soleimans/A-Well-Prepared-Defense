@@ -235,29 +235,25 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	return true
 
 func try_select_unit(grid_pos: Vector2):
-	print("UnitManager: Attempting to select unit at position: ", grid_pos)
+	print("\nUnitManager: Attempting to select unit at position: ", grid_pos)
 	
 	# Get reference to combat manager
 	var combat_manager = get_parent().get_node("CombatManager")
 	
 	# If we have a selected unit and click on an enemy unit, initiate combat
-	if selected_unit and get_enemy_units_at(grid_pos).size() > 0:
-		if is_adjacent(unit_start_pos, grid_pos):
-			combat_manager.initiate_combat(unit_start_pos, grid_pos)
-			deselect_current_unit()
-			return
-	
-	# Skip selection if unit is retreating
-	if combat_manager.retreating_units.any(func(r): 
-		return grid_pos == r["from_pos"] and r["unit"] in units_in_cells[grid_pos]
-	):
-		print("UnitManager: Cannot select retreating units")
-		return
-		
-	# Skip selection if clicking on a combat tile
-	if grid_pos in combat_manager.combat_tiles:
-		print("UnitManager: Cannot select units in combat")
-		return
+	if selected_unit and units_in_cells.has(grid_pos):
+		var enemy_units = get_enemy_units_at(grid_pos)
+		if enemy_units.size() > 0:
+			print("Found enemy units at position: ", grid_pos)
+			if is_adjacent(unit_start_pos, grid_pos):
+				print("Position is adjacent, initiating combat!")
+				print("Selected unit position: ", unit_start_pos)
+				print("Enemy unit position: ", grid_pos)
+				combat_manager.initiate_combat(unit_start_pos, grid_pos)
+				deselect_current_unit()
+				return
+			else:
+				print("Enemy found but not adjacent. Unit start pos: ", unit_start_pos, " Enemy pos: ", grid_pos)
 	
 	# If we have a selected unit and click outside valid moves, deselect
 	if selected_unit and !is_valid_move(grid_pos) and grid_pos != last_clicked_pos:
@@ -273,9 +269,6 @@ func try_select_unit(grid_pos: Vector2):
 		last_clicked_pos = grid_pos
 		cycle_through_units(grid_pos)
 
-func is_adjacent(pos1: Vector2, pos2: Vector2) -> bool:
-	return abs(pos1.x - pos2.x) <= 1 and abs(pos1.y - pos2.y) <= 1 and pos1 != pos2
-
 func get_enemy_units_at(pos: Vector2) -> Array:
 	var enemy_units = []
 	if pos in units_in_cells:
@@ -283,6 +276,12 @@ func get_enemy_units_at(pos: Vector2) -> Array:
 			if unit.is_enemy != selected_unit.is_enemy:
 				enemy_units.append(unit)
 	return enemy_units
+
+func is_adjacent(pos1: Vector2, pos2: Vector2) -> bool:
+	var dx = abs(pos1.x - pos2.x)
+	var dy = abs(pos1.y - pos2.y)
+	print("Checking adjacency - dx: ", dx, " dy: ", dy)
+	return dx <= 1 and dy <= 1 and pos1 != pos2
 
 func get_line_points(start: Vector2, end: Vector2) -> Array:
 	var points = []
