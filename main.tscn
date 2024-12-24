@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=22 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://images/image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://scripts/button.gd" id="1_d0gsr"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://scripts/turn_count.gd" id="5_r0qd4"]
 [ext_resource type="PackedScene" uid="uid://cn161ob8umr6q" path="res://scenes/politics_menu.tscn" id="5_rydge"]
 [ext_resource type="Script" path="res://scripts/turn_button.gd" id="6_rwev8"]
+[ext_resource type="Script" path="res://scripts/war_count.gd" id="7_m2aps"]
 [ext_resource type="Script" path="res://scripts/building_manager.gd" id="10_tbqb7"]
 [ext_resource type="Script" path="res://scripts/unit_manager.gd" id="11_f7f17"]
 [ext_resource type="Script" path="res://scripts/resource_manager.gd" id="12_4rgbg"]
@@ -91,10 +92,18 @@ layout_mode = 1
 [node name="politics_menu" parent="UILayer/ColorRect" instance=ExtResource("5_rydge")]
 layout_mode = 1
 
+[node name="WarCount" type="Label" parent="UILayer"]
+offset_left = 1781.0
+offset_top = 567.0
+offset_right = 1885.0
+offset_bottom = 590.0
+text = "War starts in:"
+script = ExtResource("7_m2aps")
+
 [node name="TurnCount" type="Label" parent="UILayer"]
-offset_left = 1835.0
+offset_left = 1781.0
 offset_top = 586.0
-offset_right = 1920.0
+offset_right = 1866.0
 offset_bottom = 609.0
 text = "Turn: 0"
 script = ExtResource("5_r0qd4")
@@ -105,8 +114,9 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -86.0
+offset_left = -139.0
 offset_top = -31.0
+offset_right = -53.0
 grow_horizontal = 0
 grow_vertical = 0
 text = "Next Turn"
