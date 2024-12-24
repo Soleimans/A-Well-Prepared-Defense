@@ -5,6 +5,7 @@ var buildable_columns = [0, 1, 2]  # First 3 columns are buildable
 var enemy_buildable_columns = [12, 13, 14]  # Enemy columns start from right side
 var fort_fast_construction: bool = false
 var all_unlocked_columns = []  # Track all columns unlocked by either side
+var war_mode = false  # Set to true when war starts
 
 # Building properties
 var building_costs = {
@@ -104,6 +105,9 @@ func get_next_column_cost() -> int:
 	return int(base_column_cost * pow(column_cost_multiplier, buildable_columns.size() - 3))
 
 func can_unlock_next_column() -> bool:
+	if war_mode:  # Added war mode check
+		return false
+		
 	if buildable_columns.size() >= max_unlockable_column + 1:
 		return false
 	

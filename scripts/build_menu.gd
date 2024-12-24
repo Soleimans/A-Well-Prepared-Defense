@@ -1,4 +1,5 @@
 extends Control
+
 # Signal to notify when a building is selected
 signal building_selected(building_type)
 # Signal for when menu is closed
@@ -34,6 +35,11 @@ func _ready():
 	$Panel/GridContainer/VBoxContainer/HBoxContainer2/Label2.text = "7200"
 	$Panel/GridContainer/VBoxContainer/HBoxContainer3/Label2.text = "500/level"
 	
+	# Connect to war count signal
+	var war_count = get_node("/root/Main/UILayer/WarCount")
+	if war_count:
+		war_count.turn_changed.connect(_on_war_state_changed)
+	
 	# Initialize unlock label
 	update_unlock_label()
 
@@ -64,12 +70,21 @@ func _on_unlock_column_input(event):
 		if building_manager.can_unlock_next_column():
 			building_selected.emit("unlock_column")
 
+func _on_war_state_changed(_turn: int):
+	update_unlock_label()
+
 func update_unlock_label():
 	var cost_label = $Panel/GridContainer/VBoxContainer/HBoxContainer4/Label2
 	var building_manager = get_node("/root/Main/Grid/BuildingManager")
+	var territory_manager = get_node("/root/Main/Grid/TerritoryManager")
 	
 	if !building_manager:
 		print("ERROR: BuildingManager not found!")
+		return
+		
+	# Check if war has started
+	if territory_manager and territory_manager.war_active:
+		cost_label.text = "All Unlocked"
 		return
 	
 	if building_manager.buildable_columns.size() >= building_manager.max_unlockable_column + 1:

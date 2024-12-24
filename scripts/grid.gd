@@ -91,46 +91,52 @@ func _process(_delta):
 	queue_redraw()
 
 func _draw():
+	# Get reference to war state
+	var territory_manager = get_node("TerritoryManager")
+	var war_active = territory_manager.war_active if territory_manager else false
+
 	# Draw background area (darker green)
 	var full_width = total_grid_size.x * tile_size.x
 	var full_height = total_grid_size.y * tile_size.y
 	var background_rect = Rect2(0, 0, full_width, full_height)
 	draw_rect(background_rect, Color(0.2, 0.4, 0.2, 1.0))
 	
-	# Draw columns with different colors based on their state
-	for x in range(playable_area.x):
-		var column_rect = Rect2(
-			x * tile_size.x,
-			0,
-			tile_size.x,
-			playable_area.y * tile_size.y
-		)
-		
-		if x in building_manager.buildable_columns:
-			# Already unlocked columns
-			draw_rect(column_rect, Color(0.3, 0.6, 0.3, 1.0))
-		elif x == building_manager.buildable_columns.size() and building_manager.can_unlock_next_column() and x <= building_manager.max_unlockable_column:
-			# Only highlight and show cost if the column can be unlocked
-			draw_rect(column_rect, Color(0.4, 0.5, 0.2, 1.0))
+	# Only draw column colors and unlockable columns if war hasn't started
+	if !war_active:
+		# Draw columns with different colors based on their state
+		for x in range(playable_area.x):
+			var column_rect = Rect2(
+				x * tile_size.x,
+				0,
+				tile_size.x,
+				playable_area.y * tile_size.y
+			)
 			
-			# Draw cost text if hovering over this column
-			var mouse_pos = get_global_mouse_position()
-			var grid_pos = world_to_grid(mouse_pos)
-			if grid_pos.x == x:
-				var cost = building_manager.get_next_column_cost()
-				# Draw cost text above the column
-				draw_string(
-					ThemeDB.fallback_font,
-					Vector2(x * tile_size.x + 10, tile_size.y - 10),
-					"Cost: " + str(cost),
-					HORIZONTAL_ALIGNMENT_LEFT,
-					-1,
-					16,
-					Color.WHITE
-				)
-		else:
-			# Locked columns
-			draw_rect(column_rect, Color(0.2, 0.3, 0.2, 1.0))
+			if x in building_manager.buildable_columns:
+				# Already unlocked columns
+				draw_rect(column_rect, Color(0.3, 0.6, 0.3, 1.0))
+			elif x == building_manager.buildable_columns.size() and building_manager.can_unlock_next_column() and x <= building_manager.max_unlockable_column:
+				# Only highlight and show cost if the column can be unlocked
+				draw_rect(column_rect, Color(0.4, 0.5, 0.2, 1.0))
+				
+				# Draw cost text if hovering over this column
+				var mouse_pos = get_global_mouse_position()
+				var grid_pos = world_to_grid(mouse_pos)
+				if grid_pos.x == x:
+					var cost = building_manager.get_next_column_cost()
+					# Draw cost text above the column
+					draw_string(
+						ThemeDB.fallback_font,
+						Vector2(x * tile_size.x + 10, tile_size.y - 10),
+						"Cost: " + str(cost),
+						HORIZONTAL_ALIGNMENT_LEFT,
+						-1,
+						16,
+						Color.WHITE
+					)
+			else:
+				# Locked columns
+				draw_rect(column_rect, Color(0.2, 0.3, 0.2, 1.0))
 	
 	# Draw grid lines
 	for x in range(playable_area.x + 1):

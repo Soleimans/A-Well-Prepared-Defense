@@ -240,6 +240,12 @@ func highlight_valid_moves(from_pos: Vector2):
 func manhattan_distance(from: Vector2, to: Vector2) -> int:
 	return int(abs(from.x - to.x) + abs(from.y - to.y))
 
+func check_territory_capture(to_pos: Vector2):
+	var territory_manager = get_parent().get_node("TerritoryManager")
+	if territory_manager and selected_unit:
+		var capturing_player = "enemy" if selected_unit.is_enemy else "player"
+		territory_manager.capture_territory(to_pos, capturing_player)
+
 func execute_move(to_pos: Vector2) -> bool:
 	print("UnitManager: Executing unit move to ", to_pos)
 	
@@ -262,6 +268,9 @@ func execute_move(to_pos: Vector2) -> bool:
 		var dx = abs(to_pos.x - unit_start_pos.x)
 		var dy = abs(to_pos.y - unit_start_pos.y)
 		movement_cost = max(dx, dy)
+	
+	# Check territory capture before moving
+	check_territory_capture(to_pos)
 	
 	selected_unit.movement_points -= movement_cost
 	
