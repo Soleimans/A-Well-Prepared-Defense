@@ -300,9 +300,16 @@ func manhattan_distance(from: Vector2, to: Vector2) -> int:
 
 func check_territory_capture(to_pos: Vector2):
 	var territory_manager = get_parent().get_node("TerritoryManager")
-	if territory_manager and selected_unit:
+	if territory_manager and selected_unit and territory_manager.war_active:
+		# Get current territory owner
+		var current_owner = territory_manager.get_territory_owner(to_pos)
 		var capturing_player = "enemy" if selected_unit.is_enemy else "player"
-		territory_manager.capture_territory(to_pos, capturing_player)
+		
+		# Only capture if moving to enemy or neutral territory
+		if (selected_unit.is_enemy and current_owner != "enemy") or \
+		   (!selected_unit.is_enemy and current_owner != "player"):
+			print("UnitManager: Capturing territory at ", to_pos, " for ", capturing_player)
+			territory_manager.capture_territory(to_pos, capturing_player)
 
 func execute_move(to_pos: Vector2) -> bool:
 	print("UnitManager: Executing unit move to ", to_pos)

@@ -91,7 +91,7 @@ func _process(_delta):
 	queue_redraw()
 
 func _draw():
-	# Get reference to war state
+	# Get reference to territory manager
 	var territory_manager = get_node("TerritoryManager")
 	var war_active = territory_manager.war_active if territory_manager else false
 
@@ -100,6 +100,10 @@ func _draw():
 	var full_height = total_grid_size.y * tile_size.y
 	var background_rect = Rect2(0, 0, full_width, full_height)
 	draw_rect(background_rect, Color(0.2, 0.4, 0.2, 1.0))
+	
+	# Draw territory colors first (if war is active)
+	if territory_manager and war_active:
+		territory_manager.draw(self)
 	
 	# Only draw column colors and unlockable columns if war hasn't started
 	if !war_active:

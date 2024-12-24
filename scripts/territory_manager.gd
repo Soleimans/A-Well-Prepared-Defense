@@ -47,18 +47,21 @@ func _on_turn_changed(current_turn: int):
 
 func _on_war_started():
 	# Disable column unlocking in BuildingManager
-	# We'll need to add this functionality to BuildingManager later
-	building_manager.war_mode = true
+	if building_manager:
+		building_manager.war_mode = true
+		print("TerritoryManager: Building Manager war mode enabled")
 
 func get_territory_owner(pos: Vector2) -> String:
 	return territory_ownership.get(pos, "neutral")
 
 func capture_territory(pos: Vector2, new_owner: String):
 	if !war_active:
+		print("TerritoryManager: Cannot capture territory - war not active")
 		return
 		
 	var old_owner = get_territory_owner(pos)
 	if old_owner == new_owner:
+		print("TerritoryManager: Territory already owned by ", new_owner)
 		return
 		
 	print("TerritoryManager: Capturing territory at ", pos, " for ", new_owner)
@@ -67,19 +70,32 @@ func capture_territory(pos: Vector2, new_owner: String):
 	# Handle buildings at this position
 	if building_manager.grid_cells.has(pos):
 		transfer_buildings(pos, new_owner)
+	
+	# Force a redraw of the grid
+	grid.queue_redraw()
 
 func transfer_buildings(pos: Vector2, new_owner: String):
-	var building = building_manager.grid_cells[pos]
-	if building:
-		if building.has_node("Sprite2D"):
-			var sprite = building.get_node("Sprite2D")
-			sprite.modulate = Color.WHITE if new_owner == "player" else Color.RED
-		print("TerritoryManager: Transferred building at ", pos, " to ", new_owner)
+	# Check for buildings at this position
+	if building_manager.grid_cells.has(pos):
+		var building = building_manager.grid_cells[pos]
+		if building:
+			# Change the main building's color if it has a sprite
+			if building.has_node("Sprite2D"):
+				building.get_node("Sprite2D").modulate = Color.RED if new_owner == "enemy" else Color.WHITE
+			
+			# If there are multiple buildings (like a fort under a factory), change those too
+			for child in building.get_children():
+				if child.has_node("Sprite2D"):
+					child.get_node("Sprite2D").modulate = Color.RED if new_owner == "enemy" else Color.WHITE
+			
+			print("TerritoryManager: Transferred building at ", pos, " to ", new_owner)
 	
-	# Cancel any ongoing construction
+	# Handle any ongoing construction at this position
 	if pos in building_manager.buildings_under_construction:
-		building_manager.buildings_under_construction.erase(pos)
-		print("TerritoryManager: Cancelled construction at ", pos)
+		var construction = building_manager.buildings_under_construction[pos]
+		# Update the construction ownership
+		construction.is_enemy = (new_owner == "enemy")
+		print("TerritoryManager: Updated construction ownership at ", pos)
 
 # This will be called from Grid's _draw function
 func draw(grid_node: Node2D):
@@ -95,5 +111,13 @@ func draw(grid_node: Node2D):
 				grid.tile_size.x,
 				grid.tile_size.y
 			)
-			var color = Color(0, 0.5, 1, 0.2) if owner == "player" else Color(1, 0, 0, 0.2)
+			# Make colors more visible with higher alpha
+			var color = Color(0, 0.5, 1, 0.3) if owner == "player" else Color(1, 0, 0, 0.3)
 			grid_node.draw_rect(rect, color)
+
+# Debug function to print current territory state
+func print_territory_state():
+	print("\nTerritory State:")
+	print("War Active: ", war_active)
+	for pos in territory_ownership:
+		print("Position ", pos, ": ", territory_ownership[pos])
