@@ -157,9 +157,12 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 	
 	match building_type:
 		"civilian_factory", "military_factory":
+			# Allow factory placement if the cell is empty OR if it only contains a fort
 			if grid_cells[grid_pos] != null:
-				print("Position already occupied")
-				return false
+				# Check if the existing building is a fort
+				if not grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
+					print("Position already occupied by non-fort building")
+					return false
 		"fort":
 			if fort_levels[grid_pos] >= 10:
 				print("Maximum fort level reached")
@@ -244,11 +247,25 @@ func process_construction():
 						grid_cells[grid_pos] = building
 						building.position = grid.grid_to_world(grid_pos)
 				else:
-					if grid_cells[grid_pos] and not grid_cells[grid_pos].has_node("Fort"):
+					# Save existing fort if there is one
+					var existing_fort = null
+					if grid_cells[grid_pos] and grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
+						existing_fort = grid_cells[grid_pos]
+						existing_fort.get_parent().remove_child(existing_fort)
+					
+					# Remove old building if it exists and isn't a fort
+					if grid_cells[grid_pos] and not grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
 						grid_cells[grid_pos].queue_free()
+					
+					# Add the new factory
 					grid.add_child(building)
 					grid_cells[grid_pos] = building
 					building.position = grid.grid_to_world(grid_pos)
+					
+					# Re-add the fort if there was one
+					if existing_fort:
+						building.add_child(existing_fort)
+						existing_fort.position = Vector2.ZERO
 					
 				finished_positions.append(grid_pos)
 	
