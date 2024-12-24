@@ -38,7 +38,12 @@ func _ready():
 	# Connect to war count signal
 	var war_count = get_node("/root/Main/UILayer/WarCount")
 	if war_count:
-		war_count.turn_changed.connect(_on_war_state_changed)
+		war_count.connect("turn_changed", _on_war_state_changed)
+	
+	# Connect to turn count for early updates
+	var turn_count = get_node("/root/Main/UILayer/TurnCount")
+	if turn_count:
+		turn_count.connect("turn_changed", _on_turn_changed)
 	
 	# Initialize unlock label
 	update_unlock_label()
@@ -70,6 +75,12 @@ func _on_unlock_column_input(event):
 		if building_manager.can_unlock_next_column():
 			building_selected.emit("unlock_column")
 
+func _on_turn_changed(current_turn: int):
+	# Update label immediately when turn 10 is reached
+	if current_turn == 10:
+		var cost_label = $Panel/GridContainer/VBoxContainer/HBoxContainer4/Label2
+		cost_label.text = "All Unlocked"
+
 func _on_war_state_changed(_turn: int):
 	update_unlock_label()
 
@@ -77,9 +88,15 @@ func update_unlock_label():
 	var cost_label = $Panel/GridContainer/VBoxContainer/HBoxContainer4/Label2
 	var building_manager = get_node("/root/Main/Grid/BuildingManager")
 	var territory_manager = get_node("/root/Main/Grid/TerritoryManager")
+	var turn_count = get_node("/root/Main/UILayer/TurnCount")
 	
 	if !building_manager:
 		print("ERROR: BuildingManager not found!")
+		return
+	
+	# Check if we're at turn 10 or later
+	if turn_count and turn_count.current_turn >= 10:
+		cost_label.text = "All Unlocked"
 		return
 		
 	# Check if war has started
