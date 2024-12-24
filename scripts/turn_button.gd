@@ -32,22 +32,41 @@ func _on_button_pressed():
 		
 		# Get factory counts and generate points
 		var factory_counts = get_factory_counts()
+		
+		# Generate player points
 		var points_generated = factory_counts["civilian"] * points_per_civilian_factory
 		var military_points_generated = factory_counts["military"] * points_per_military_factory
 		
-		print("Civilian factories: ", factory_counts["civilian"])
-		print("Military factories: ", factory_counts["military"])
-		print("Generated points: ", points_generated)
-		print("Generated military points: ", military_points_generated)
+		# Generate enemy points
+		var enemy_points_generated = factory_counts["enemy_civilian"] * points_per_civilian_factory
+		var enemy_military_points_generated = factory_counts["enemy_military"] * points_per_military_factory
 		
-		# Add generated points
+		print("Player Civilian factories: ", factory_counts["civilian"])
+		print("Player Military factories: ", factory_counts["military"])
+		print("Enemy Civilian factories: ", factory_counts["enemy_civilian"])
+		print("Enemy Military factories: ", factory_counts["enemy_military"])
+		print("Generated player points: ", points_generated)
+		print("Generated player military points: ", military_points_generated)
+		print("Generated enemy points: ", enemy_points_generated)
+		print("Generated enemy military points: ", enemy_military_points_generated)
+		
+		# Add generated points for player
 		resource_manager.points += points_generated
 		resource_manager.military_points += military_points_generated
 		
-		# Add political power
+		# Add generated points for enemy
+		resource_manager.enemy_points += enemy_points_generated
+		resource_manager.enemy_military_points += enemy_military_points_generated
+		
+		# Add political power for player
 		var political_power_gain = resource_manager.calculate_political_power_gain()
 		resource_manager.political_power += political_power_gain
-		print("Generated political power: ", political_power_gain)
+		print("Generated player political power: ", political_power_gain)
+		
+		# Add political power for enemy
+		var enemy_political_power_gain = resource_manager.calculate_political_power_gain(true)
+		resource_manager.enemy_political_power += enemy_political_power_gain
+		print("Generated enemy political power: ", enemy_political_power_gain)
 		
 		# Reset unit movements
 		for pos in unit_manager.units_in_cells:
@@ -87,7 +106,12 @@ func _unhandled_input(event):
 		_on_button_pressed()
 
 func get_factory_counts() -> Dictionary:
-	var counts = {"civilian": 0, "military": 0}
+	var counts = {
+		"civilian": 0, 
+		"military": 0,
+		"enemy_civilian": 0,
+		"enemy_military": 0
+	}
 	
 	if grid_node:
 		var building_manager = grid_node.get_node("BuildingManager")
@@ -96,27 +120,40 @@ func get_factory_counts() -> Dictionary:
 		for pos in building_manager.grid_cells:
 			var cell = building_manager.grid_cells[pos]
 			if cell and not pos in construction_positions:
-				# Skip enemy buildings
-				if cell.has_node("Sprite2D") and cell.get_node("Sprite2D").modulate == Color.RED:
-					continue
+				var is_enemy = cell.has_node("Sprite2D") and cell.get_node("Sprite2D").modulate == Color.RED
 					
 				# Check if this is a factory by its scene path
 				if cell.scene_file_path == "res://scenes/civilian_factory.tscn":
-					counts["civilian"] += 1
-					print("Found a completed civilian factory")
+					if is_enemy:
+						counts["enemy_civilian"] += 1
+						print("Found a completed enemy civilian factory")
+					else:
+						counts["civilian"] += 1
+						print("Found a completed civilian factory")
 				elif cell.scene_file_path == "res://scenes/military_factory.tscn":
-					counts["military"] += 1
-					print("Found a completed military factory")
+					if is_enemy:
+						counts["enemy_military"] += 1
+						print("Found a completed enemy military factory")
+					else:
+						counts["military"] += 1
+						print("Found a completed military factory")
 				
 				# If there are multiple nodes at this position, check them too
 				for child in cell.get_children():
-					if child.scene_file_path == "res://scenes/civilian_factory.tscn" and \
-					   not (child.has_node("Sprite2D") and child.get_node("Sprite2D").modulate == Color.RED):
-						counts["civilian"] += 1
-						print("Found a completed civilian factory")
-					elif child.scene_file_path == "res://scenes/military_factory.tscn" and \
-						 not (child.has_node("Sprite2D") and child.get_node("Sprite2D").modulate == Color.RED):
-						counts["military"] += 1
-						print("Found a completed military factory")
+					var child_is_enemy = child.has_node("Sprite2D") and child.get_node("Sprite2D").modulate == Color.RED
+					if child.scene_file_path == "res://scenes/civilian_factory.tscn":
+						if child_is_enemy:
+							counts["enemy_civilian"] += 1
+							print("Found a completed enemy civilian factory")
+						else:
+							counts["civilian"] += 1
+							print("Found a completed civilian factory")
+					elif child.scene_file_path == "res://scenes/military_factory.tscn":
+						if child_is_enemy:
+							counts["enemy_military"] += 1
+							print("Found a completed enemy military factory")
+						else:
+							counts["military"] += 1
+							print("Found a completed military factory")
 	
 	return counts

@@ -146,8 +146,13 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 		print("UnitManager: Cannot place unit - cell is full")
 		return false
 		
-	if !placing_enemy:
-		var cost = UNIT_COSTS[selected_unit_type]
+	# Check costs for both player and enemy units
+	var cost = UNIT_COSTS[selected_unit_type]
+	if placing_enemy:
+		if resource_manager.enemy_military_points < cost:
+			print("UnitManager: Cannot place unit - insufficient enemy resources")
+			return false
+	else:
 		if resource_manager.military_points < cost:
 			print("UnitManager: Cannot place unit - insufficient resources")
 			return false
@@ -166,7 +171,10 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	
 	units_in_cells[grid_pos].append(new_unit)
 	
-	if !placing_enemy:
+	# Deduct cost for both player and enemy units
+	if placing_enemy:
+		resource_manager.enemy_military_points -= UNIT_COSTS[selected_unit_type]
+	else:
 		resource_manager.military_points -= UNIT_COSTS[selected_unit_type]
 	
 	print("UnitManager: Unit placed successfully")

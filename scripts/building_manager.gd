@@ -159,13 +159,18 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 		if !enemy_buildable_columns.has(int(grid_pos.x)):
 			print("Position not in enemy buildable columns")
 			return false
+		# Check resource cost for enemy buildings
+		var cost = get_building_cost(building_type, grid_pos)
+		if resource_manager.enemy_points < cost:
+			print("Not enough enemy points!")
+			return false
 	else:
 		# Original player building checks
 		if !buildable_columns.has(int(grid_pos.x)):
 			print("Position not in buildable columns")
 			return false
 		
-		# Check resource cost only for player buildings
+		# Check resource cost for player buildings
 		var cost = get_building_cost(building_type, grid_pos)
 		if resource_manager.points < cost:
 			print("Not enough points!")
@@ -218,11 +223,14 @@ func place_building(grid_pos: Vector2, building_type: String):
 			"is_enemy": placing_enemy
 		}
 	
-	if !placing_enemy:
+	# Deduct cost from appropriate resource pool
+	if placing_enemy:
+		resource_manager.enemy_points -= cost
+	else:
 		resource_manager.points -= cost
 	
 	print("Construction started: ", building_type, " at ", grid_pos)
-	print("Points remaining: ", resource_manager.points)
+	print("Points remaining: ", resource_manager.points if !placing_enemy else resource_manager.enemy_points)
 
 func process_construction():
 	print("Processing construction progress")

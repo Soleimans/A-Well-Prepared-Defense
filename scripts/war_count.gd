@@ -1,6 +1,6 @@
 extends Label
 
-const WAR_START_TURN = 100
+const WAR_START_TURN = 10
 
 func _ready():
 	# Set initial text
