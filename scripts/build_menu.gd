@@ -72,11 +72,16 @@ func update_unlock_label():
 		print("ERROR: BuildingManager not found!")
 		return
 	
-	if building_manager.buildable_columns.size() > building_manager.max_unlockable_column:
+	if building_manager.buildable_columns.size() >= building_manager.max_unlockable_column + 1:
 		cost_label.text = "All Unlocked"
 	else:
-		var cost = building_manager.get_next_column_cost()
-		cost_label.text = str(cost)
+		var next_column = building_manager.buildable_columns.size()
+		# Check if the next column is already taken by enemy
+		if next_column in building_manager.enemy_buildable_columns or next_column in building_manager.all_unlocked_columns:
+			cost_label.text = "All Unlocked"
+		else:
+			var cost = building_manager.get_next_column_cost()
+			cost_label.text = str(cost)
 
 # Function to refresh the UI when the menu is shown
 func _on_visibility_changed():
