@@ -30,6 +30,7 @@ var currently_highlighted_unit = null
 @onready var grid = get_parent()
 @onready var resource_manager = get_parent().get_node("ResourceManager")
 @onready var building_manager = get_parent().get_node("BuildingManager")
+@onready var territory_manager = get_parent().get_node("TerritoryManager")
 
 func _ready():
 	print("UnitManager: Initializing...")
@@ -45,6 +46,40 @@ func has_selected_unit_type() -> bool:
 
 func has_selected_unit() -> bool:
 	return selected_unit != null
+
+func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
+	# First check if the position is within grid bounds
+	if grid_pos.x < 0 or grid_pos.x >= grid.grid_size.x or \
+	   grid_pos.y < 0 or grid_pos.y >= grid.grid_size.y:
+		print("Position out of grid bounds")
+		return false
+	
+	# If war is active, allow movement anywhere within grid bounds
+	if territory_manager and territory_manager.war_active:
+		return true
+		
+	# Get reference to building manager
+	var building_manager = get_parent().get_node("BuildingManager")
+	if !building_manager:
+		print("BuildingManager not found")
+		return false
+	
+	if is_enemy:
+		# Check if the column is in enemy territory
+		for column in building_manager.enemy_buildable_columns:
+			if grid_pos.x == column:
+				return true
+		print("Enemy attempted to move outside their territory at column: ", grid_pos.x)
+		print("Enemy buildable columns: ", building_manager.enemy_buildable_columns)
+		return false
+	else:
+		# Player can move in any column they've purchased
+		for column in building_manager.buildable_columns:
+			if grid_pos.x == column:
+				return true
+		print("Player attempted to move outside their territory at column: ", grid_pos.x)
+		print("Player buildable columns: ", building_manager.buildable_columns)
+		return false
 
 func is_valid_move(grid_pos: Vector2) -> bool:
 	return grid_pos in valid_move_tiles
@@ -132,21 +167,21 @@ func cycle_through_units(grid_pos: Vector2) -> bool:
 func try_place_unit(grid_pos: Vector2) -> bool:
 	print("UnitManager: Attempting to place unit at: ", grid_pos)
 	
-	# Check if position is within grid bounds for both player and enemy units
+	# Check if position is within grid bounds
 	if grid_pos.x < 0 or grid_pos.x >= grid.grid_size.x or grid_pos.y < 0 or grid_pos.y >= grid.grid_size.y:
 		print("UnitManager: Cannot place unit - position out of bounds")
 		return false
 	
-	# Check placement rules for player units (must be placed on leftmost column)
-	if !placing_enemy and grid_pos.x != 0:
-		print("UnitManager: Cannot place unit - invalid x position for player unit")
+	# Check territory restrictions before war
+	if !is_position_in_territory(grid_pos, placing_enemy):
+		print("UnitManager: Cannot place unit - wrong territory")
 		return false
 		
 	if units_in_cells[grid_pos].size() >= MAX_UNITS_PER_CELL:
 		print("UnitManager: Cannot place unit - cell is full")
 		return false
 		
-	# Check costs for both player and enemy units
+	# Check costs
 	var cost = UNIT_COSTS[selected_unit_type]
 	if placing_enemy:
 		if resource_manager.enemy_military_points < cost:
@@ -171,7 +206,6 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	
 	units_in_cells[grid_pos].append(new_unit)
 	
-	# Deduct cost for both player and enemy units
 	if placing_enemy:
 		resource_manager.enemy_military_points -= UNIT_COSTS[selected_unit_type]
 	else:
@@ -221,8 +255,10 @@ func highlight_valid_moves(from_pos: Vector2):
 				var max_dist = max(dx, dy)
 				
 				if max_dist <= 2 and max_dist <= remaining_points:
-					if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
-						valid_move_tiles.append(test_pos)
+					# Check territory restrictions before war
+					if is_position_in_territory(test_pos, selected_unit.is_enemy):
+						if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
+							valid_move_tiles.append(test_pos)
 	else:
 		# Infantry and garrison movement (1 tile orthogonally)
 		for x in range(max(0, from_pos.x - 1), min(grid.grid_size.x, from_pos.x + 2)):
@@ -232,8 +268,10 @@ func highlight_valid_moves(from_pos: Vector2):
 					continue
 					
 				if manhattan_distance(from_pos, test_pos) == 1:
-					if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
-						valid_move_tiles.append(test_pos)
+					# Check territory restrictions before war
+					if is_position_in_territory(test_pos, selected_unit.is_enemy):
+						if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
+							valid_move_tiles.append(test_pos)
 	
 	print("UnitManager: Found ", valid_move_tiles.size(), " valid moves")
 
