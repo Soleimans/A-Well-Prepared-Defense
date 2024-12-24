@@ -3,6 +3,7 @@ extends Node
 # Building zones
 var buildable_columns = [0, 1, 2]  # First 3 columns are buildable
 var enemy_buildable_columns = [12, 13, 14]  # Enemy columns start from right side
+var fort_fast_construction: bool = false
 
 # Building properties
 var building_costs = {
@@ -16,6 +17,13 @@ var construction_times = {
 	"civilian_factory": 6,
 	"military_factory": 4,
 	"fort": 1  # Base time for first 5 levels, will be 2 for levels 6-10
+}
+
+# Construction modifiers
+var construction_modifiers = {
+	"civilian_factory": 0,
+	"military_factory": 0,
+	"fort": 0
 }
 
 # Column unlocking properties
@@ -51,6 +59,20 @@ func initialize(size: Vector2):
 			grid_cells[Vector2(x, y)] = null
 			fort_levels[Vector2(x, y)] = 0
 	print("BuildingManager initialized")
+
+func set_fort_fast_construction(enabled: bool):
+	fort_fast_construction = enabled
+	print("Fort fast construction set to: ", enabled)
+
+func apply_construction_modifier(building_type: String, value: int):
+	if building_type in construction_modifiers:
+		construction_modifiers[building_type] += value
+		print("Applied construction modifier for ", building_type, ": ", value)
+
+func remove_construction_modifier(building_type: String, value: int):
+	if building_type in construction_modifiers:
+		construction_modifiers[building_type] -= value
+		print("Removed construction modifier for ", building_type, ": ", value)
 
 func has_selected_building() -> bool:
 	return selected_building_type != ""
@@ -157,7 +179,7 @@ func place_building(grid_pos: Vector2, building_type: String):
 	# Start construction
 	if building_type == "fort":
 		var current_level = fort_levels[grid_pos]
-		var construction_time = 2 if current_level >= 5 else 1
+		var construction_time = 1 if (fort_fast_construction or current_level < 5) else 2
 		buildings_under_construction[grid_pos] = {
 			"type": building_type,
 			"turns_left": construction_time,
@@ -166,10 +188,14 @@ func place_building(grid_pos: Vector2, building_type: String):
 			"is_enemy": placing_enemy
 		}
 	else:
+		# Apply construction time modifiers
+		var modified_time = construction_times[building_type] + construction_modifiers[building_type]
+		modified_time = max(1, modified_time)  # Ensure minimum 1 turn
+		
 		buildings_under_construction[grid_pos] = {
 			"type": building_type,
-			"turns_left": construction_times[building_type],
-			"total_turns": construction_times[building_type],
+			"turns_left": modified_time,
+			"total_turns": modified_time,
 			"is_enemy": placing_enemy
 		}
 	

@@ -2,7 +2,7 @@ extends Node
 
 var points = 1000000
 var military_points = 1000000
-var political_power = 0  # Starting political power
+var political_power = 1000  # Starting political power
 var political_power_gain = 10  # Base gain per turn
 var political_power_modifiers = []  # Array to store modifiers from ministers
 
