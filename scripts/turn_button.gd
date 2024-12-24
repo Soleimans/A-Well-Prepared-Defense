@@ -27,8 +27,13 @@ func _on_button_pressed():
 		var unit_manager = grid_node.get_node("UnitManager")
 		var building_manager = grid_node.get_node("BuildingManager")
 		var resource_manager = grid_node.get_node("ResourceManager")
+		var combat_manager = grid_node.get_node("CombatManager")
 		
 		print("Found building manager: ", building_manager != null)
+		
+		# Process combat first
+		if combat_manager:
+			combat_manager.process_turn()
 		
 		# Get factory counts and generate points
 		var factory_counts = get_factory_counts()

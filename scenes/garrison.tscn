@@ -12,3 +12,17 @@ texture = ExtResource("2_xvtqh")
 [node name="Label" type="Label" parent="."]
 offset_right = 40.0
 offset_bottom = 23.0
+
+[node name="Health" type="ProgressBar" parent="."]
+offset_left = -31.0
+offset_top = -17.0
+offset_right = -27.0
+offset_bottom = 10.0
+show_percentage = false
+
+[node name="Equipment" type="ProgressBar" parent="."]
+offset_left = -25.0
+offset_top = -16.0
+offset_right = -21.0
+offset_bottom = 11.0
+show_percentage = false
