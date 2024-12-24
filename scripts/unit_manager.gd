@@ -54,10 +54,6 @@ func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
 		print("Position out of grid bounds")
 		return false
 	
-	# If war is active, allow movement anywhere within grid bounds
-	if territory_manager and territory_manager.war_active:
-		return true
-		
 	# Get reference to building manager
 	var building_manager = get_parent().get_node("BuildingManager")
 	if !building_manager:
@@ -72,8 +68,12 @@ func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
 				return true
 			print("Enemy can only place new units in the last column")
 			return false
-		# For moving existing units, check if column is in enemy territory
+		# For moving existing units
 		else:
+			# During war, units can move anywhere
+			if territory_manager and territory_manager.war_active:
+				return true
+			# Before war, check if column is in enemy territory
 			for column in building_manager.enemy_buildable_columns:
 				if grid_pos.x == column:
 					return true
@@ -88,8 +88,12 @@ func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
 				return true
 			print("Player can only place new units in the first column")
 			return false
-		# For moving existing units, check if column is in player territory
+		# For moving existing units
 		else:
+			# During war, units can move anywhere
+			if territory_manager and territory_manager.war_active:
+				return true
+			# Before war, check if column is in player territory
 			for column in building_manager.buildable_columns:
 				if grid_pos.x == column:
 					return true
