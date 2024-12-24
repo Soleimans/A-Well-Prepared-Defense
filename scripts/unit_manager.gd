@@ -65,21 +65,37 @@ func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
 		return false
 	
 	if is_enemy:
-		# Check if the column is in enemy territory
-		for column in building_manager.enemy_buildable_columns:
-			if grid_pos.x == column:
+		# If placing a new unit (not moving)
+		if selected_unit_type != "" and !selected_unit:
+			# Enemy can only place units in the rightmost column
+			if grid_pos.x == grid.grid_size.x - 1:
 				return true
-		print("Enemy attempted to move outside their territory at column: ", grid_pos.x)
-		print("Enemy buildable columns: ", building_manager.enemy_buildable_columns)
-		return false
+			print("Enemy can only place new units in the last column")
+			return false
+		# For moving existing units, check if column is in enemy territory
+		else:
+			for column in building_manager.enemy_buildable_columns:
+				if grid_pos.x == column:
+					return true
+			print("Enemy attempted to move outside their territory at column: ", grid_pos.x)
+			print("Enemy buildable columns: ", building_manager.enemy_buildable_columns)
+			return false
 	else:
-		# Player can move in any column they've purchased
-		for column in building_manager.buildable_columns:
-			if grid_pos.x == column:
+		# If placing a new unit (not moving)
+		if selected_unit_type != "" and !selected_unit:
+			# Player can only place units in the leftmost column
+			if grid_pos.x == 0:
 				return true
-		print("Player attempted to move outside their territory at column: ", grid_pos.x)
-		print("Player buildable columns: ", building_manager.buildable_columns)
-		return false
+			print("Player can only place new units in the first column")
+			return false
+		# For moving existing units, check if column is in player territory
+		else:
+			for column in building_manager.buildable_columns:
+				if grid_pos.x == column:
+					return true
+			print("Player attempted to move outside their territory at column: ", grid_pos.x)
+			print("Player buildable columns: ", building_manager.buildable_columns)
+			return false
 
 func is_valid_move(grid_pos: Vector2) -> bool:
 	return grid_pos in valid_move_tiles
