@@ -97,9 +97,6 @@ func _draw():
 	var background_rect = Rect2(0, 0, full_width, full_height)
 	draw_rect(background_rect, Color(0.2, 0.4, 0.2, 1.0))
 	
-	# Get the next column that can be unlocked
-	var next_unlockable = building_manager.buildable_columns.size()
-	
 	# Draw columns with different colors based on their state
 	for x in range(playable_area.x):
 		var column_rect = Rect2(
@@ -112,8 +109,8 @@ func _draw():
 		if x in building_manager.buildable_columns:
 			# Already unlocked columns
 			draw_rect(column_rect, Color(0.3, 0.6, 0.3, 1.0))
-		elif x == next_unlockable and x <= building_manager.max_unlockable_column:
-			# Next column to unlock - highlight in a different color
+		elif x == building_manager.buildable_columns.size() and building_manager.can_unlock_next_column() and x <= building_manager.max_unlockable_column:
+			# Only highlight and show cost if the column can be unlocked
 			draw_rect(column_rect, Color(0.4, 0.5, 0.2, 1.0))
 			
 			# Draw cost text if hovering over this column

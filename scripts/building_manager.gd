@@ -4,6 +4,7 @@ extends Node
 var buildable_columns = [0, 1, 2]  # First 3 columns are buildable
 var enemy_buildable_columns = [12, 13, 14]  # Enemy columns start from right side
 var fort_fast_construction: bool = false
+var all_unlocked_columns = []  # Track all columns unlocked by either side
 
 # Building properties
 var building_costs = {
@@ -105,6 +106,11 @@ func get_next_column_cost() -> int:
 func can_unlock_next_column() -> bool:
 	if buildable_columns.size() >= max_unlockable_column + 1:
 		return false
+	
+	var next_column = buildable_columns.size()
+	if next_column in enemy_buildable_columns or next_column in all_unlocked_columns:
+		return false
+		
 	return resource_manager.points >= get_next_column_cost()
 
 func unlock_next_column() -> bool:
@@ -114,15 +120,25 @@ func unlock_next_column() -> bool:
 	var cost = get_next_column_cost()
 	var next_column = buildable_columns.size()
 	
+	# Check if column is already unlocked by enemy
+	if next_column in enemy_buildable_columns or next_column in all_unlocked_columns:
+		print("Column already claimed by enemy!")
+		return false
+		
 	resource_manager.points -= cost
 	buildable_columns.append(next_column)
+	all_unlocked_columns.append(next_column)  # Track this column as claimed
 	return true
 
 func unlock_next_enemy_column():
 	var next_column = enemy_buildable_columns[0] - 1
-	if next_column >= grid.grid_size.x / 2:  # Don't allow unlocking past middle
+	# Check both minimum column and if already unlocked
+	if next_column >= 3 and not (next_column in buildable_columns or next_column in all_unlocked_columns):
 		enemy_buildable_columns.push_front(next_column)
+		all_unlocked_columns.append(next_column)  # Track this column as claimed
 		print("Enemy unlocked column: ", next_column)
+	else:
+		print("Column already claimed or at limit!")
 
 func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 	print("Checking build position for ", building_type, " at ", grid_pos)
