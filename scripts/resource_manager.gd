@@ -4,6 +4,7 @@ extends Node
 var points = 1000000
 var military_points = 1000000
 var political_power = 1000
+var manpower = 1000000  # Add player manpower
 var political_power_gain = 10
 var political_power_modifiers = []
 
@@ -19,6 +20,7 @@ var enemy_political_power_modifiers = []
 @onready var points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label")
 @onready var military_points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label2")
 @onready var political_power_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Politics_Label")
+@onready var manpower_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Manpower_Count")
 
 # Enemy resource labels
 @onready var enemy_points_label = get_node("/root/Main/UILayer/Debug/Panel/GridContainer/VBoxContainer/EnemyIndustrialPoints")
@@ -38,6 +40,8 @@ func update_labels():
 		military_points_label.text = str(military_points)
 	if political_power_label:
 		political_power_label.text = str(political_power)
+	if manpower_label:
+		manpower_label.text = str(manpower)
 		
 	# Update enemy labels
 	if enemy_points_label:

@@ -8,6 +8,12 @@ const UNIT_COSTS = {
 	"garrison": 500
 }
 
+const MANPOWER_COSTS = {
+	"infantry": 1000,
+	"armoured": 1000,
+	"garrison": 500
+}
+
 # Preloaded scenes
 var unit_scenes = {
 	"infantry": preload("res://scenes/infantry.tscn"),
@@ -201,15 +207,23 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 		print("UnitManager: Cannot place unit - cell is full")
 		return false
 		
-	# Check costs
-	var cost = UNIT_COSTS[selected_unit_type]
+	# Check military points and manpower costs
+	var military_cost = UNIT_COSTS[selected_unit_type]
+	var manpower_cost = MANPOWER_COSTS[selected_unit_type]
+	
 	if placing_enemy:
-		if resource_manager.enemy_military_points < cost:
-			print("UnitManager: Cannot place unit - insufficient enemy resources")
+		if resource_manager.enemy_military_points < military_cost:
+			print("UnitManager: Cannot place unit - insufficient enemy military points")
+			return false
+		if resource_manager.enemy_manpower < manpower_cost:
+			print("UnitManager: Cannot place unit - insufficient enemy manpower")
 			return false
 	else:
-		if resource_manager.military_points < cost:
-			print("UnitManager: Cannot place unit - insufficient resources")
+		if resource_manager.military_points < military_cost:
+			print("UnitManager: Cannot place unit - insufficient military points")
+			return false
+		if resource_manager.manpower < manpower_cost:
+			print("UnitManager: Cannot place unit - insufficient manpower")
 			return false
 	
 	var new_unit = unit_scenes[selected_unit_type].instantiate()
@@ -228,8 +242,10 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	
 	if placing_enemy:
 		resource_manager.enemy_military_points -= UNIT_COSTS[selected_unit_type]
+		resource_manager.enemy_manpower -= MANPOWER_COSTS[selected_unit_type]
 	else:
 		resource_manager.military_points -= UNIT_COSTS[selected_unit_type]
+		resource_manager.manpower -= MANPOWER_COSTS[selected_unit_type]
 	
 	print("UnitManager: Unit placed successfully")
 	return true

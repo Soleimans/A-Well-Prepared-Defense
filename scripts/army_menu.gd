@@ -10,6 +10,11 @@ const UNIT_COSTS = {
 	"armoured": 3000,
 	"garrison": 500
 }
+const MANPOWER_COSTS = {
+	"infantry": 1000,
+	"armoured": 1000,
+	"garrison": 500
+}
 
 func _ready():
 	# Connect unit containers
