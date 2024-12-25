@@ -115,42 +115,34 @@ func _process(_delta):
 func _draw():
 	# Get reference to territory manager
 	var territory_manager = get_node("TerritoryManager")
-	
-	# Draw the base background first
-	var full_width = total_grid_size.x * tile_size.x
-	var full_height = total_grid_size.y * tile_size.y
-	var background_rect = Rect2(0, 0, full_width, full_height)
-	draw_rect(background_rect, Color(0.2, 0.2, 0.2, 1.0))  # Dark gray background
-	
-	# Draw territory colors
-	for x in range(playable_area.x):
-		for y in range(playable_area.y):
-			var pos = Vector2(x, y)
-			var rect = Rect2(
+	var war_active = territory_manager.war_active if territory_manager else false
+
+	if war_active:
+		# During war, let territory manager handle ALL territory drawing
+		if territory_manager:
+			territory_manager.draw(self)
+	else:
+		# Pre-war territory drawing
+		# Draw background area (darker green)
+		var full_width = total_grid_size.x * tile_size.x
+		var full_height = total_grid_size.y * tile_size.y
+		var background_rect = Rect2(0, 0, full_width, full_height)
+		draw_rect(background_rect, Color(0.2, 0.4, 0.2, 1.0))
+
+		# Draw columns with different colors based on their state
+		for x in range(playable_area.x):
+			var column_rect = Rect2(
 				x * tile_size.x,
-				y * tile_size.y,
+				0,
 				tile_size.x,
-				tile_size.y
+				playable_area.y * tile_size.y
 			)
 			
-			var color
-			if x < 3:  # First 3 columns are player territory
-				color = Color(0, 0.5, 1, 1)  # Blue for player
-			elif x >= playable_area.x - 3:  # Last 3 columns are enemy territory
-				color = Color(1, 0, 0, 1)  # Red for enemy
-			elif x in building_manager.buildable_columns:
-				color = Color(0, 0.5, 1, 1)  # Blue for player unlocked columns
-			elif x in building_manager.enemy_buildable_columns:
-				color = Color(1, 0, 0, 1)  # Red for enemy unlocked columns
-			elif !territory_manager.war_active and x == building_manager.buildable_columns.size() and building_manager.can_unlock_next_column() and x <= building_manager.max_unlockable_column:
-				color = Color(0.3, 0.6, 1, 1)  # Lighter blue for next unlockable column
-			else:
-				color = Color(0.2, 0.2, 0.2, 1)  # Dark gray for neutral territory
-			
-			draw_rect(rect, color)
-			
-			# Show unlock cost on hoverable columns
-			if !territory_manager.war_active and x == building_manager.buildable_columns.size() and building_manager.can_unlock_next_column() and x <= building_manager.max_unlockable_column:
+			if x in building_manager.buildable_columns:
+				draw_rect(column_rect, Color(0.3, 0.6, 0.3, 1.0))
+			elif x == building_manager.buildable_columns.size() and building_manager.can_unlock_next_column() and x <= building_manager.max_unlockable_column:
+				draw_rect(column_rect, Color(0.4, 0.5, 0.2, 1.0))
+				
 				var mouse_pos = get_global_mouse_position()
 				var grid_pos = world_to_grid(mouse_pos)
 				if grid_pos.x == x:
@@ -164,8 +156,10 @@ func _draw():
 						16,
 						Color.WHITE
 					)
+			else:
+				draw_rect(column_rect, Color(0.2, 0.3, 0.2, 1.0))
 	
-	# Draw grid lines
+	# Always draw grid lines
 	for x in range(playable_area.x + 1):
 		var from = Vector2(x * tile_size.x, 0)
 		var to = Vector2(x * tile_size.x, playable_area.y * tile_size.y)
