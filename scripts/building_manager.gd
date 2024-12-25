@@ -158,11 +158,22 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 		print("Construction already in progress at this position")
 		return false
 	
+	# Get reference to territory manager
+	var territory_manager = get_parent().get_node("TerritoryManager")
+	
 	# Different rules for enemy buildings
 	if placing_enemy:
-		if !enemy_buildable_columns.has(int(grid_pos.x)):
-			print("Position not in enemy buildable columns")
-			return false
+		if war_mode and territory_manager:
+			# During war, check territory ownership
+			if territory_manager.get_territory_owner(grid_pos) != "enemy":
+				print("Position not in enemy territory")
+				return false
+		else:
+			# Before war, use column restrictions
+			if !enemy_buildable_columns.has(int(grid_pos.x)):
+				print("Position not in enemy buildable columns")
+				return false
+				
 		# Check resource cost for enemy buildings
 		var cost = get_building_cost(building_type, grid_pos)
 		if resource_manager.enemy_points < cost:
@@ -170,9 +181,16 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 			return false
 	else:
 		# Original player building checks
-		if !buildable_columns.has(int(grid_pos.x)):
-			print("Position not in buildable columns")
-			return false
+		if war_mode and territory_manager:
+			# During war, check territory ownership
+			if territory_manager.get_territory_owner(grid_pos) != "player":
+				print("Position not in player territory")
+				return false
+		else:
+			# Before war, use column restrictions
+			if !buildable_columns.has(int(grid_pos.x)):
+				print("Position not in buildable columns")
+				return false
 		
 		# Check resource cost for player buildings
 		var cost = get_building_cost(building_type, grid_pos)

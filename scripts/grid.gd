@@ -117,18 +117,14 @@ func _draw():
 	var territory_manager = get_node("TerritoryManager")
 	var war_active = territory_manager.war_active if territory_manager else false
 
-	# Draw background area (darker green)
-	var full_width = total_grid_size.x * tile_size.x
-	var full_height = total_grid_size.y * tile_size.y
-	var background_rect = Rect2(0, 0, full_width, full_height)
-	draw_rect(background_rect, Color(0.2, 0.4, 0.2, 1.0))
-	
-	# Draw territory colors first (if war is active)
-	if territory_manager and war_active:
-		territory_manager.draw(self)
-	
-	# Only draw column colors and unlockable columns if war hasn't started
+	# Only draw the base background if war is not active
 	if !war_active:
+		# Draw background area (darker green)
+		var full_width = total_grid_size.x * tile_size.x
+		var full_height = total_grid_size.y * tile_size.y
+		var background_rect = Rect2(0, 0, full_width, full_height)
+		draw_rect(background_rect, Color(0.2, 0.4, 0.2, 1.0))
+
 		# Draw columns with different colors based on their state
 		for x in range(playable_area.x):
 			var column_rect = Rect2(
@@ -150,7 +146,6 @@ func _draw():
 				var grid_pos = world_to_grid(mouse_pos)
 				if grid_pos.x == x:
 					var cost = building_manager.get_next_column_cost()
-					# Draw cost text above the column
 					draw_string(
 						ThemeDB.fallback_font,
 						Vector2(x * tile_size.x + 10, tile_size.y - 10),
@@ -163,8 +158,18 @@ func _draw():
 			else:
 				# Locked columns
 				draw_rect(column_rect, Color(0.2, 0.3, 0.2, 1.0))
-	
-	# Draw grid lines
+	else:
+		# During war, just draw a neutral background
+		var full_width = total_grid_size.x * tile_size.x
+		var full_height = total_grid_size.y * tile_size.y
+		var background_rect = Rect2(0, 0, full_width, full_height)
+		draw_rect(background_rect, Color(0.2, 0.2, 0.2, 1.0))  # Neutral dark gray background
+		
+		# Draw territory colors
+		if territory_manager:
+			territory_manager.draw(self)
+
+	# Always draw grid lines
 	for x in range(playable_area.x + 1):
 		var from = Vector2(x * tile_size.x, 0)
 		var to = Vector2(x * tile_size.x, playable_area.y * tile_size.y)
@@ -187,7 +192,7 @@ func _draw():
 		)
 		draw_rect(highlight_rect, Color(1, 1, 1, 0.2))
 	
-	# Let managers draw their content
+	# Draw manager content
 	building_manager.draw(self)
 	unit_manager.draw(self)
 

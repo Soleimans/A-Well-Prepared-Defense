@@ -3,6 +3,7 @@ extends Node
 @onready var panel = $Panel
 @onready var unit_manager = get_node("/root/Main/Grid/UnitManager")
 @onready var building_manager = get_node("/root/Main/Grid/BuildingManager")
+@onready var enemy_column_button = $Panel/GridContainer/VBoxContainer/Button7
 
 func _ready():
 	panel.hide()
@@ -17,8 +18,18 @@ func _ready():
 	$Panel/GridContainer/VBoxContainer/Button6.pressed.connect(_on_enemy_fort_pressed)
 	$Panel/GridContainer/VBoxContainer/Button7.pressed.connect(_on_enemy_next_column_pressed)
 	
+	# Connect to war count signal
+	var war_count = get_node("/root/Main/UILayer/WarCount")
+	if war_count:
+		war_count.connect("turn_changed", _on_war_state_changed)
+	
 	# Connect the visibility changed signal
 	panel.visibility_changed.connect(_on_panel_visibility_changed)
+
+func _on_war_state_changed(current_turn: int):
+	if current_turn >= 10:  # War starts at turn 10
+		enemy_column_button.disabled = true
+		enemy_column_button.modulate = Color(0.5, 0.5, 0.5, 1.0)  # Gray out the button
 
 func _input(event):
 	if event.is_action_pressed("toggle_debug"):
@@ -37,7 +48,7 @@ func _on_enemy_armoured_pressed():
 	unit_manager.selected_unit_type = "armoured"
 	unit_manager.placing_enemy = true
 
-# New enemy building placement functions
+# Enemy building placement functions
 func _on_enemy_civilian_factory_pressed():
 	building_manager.selected_building_type = "civilian_factory"
 	building_manager.placing_enemy = true
