@@ -33,7 +33,29 @@ func _on_button_pressed():
 		
 		# Process combat first
 		if combat_manager:
-			combat_manager.process_turn ()
+			combat_manager.process_turn()
+		
+		# Process replenishment for all units
+		var player_military_cost = 0
+		var player_manpower_cost = 0
+		var enemy_military_cost = 0
+		var enemy_manpower_cost = 0
+		
+		print("\nProcessing unit replenishment...")
+		for pos in unit_manager.units_in_cells:
+			for unit in unit_manager.units_in_cells[pos]:
+				if unit.has_method("try_replenish"):
+					var result = unit.try_replenish()
+					if result.replenished:
+						print("Replenishing unit at position ", pos)
+						if unit.is_enemy:
+							enemy_military_cost += result.military_cost
+							enemy_manpower_cost += result.manpower_cost
+							print("Enemy costs - Military: ", result.military_cost, " Manpower: ", result.manpower_cost)
+						else:
+							player_military_cost += result.military_cost
+							player_manpower_cost += result.manpower_cost
+							print("Player costs - Military: ", result.military_cost, " Manpower: ", result.manpower_cost)
 		
 		# Get factory counts and generate points
 		var factory_counts = get_factory_counts()
@@ -46,6 +68,7 @@ func _on_button_pressed():
 		var enemy_points_generated = factory_counts["enemy_civilian"] * points_per_civilian_factory
 		var enemy_military_points_generated = factory_counts["enemy_military"] * points_per_military_factory
 		
+		print("\nFactory Production:")
 		print("Player Civilian factories: ", factory_counts["civilian"])
 		print("Player Military factories: ", factory_counts["military"])
 		print("Enemy Civilian factories: ", factory_counts["enemy_civilian"])
@@ -54,6 +77,18 @@ func _on_button_pressed():
 		print("Generated player military points: ", military_points_generated)
 		print("Generated enemy points: ", enemy_points_generated)
 		print("Generated enemy military points: ", enemy_military_points_generated)
+		
+		# Deduct replenishment costs first
+		resource_manager.military_points -= player_military_cost
+		resource_manager.manpower -= player_manpower_cost
+		resource_manager.enemy_military_points -= enemy_military_cost
+		resource_manager.enemy_manpower -= enemy_manpower_cost
+		
+		print("\nReplenishment costs processed:")
+		print("Player military cost: ", player_military_cost)
+		print("Player manpower cost: ", player_manpower_cost)
+		print("Enemy military cost: ", enemy_military_cost)
+		print("Enemy manpower cost: ", enemy_manpower_cost)
 		
 		# Add generated points for player
 		resource_manager.points += points_generated

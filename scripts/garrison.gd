@@ -12,6 +12,7 @@ var max_hard_health = 100
 var max_equipment = 500
 var soft_attack = 200
 var hard_attack = 50
+var in_combat_this_turn = false
 
 @onready var sprite = $Sprite2D
 @onready var health_bar = $Health
@@ -62,6 +63,34 @@ func setup_progress_bars():
 		health_bar.value = health_bar.max_value
 		equipment_bar.value = equipment_bar.max_value
 
+func try_replenish() -> Dictionary:
+	if has_moved or in_combat_this_turn:
+		return {"replenished": false}
+		
+	var equipment_needed = max_equipment - equipment
+	var soft_health_needed = max_soft_health - soft_health
+	var hard_health_needed = max_hard_health - hard_health
+	
+	# Calculate actual amounts to replenish (cap at maximum values)
+	var equipment_replenish = min(100, equipment_needed)
+	var soft_health_replenish = min(200, soft_health_needed)
+	var hard_health_replenish = min(100, hard_health_needed)
+	
+	# Calculate costs based on actual replenishment
+	var military_cost = ceil(equipment_replenish / 100.0 * 100)  # 100 points per 100 equipment
+	var manpower_cost = ceil((soft_health_replenish / 200.0 + hard_health_replenish / 100.0) * 300)  # 300 points for full health
+	
+	# Apply replenishment
+	equipment += equipment_replenish
+	soft_health += soft_health_replenish
+	hard_health += hard_health_replenish
+	
+	return {
+		"replenished": equipment_replenish > 0 or soft_health_replenish > 0 or hard_health_replenish > 0,
+		"military_cost": military_cost,
+		"manpower_cost": manpower_cost
+	}
+
 func update_bars():
 	if health_bar and equipment_bar:
 		# Calculate current values
@@ -75,6 +104,7 @@ func update_bars():
 func reset_movement():
 	has_moved = false
 	movement_points = 1
+	in_combat_this_turn = false
 
 func can_move():
 	return !has_moved && movement_points > 0

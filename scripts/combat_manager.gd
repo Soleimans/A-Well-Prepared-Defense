@@ -7,6 +7,10 @@ var units_in_combat = []
 
 # Process combat between two units
 func resolve_combat(attacker: Node2D, defender: Node2D):
+	# Mark both units as having participated in combat
+	attacker.in_combat_this_turn = true
+	defender.in_combat_this_turn = true
+	
 	print("\nCOMBAT RESOLUTION:")
 	print("Attacker before - Soft Health: ", attacker.soft_health, " Hard Health: ", attacker.hard_health, " Equipment: ", attacker.equipment)
 	print("Defender before - Soft Health: ", defender.soft_health, " Hard Health: ", defender.hard_health, " Equipment: ", defender.equipment)
