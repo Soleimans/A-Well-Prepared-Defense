@@ -335,6 +335,21 @@ func get_line_points(start: Vector2, end: Vector2) -> Array:
 	points.append(Vector2(x1, y1))
 	return points
 
+func is_path_blocked(from_pos: Vector2, to_pos: Vector2) -> bool:
+	# Get all points along the path except the starting position
+	var path_points = get_line_points(from_pos, to_pos)
+	path_points.pop_front()  # Remove starting position
+	
+	# Check each point along the path for enemy units
+	for point in path_points:
+		if point in units_in_cells:
+			for unit in units_in_cells[point]:
+				if unit.is_enemy != selected_unit.is_enemy:
+					print("Path blocked by enemy unit at ", point)
+					return true
+	
+	return false
+
 func highlight_valid_moves(from_pos: Vector2):
 	print("UnitManager: Highlighting valid moves from position: ", from_pos)
 	valid_move_tiles.clear()
@@ -361,6 +376,8 @@ func highlight_valid_moves(from_pos: Vector2):
 		
 		# Check each direction up to 2 tiles away
 		for direction in directions:
+			var path_blocked = false
+			
 			for distance in range(1, remaining_points + 1):
 				var test_pos = from_pos + direction * distance
 				
@@ -373,8 +390,12 @@ func highlight_valid_moves(from_pos: Vector2):
 				if !is_position_in_territory(test_pos, selected_unit.is_enemy):
 					break
 				
-				# Check if tile is occupied
+				# Check if tile is occupied by max units
 				if test_pos in units_in_cells and units_in_cells[test_pos].size() >= MAX_UNITS_PER_CELL:
+					break
+					
+				# Check if path is blocked by enemy units
+				if is_path_blocked(from_pos, test_pos):
 					break
 				
 				valid_move_tiles.append(test_pos)
@@ -389,7 +410,15 @@ func highlight_valid_moves(from_pos: Vector2):
 				if manhattan_distance(from_pos, test_pos) == 1:
 					# Check territory restrictions before war
 					if is_position_in_territory(test_pos, selected_unit.is_enemy):
-						if test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
+						# Check if destination has enemy units
+						var has_enemy = false
+						if test_pos in units_in_cells:
+							for unit in units_in_cells[test_pos]:
+								if unit.is_enemy != selected_unit.is_enemy:
+									has_enemy = true
+									break
+						
+						if !has_enemy and (test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL):
 							valid_move_tiles.append(test_pos)
 	
 	print("UnitManager: Found ", valid_move_tiles.size(), " valid moves")
@@ -446,6 +475,11 @@ func execute_move(to_pos: Vector2) -> bool:
 	var unit_index = units_in_cells[unit_start_pos].find(selected_unit)
 	if unit_index == -1:
 		print("UnitManager: Cannot move - unit not found in starting position")
+		return false
+	
+	# Verify the path isn't blocked before moving
+	if is_path_blocked(unit_start_pos, to_pos):
+		print("UnitManager: Cannot move - path is blocked by enemy unit")
 		return false
 		
 	# Calculate movement cost based on actual distance moved
