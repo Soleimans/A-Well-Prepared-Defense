@@ -8,8 +8,8 @@ var units_in_combat = []
 # Process combat between two units
 func resolve_combat(attacker: Node2D, defender: Node2D):
 	print("\nCOMBAT RESOLUTION:")
-	print("Attacker before - Soft Health: ", attacker.soft_health, " Hard Health: ", attacker.hard_health)
-	print("Defender before - Soft Health: ", defender.soft_health, " Hard Health: ", defender.hard_health)
+	print("Attacker before - Soft Health: ", attacker.soft_health, " Hard Health: ", attacker.hard_health, " Equipment: ", attacker.equipment)
+	print("Defender before - Soft Health: ", defender.soft_health, " Hard Health: ", defender.hard_health, " Equipment: ", defender.equipment)
 	
 	# Store original health values
 	var attacker_original_soft = attacker.soft_health
@@ -23,24 +23,33 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 	var damage_to_attacker_soft = defender.soft_attack
 	var damage_to_attacker_hard = defender.hard_attack
 	
-	# Apply damage
+	# Calculate equipment damage
+	var equipment_damage_to_defender = (attacker.soft_attack + attacker.hard_attack) * 0.5
+	var equipment_damage_to_attacker = (defender.soft_attack + defender.hard_attack) * 0.5
+	
+	# Apply health damage
 	defender.soft_health = max(0, defender.soft_health - damage_to_defender_soft)
 	defender.hard_health = max(0, defender.hard_health - damage_to_defender_hard)
 	attacker.soft_health = max(0, attacker.soft_health - damage_to_attacker_soft)
 	attacker.hard_health = max(0, attacker.hard_health - damage_to_attacker_hard)
 	
-	# Update health bars
+	# Apply equipment damage
+	defender.equipment = max(0, defender.equipment - equipment_damage_to_defender)
+	attacker.equipment = max(0, attacker.equipment - equipment_damage_to_attacker)
+	
+	# Update health and equipment bars
 	attacker.update_bars()
 	defender.update_bars()
 	
-	print("Damage dealt to defender - Soft: ", damage_to_defender_soft, " Hard: ", damage_to_defender_hard)
-	print("Damage dealt to attacker - Soft: ", damage_to_attacker_soft, " Hard: ", damage_to_attacker_hard)
-	print("Attacker after - Soft Health: ", attacker.soft_health, " Hard Health: ", attacker.hard_health)
-	print("Defender after - Soft Health: ", defender.soft_health, " Hard Health: ", defender.hard_health)
+	print("Damage dealt to defender - Soft: ", damage_to_defender_soft, " Hard: ", damage_to_defender_hard, " Equipment: ", equipment_damage_to_defender)
+	print("Damage dealt to attacker - Soft: ", damage_to_attacker_soft, " Hard: ", damage_to_attacker_hard, " Equipment: ", equipment_damage_to_attacker)
+	print("Attacker after - Soft Health: ", attacker.soft_health, " Hard Health: ", attacker.hard_health, " Equipment: ", attacker.equipment)
+	print("Defender after - Soft Health: ", defender.soft_health, " Hard Health: ", defender.hard_health, " Equipment: ", defender.equipment)
 
 func check_unit_destroyed(unit: Node2D):
-	if unit.soft_health <= 0 or unit.hard_health <= 0:
-		print("Unit destroyed! Soft Health: ", unit.soft_health, " Hard Health: ", unit.hard_health)
+	# Unit is destroyed if both health types are 0 OR if equipment is 0
+	if (unit.soft_health <= 0 and unit.hard_health <= 0) or unit.equipment <= 0:
+		print("Unit destroyed! Soft Health: ", unit.soft_health, " Hard Health: ", unit.hard_health, " Equipment: ", unit.equipment)
 		# Find the unit's position
 		var unit_pos = Vector2.ZERO
 		for pos in unit_manager.units_in_cells:
