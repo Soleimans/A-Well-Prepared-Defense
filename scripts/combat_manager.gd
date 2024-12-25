@@ -4,6 +4,7 @@ extends Node2D
 var units_in_combat = []
 
 @onready var unit_manager = get_parent().get_node("UnitManager")
+@onready var building_manager = get_parent().get_node("BuildingManager")
 
 # Process combat between two units
 func resolve_combat(attacker: Node2D, defender: Node2D):
@@ -21,15 +22,40 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 	var defender_original_soft = defender.soft_health
 	var defender_original_hard = defender.hard_health
 	
-	# Calculate damage first
+	# Calculate base damage first
 	var damage_to_defender_soft = attacker.soft_attack
 	var damage_to_defender_hard = attacker.hard_attack
 	var damage_to_attacker_soft = defender.soft_attack
 	var damage_to_attacker_hard = defender.hard_attack
 	
-	# Calculate equipment damage
-	var equipment_damage_to_defender = (attacker.soft_attack + attacker.hard_attack) * 0.5
+	# Find defender's position
+	var defender_pos = Vector2.ZERO
+	for pos in unit_manager.units_in_cells:
+		if defender in unit_manager.units_in_cells[pos]:
+			defender_pos = pos
+			break
+	
+	# Calculate total damage reduction
+	var base_defense_reduction = 0.2  # 20% base defense bonus
+	var fort_reduction = 0.0
+	
+	# Check for fort at defender's position
+	if defender_pos != Vector2.ZERO and building_manager.fort_levels.has(defender_pos):
+		var fort_level = building_manager.fort_levels[defender_pos]
+		fort_reduction = fort_level * 0.02  # 2% per level
+	
+	var total_reduction = base_defense_reduction + fort_reduction
+	var damage_multiplier = 1.0 - total_reduction
+	
+	# Apply total damage reduction to defender
+	damage_to_defender_soft *= damage_multiplier
+	damage_to_defender_hard *= damage_multiplier
+	
+	# Calculate equipment damage with defense bonus
+	var equipment_damage_to_defender = (attacker.soft_attack + attacker.hard_attack) * 0.5 * damage_multiplier
 	var equipment_damage_to_attacker = (defender.soft_attack + defender.hard_attack) * 0.5
+	
+	print("Combat modifiers - Base defense: -20%, Fort level reduction: -" + str(fort_reduction * 100) + "%, Total reduction: -" + str(total_reduction * 100) + "%")
 	
 	# Apply health damage
 	defender.soft_health = max(0, defender.soft_health - damage_to_defender_soft)
