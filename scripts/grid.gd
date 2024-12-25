@@ -85,12 +85,15 @@ func _input(event):
 				
 				if enemy_units.size() > 0:
 					print("Enemy units found at click position")
-					# Check if the position is adjacent to our selected unit
-					if unit_manager.is_adjacent(unit_manager.unit_start_pos, grid_pos):
-						print("Position is adjacent, initiating combat!")
+					# Check if the position is adjacent and unit hasn't attacked this turn
+					if unit_manager.is_adjacent(unit_manager.unit_start_pos, grid_pos) and !unit_manager.selected_unit.in_combat_this_turn:
+						print("Position is adjacent and unit hasn't attacked, initiating combat!")
 						var combat_manager = get_node("CombatManager")
 						combat_manager.initiate_combat(unit_manager.unit_start_pos, grid_pos)
 						unit_manager.deselect_current_unit()
+						return
+					elif unit_manager.selected_unit.in_combat_this_turn:
+						print("Unit has already attacked this turn")
 						return
 					else:
 						print("Enemy found but not in adjacent tile")
