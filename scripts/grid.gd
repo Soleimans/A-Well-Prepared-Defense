@@ -117,8 +117,12 @@ func _draw():
 	var territory_manager = get_node("TerritoryManager")
 	var war_active = territory_manager.war_active if territory_manager else false
 
-	# Only draw the base background if war is not active
-	if !war_active:
+	if war_active:
+		# During war, let territory manager handle ALL territory drawing
+		if territory_manager:
+			territory_manager.draw(self)
+	else:
+		# Pre-war territory drawing
 		# Draw background area (darker green)
 		var full_width = total_grid_size.x * tile_size.x
 		var full_height = total_grid_size.y * tile_size.y
@@ -135,13 +139,10 @@ func _draw():
 			)
 			
 			if x in building_manager.buildable_columns:
-				# Already unlocked columns
 				draw_rect(column_rect, Color(0.3, 0.6, 0.3, 1.0))
 			elif x == building_manager.buildable_columns.size() and building_manager.can_unlock_next_column() and x <= building_manager.max_unlockable_column:
-				# Only highlight and show cost if the column can be unlocked
 				draw_rect(column_rect, Color(0.4, 0.5, 0.2, 1.0))
 				
-				# Draw cost text if hovering over this column
 				var mouse_pos = get_global_mouse_position()
 				var grid_pos = world_to_grid(mouse_pos)
 				if grid_pos.x == x:
@@ -156,19 +157,8 @@ func _draw():
 						Color.WHITE
 					)
 			else:
-				# Locked columns
 				draw_rect(column_rect, Color(0.2, 0.3, 0.2, 1.0))
-	else:
-		# During war, just draw a neutral background
-		var full_width = total_grid_size.x * tile_size.x
-		var full_height = total_grid_size.y * tile_size.y
-		var background_rect = Rect2(0, 0, full_width, full_height)
-		draw_rect(background_rect, Color(0.2, 0.2, 0.2, 1.0))  # Neutral dark gray background
-		
-		# Draw territory colors
-		if territory_manager:
-			territory_manager.draw(self)
-
+	
 	# Always draw grid lines
 	for x in range(playable_area.x + 1):
 		var from = Vector2(x * tile_size.x, 0)

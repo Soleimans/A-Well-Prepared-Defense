@@ -427,36 +427,37 @@ func manhattan_distance(from: Vector2, to: Vector2) -> int:
 	return int(abs(from.x - to.x) + abs(from.y - to.y))
 
 
+# In unit_manager.gd
 func check_territory_capture(from_pos: Vector2, to_pos: Vector2):
 	var territory_manager = get_parent().get_node("TerritoryManager")
 	if territory_manager and selected_unit and territory_manager.war_active:
+		var current_owner = territory_manager.get_territory_owner(to_pos)
 		var capturing_player = "enemy" if selected_unit.is_enemy else "player"
 		
-		# For armoured units, capture all tiles along the path
-		if selected_unit.scene_file_path.contains("armoured"):
-			var path_points = get_line_points(from_pos, to_pos)
+		# Only capture if it's not already owned by the moving unit's side
+		if (selected_unit.is_enemy and current_owner != "enemy") or \
+		   (!selected_unit.is_enemy and current_owner != "player"):
 			
-			# Skip the first point (starting position)
-			for i in range(1, path_points.size()):
-				var grid_pos = path_points[i]
+			# For armoured units, capture all tiles along the path
+			if selected_unit.scene_file_path.contains("armoured"):
+				var path_points = get_line_points(from_pos, to_pos)
 				
-				# Verify the position is within grid bounds
-				if grid_pos.x >= 0 and grid_pos.x < grid.grid_size.x and \
-				   grid_pos.y >= 0 and grid_pos.y < grid.grid_size.y:
-					# Get current territory owner
-					var current_owner = territory_manager.get_territory_owner(grid_pos)
+				# Skip the first point (starting position)
+				for i in range(1, path_points.size()):
+					var grid_pos = path_points[i]
 					
-					# Only capture if moving to enemy or neutral territory
-					if (selected_unit.is_enemy and current_owner != "enemy") or \
-					   (!selected_unit.is_enemy and current_owner != "player"):
-						print("UnitManager: Capturing territory at ", grid_pos, " for ", capturing_player)
-						territory_manager.capture_territory(grid_pos, capturing_player)
-		else:
-			# For infantry and garrison, just capture the destination tile
-			var current_owner = territory_manager.get_territory_owner(to_pos)
-			if (selected_unit.is_enemy and current_owner != "enemy") or \
-			   (!selected_unit.is_enemy and current_owner != "player"):
-				print("UnitManager: Capturing territory at ", to_pos, " for ", capturing_player)
+					# Verify the position is within grid bounds
+					if grid_pos.x >= 0 and grid_pos.x < grid.grid_size.x and \
+					   grid_pos.y >= 0 and grid_pos.y < grid.grid_size.y:
+						# Get current territory owner
+						current_owner = territory_manager.get_territory_owner(grid_pos)
+						
+						# Only capture if not already owned
+						if (selected_unit.is_enemy and current_owner != "enemy") or \
+						   (!selected_unit.is_enemy and current_owner != "player"):
+							territory_manager.capture_territory(grid_pos, capturing_player)
+			else:
+				# For infantry and garrison, just capture the destination tile
 				territory_manager.capture_territory(to_pos, capturing_player)
 
 

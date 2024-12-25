@@ -321,28 +321,30 @@ func process_construction():
 		print("Removed completed construction at ", pos)
 
 func draw(grid_node: Node2D):
-	# Draw buildable zones (blue tint for player, red tint for enemy)
-	for x in buildable_columns:
-		for y in range(grid.grid_size.y):
-			var rect = Rect2(
-				x * grid.tile_size.x,
-				y * grid.tile_size.y,
-				grid.tile_size.x,
-				grid.tile_size.y
-			)
-			grid_node.draw_rect(rect, Color(0, 0.5, 1, 0.2))
+	# Only draw buildable zones before war
+	if !war_mode:
+		# Draw buildable zones (blue tint for player, red tint for enemy)
+		for x in buildable_columns:
+			for y in range(grid.grid_size.y):
+				var rect = Rect2(
+					x * grid.tile_size.x,
+					y * grid.tile_size.y,
+					grid.tile_size.x,
+					grid.tile_size.y
+				)
+				grid_node.draw_rect(rect, Color(0, 0.5, 1, 0.2))
+		
+		for x in enemy_buildable_columns:
+			for y in range(grid.grid_size.y):
+				var rect = Rect2(
+					x * grid.tile_size.x,
+					y * grid.tile_size.y,
+					grid.tile_size.x,
+					grid.tile_size.y
+				)
+				grid_node.draw_rect(rect, Color(1, 0, 0, 0.2))
 	
-	for x in enemy_buildable_columns:
-		for y in range(grid.grid_size.y):
-			var rect = Rect2(
-				x * grid.tile_size.x,
-				y * grid.tile_size.y,
-				grid.tile_size.x,
-				grid.tile_size.y
-			)
-			grid_node.draw_rect(rect, Color(1, 0, 0, 0.2))
-	
-	# Draw construction progress
+	# Always draw construction progress
 	for grid_pos in buildings_under_construction:
 		var construction = buildings_under_construction[grid_pos]
 		var progress = float(construction.total_turns - construction.turns_left) / construction.total_turns
