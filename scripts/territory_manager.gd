@@ -46,7 +46,12 @@ func initialize_territory():
 func _on_turn_changed(current_turn: int):
 	if current_turn >= 10 and !war_active:  # War starts at turn 10
 		war_active = true
+		# Also set war mode in building manager
+		var building_manager = get_parent().get_node("BuildingManager")
+		if building_manager:
+			building_manager.war_mode = true
 		print("TerritoryManager: War has begun!")
+		print("War mode active in building manager: ", building_manager.war_mode if building_manager else "BuildingManager not found")
 		debug_print_territory()
 
 func get_territory_owner(pos: Vector2) -> String:

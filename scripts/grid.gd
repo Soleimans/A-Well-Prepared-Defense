@@ -117,16 +117,10 @@ func _process(_delta):
 	queue_redraw()
 
 func _draw():
-	# Fill ENTIRE grid with base color first
-	var full_rect = Rect2(0, 0, 
-		grid_size.x * tile_size.x,
-		grid_size.y * tile_size.y)
-	draw_rect(full_rect, Color(0.2, 0.2, 0.2, 1.0))
-
 	# Get reference to territory manager
 	var territory_manager = get_node("TerritoryManager")
 	
-	# Draw territories
+	# Draw territories first instead of base color
 	for x in range(grid_size.x):
 		for y in range(grid_size.y):
 			var pos = Vector2(x, y)
@@ -137,7 +131,6 @@ func _draw():
 				tile_size.y
 			)
 			
-			var color
 			var territory_owner = "neutral"
 			
 			if territory_manager:
@@ -149,17 +142,17 @@ func _draw():
 				elif x >= grid_size.x - 3 or x in building_manager.enemy_buildable_columns:  # Starting columns OR unlocked by enemy
 					territory_owner = "enemy"
 			
+			# Set color based on territory owner
+			var color = Color(0.2, 0.2, 0.2, 1)  # Default gray for neutral
 			match territory_owner:
 				"player":
-					color = Color(0, 0.5, 1, 1)  # Solid blue
+					color = Color(0, 0.5, 1, 1)  # Blue for player
 				"enemy":
-					color = Color(1, 0, 0, 1)    # Solid red
-				_: # neutral
-					color = Color(0.2, 0.2, 0.2, 1)  # Gray for neutral
+					color = Color(1, 0, 0, 1)    # Red for enemy
 			
 			draw_rect(rect, color)
 	
-	# Always draw grid lines
+	# Draw grid lines
 	for x in range(playable_area.x + 1):
 		var from = Vector2(x * tile_size.x, 0)
 		var to = Vector2(x * tile_size.x, playable_area.y * tile_size.y)
@@ -185,7 +178,7 @@ func _draw():
 	# Draw manager content
 	building_manager.draw(self)
 	unit_manager.draw(self)
-
+	
 	# Draw combat tiles if combat manager exists
 	var combat_manager = get_node("CombatManager")
 	if combat_manager:

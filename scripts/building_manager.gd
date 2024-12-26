@@ -132,6 +132,15 @@ func unlock_next_column() -> bool:
 	resource_manager.points -= cost
 	buildable_columns.append(next_column)
 	all_unlocked_columns.append(next_column)  # Track this column as claimed
+	
+	# Get reference to territory manager and update territory ownership
+	var territory_manager = get_parent().get_node("TerritoryManager")
+	if territory_manager:
+		# Update territory ownership for all cells in the new column
+		for y in range(get_parent().grid_size.y):
+			var pos = Vector2(next_column, y)
+			territory_manager.capture_territory(pos, "player")
+	
 	return true
 
 func unlock_next_enemy_column():
@@ -140,6 +149,15 @@ func unlock_next_enemy_column():
 	if next_column >= 3 and not (next_column in buildable_columns or next_column in all_unlocked_columns):
 		enemy_buildable_columns.push_front(next_column)
 		all_unlocked_columns.append(next_column)  # Track this column as claimed
+		
+		# Get reference to territory manager and update territory ownership
+		var territory_manager = get_parent().get_node("TerritoryManager")
+		if territory_manager:
+			# Update territory ownership for all cells in the new column
+			for y in range(get_parent().grid_size.y):
+				var pos = Vector2(next_column, y)
+				territory_manager.capture_territory(pos, "enemy")
+				
 		print("Enemy unlocked column: ", next_column)
 	else:
 		print("Column already claimed or at limit!")
@@ -163,9 +181,14 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 	
 	# Different rules for enemy buildings
 	if placing_enemy:
-		if war_mode and territory_manager:
-			# During war, check territory ownership
-			if territory_manager.get_territory_owner(grid_pos) != "enemy":
+		# Get territory owner of the position
+		var territory_owner = "neutral"
+		if territory_manager:
+			territory_owner = territory_manager.get_territory_owner(grid_pos)
+			
+		if war_mode:
+			# During war, can only build in enemy territory
+			if territory_owner != "enemy":
 				print("Position not in enemy territory")
 				return false
 		else:
@@ -180,10 +203,14 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 			print("Not enough enemy points!")
 			return false
 	else:
-		# Original player building checks
-		if war_mode and territory_manager:
-			# During war, check territory ownership
-			if territory_manager.get_territory_owner(grid_pos) != "player":
+		# Get territory owner of the position
+		var territory_owner = "neutral"
+		if territory_manager:
+			territory_owner = territory_manager.get_territory_owner(grid_pos)
+			
+		if war_mode:
+			# During war, can build in any owned or captured territory
+			if territory_owner != "player":
 				print("Position not in player territory")
 				return false
 		else:
@@ -222,6 +249,14 @@ func place_building(grid_pos: Vector2, building_type: String):
 	var cost = get_building_cost(building_type, grid_pos)
 	print("Starting construction of ", building_type, " at ", grid_pos)
 	
+	# Get territory owner
+	var territory_manager = get_parent().get_node("TerritoryManager")
+	var territory_owner = "neutral"
+	if territory_manager:
+		territory_owner = territory_manager.get_territory_owner(grid_pos)
+	
+	print("Territory owner at build position: ", territory_owner)
+	
 	# Start construction
 	if building_type == "fort":
 		var current_level = fort_levels[grid_pos]
@@ -231,7 +266,7 @@ func place_building(grid_pos: Vector2, building_type: String):
 			"turns_left": construction_time,
 			"total_turns": construction_time,
 			"target_level": current_level + 1,
-			"is_enemy": placing_enemy
+			"is_enemy": territory_owner == "enemy"
 		}
 	else:
 		# Apply construction time modifiers
@@ -242,17 +277,18 @@ func place_building(grid_pos: Vector2, building_type: String):
 			"type": building_type,
 			"turns_left": modified_time,
 			"total_turns": modified_time,
-			"is_enemy": placing_enemy
+			"is_enemy": territory_owner == "enemy"
 		}
 	
 	# Deduct cost from appropriate resource pool
-	if placing_enemy:
+	if territory_owner == "enemy":
 		resource_manager.enemy_points -= cost
 	else:
 		resource_manager.points -= cost
 	
 	print("Construction started: ", building_type, " at ", grid_pos)
-	print("Points remaining: ", resource_manager.points if !placing_enemy else resource_manager.enemy_points)
+	print("Territory owner: ", territory_owner)
+	print("Points remaining: ", resource_manager.points if territory_owner != "enemy" else resource_manager.enemy_points)
 
 func process_construction():
 	print("Processing construction progress")
