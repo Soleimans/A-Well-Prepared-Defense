@@ -434,30 +434,27 @@ func check_territory_capture(from_pos: Vector2, to_pos: Vector2):
 		var current_owner = territory_manager.get_territory_owner(to_pos)
 		var capturing_player = "enemy" if selected_unit.is_enemy else "player"
 		
-		# Only capture if it's not already owned by the moving unit's side
-		if (selected_unit.is_enemy and current_owner != "enemy") or \
-		   (!selected_unit.is_enemy and current_owner != "player"):
+		# For armoured units, process the entire path regardless of start/end ownership
+		if selected_unit.scene_file_path.contains("armoured"):
+			var path_points = get_line_points(from_pos, to_pos)
 			
-			# For armoured units, capture all tiles along the path
-			if selected_unit.scene_file_path.contains("armoured"):
-				var path_points = get_line_points(from_pos, to_pos)
-				
-				# Skip the first point (starting position)
-				for i in range(1, path_points.size()):
-					var grid_pos = path_points[i]
+			# Process every point in the path (including start and end)
+			for point in path_points:
+				# Verify the position is within grid bounds
+				if point.x >= 0 and point.x < grid.grid_size.x and \
+				   point.y >= 0 and point.y < grid.grid_size.y:
+					# Get current territory owner
+					current_owner = territory_manager.get_territory_owner(point)
 					
-					# Verify the position is within grid bounds
-					if grid_pos.x >= 0 and grid_pos.x < grid.grid_size.x and \
-					   grid_pos.y >= 0 and grid_pos.y < grid.grid_size.y:
-						# Get current territory owner
-						current_owner = territory_manager.get_territory_owner(grid_pos)
-						
-						# Only capture if not already owned
-						if (selected_unit.is_enemy and current_owner != "enemy") or \
-						   (!selected_unit.is_enemy and current_owner != "player"):
-							territory_manager.capture_territory(grid_pos, capturing_player)
-			else:
-				# For infantry and garrison, just capture the destination tile
+					# Capture if it's not our territory
+					if selected_unit.is_enemy and current_owner != "enemy":
+						territory_manager.capture_territory(point, "enemy")
+					elif !selected_unit.is_enemy and current_owner != "player":
+						territory_manager.capture_territory(point, "player")
+		else:
+			# For infantry and garrison, only capture if destination isn't owned
+			if (selected_unit.is_enemy and current_owner != "enemy") or \
+			   (!selected_unit.is_enemy and current_owner != "player"):
 				territory_manager.capture_territory(to_pos, capturing_player)
 
 
