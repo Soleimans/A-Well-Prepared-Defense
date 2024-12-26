@@ -57,8 +57,8 @@ func setup_progress_bars():
 		equipment_bar.add_theme_stylebox_override("fill", equipment_style)
 		
 		# Set the size and layout
-		health_bar.custom_minimum_size = Vector2(10, 50)  # Thin and tall
-		equipment_bar.custom_minimum_size = Vector2(10, 50)  # Thin and tall
+		health_bar.custom_minimum_size = Vector2(4, 18)  # Thin and tall
+		equipment_bar.custom_minimum_size = Vector2(4, 18)  # Thin and tall
 		
 		# Set initial values
 		health_bar.value = health_bar.max_value
