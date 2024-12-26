@@ -78,9 +78,12 @@ func _input(event):
 			unit_manager.try_place_unit(grid_pos)
 			
 		else:
-			# Check if we have a selected unit
-			if unit_manager.selected_unit != null:
-				# Check if there are enemy units at the clicked position
+			# Check if we're clicking on the same tile as a selected unit
+			if unit_manager.selected_unit != null and grid_pos == unit_manager.unit_start_pos:
+				print("Clicking on selected unit's tile")
+				unit_manager.try_select_unit(grid_pos)
+			# Check if we have a selected unit and we're clicking on an enemy
+			elif unit_manager.selected_unit != null:
 				var enemy_units = unit_manager.get_enemy_units_at(grid_pos)
 				
 				if enemy_units.size() > 0:
@@ -103,7 +106,8 @@ func _input(event):
 					print("Executing move")
 					unit_manager.execute_move(grid_pos)
 				else:
-					print("Invalid move location")
+					print("Invalid move location - checking for unit selection")
+					unit_manager.try_select_unit(grid_pos)
 			else:
 				# No unit selected, try to select one
 				print("Attempting to select/cycle units")

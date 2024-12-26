@@ -142,12 +142,8 @@ func get_movable_units_at_position(grid_pos: Vector2) -> Array:
 	print("\nChecking movable units at position: ", grid_pos)
 	if grid_pos in units_in_cells:
 		for unit in units_in_cells[grid_pos]:
-			print("Unit found: ", unit)
-			print("Can move?: ", unit.has_method("can_move") and unit.can_move())
-			if unit.has_method("can_move"):
-				print("Movement points: ", unit.movement_points)
-				print("Has moved: ", unit.has_moved)
 			if unit and is_instance_valid(unit) and unit.has_method("can_move") and unit.can_move():
+				print("Found movable unit: ", unit.scene_file_path)
 				movable_units.append(unit)
 	print("Total movable units found: ", movable_units.size())
 	return movable_units
@@ -157,34 +153,29 @@ func cycle_through_units(grid_pos: Vector2) -> bool:
 	print("\nCycling through units")
 	print("Total movable units: ", movable_units.size())
 	print("Currently selected unit: ", selected_unit)
+	print("Current unit index: ", current_unit_index)
 	
 	if movable_units.size() == 0:
 		print("No movable units found")
+		current_unit_index = -1
 		return false
 		
-	var next_unit
-	if !selected_unit:
-		print("No unit currently selected, selecting first unit")
-		next_unit = movable_units[0]
-	else:
-		print("Finding current unit in movable units array")
-		var current_index = movable_units.find(selected_unit)
-		print("Current index: ", current_index)
-		if current_index != -1:
-			current_index = (current_index + 1) % movable_units.size()
-			print("New index after cycling: ", current_index)
-			next_unit = movable_units[current_index]
-		else:
-			print("Current unit not found in movable units, selecting first")
-			next_unit = movable_units[0]
-	
-	# Update selection and highlighting
+	# Clear previous highlighting
 	if currently_highlighted_unit:
 		set_unit_highlight(currently_highlighted_unit, false)
+		
+	# Update current_unit_index
+	if current_unit_index == -1 or !selected_unit:
+		current_unit_index = 0
+	else:
+		current_unit_index = (current_unit_index + 1) % movable_units.size()
 	
-	selected_unit = next_unit
-	currently_highlighted_unit = next_unit
-	set_unit_highlight(next_unit, true)
+	print("New unit index: ", current_unit_index)
+	
+	# Select the next unit
+	selected_unit = movable_units[current_unit_index]
+	currently_highlighted_unit = selected_unit
+	set_unit_highlight(selected_unit, true)
 	unit_start_pos = grid_pos
 	highlight_valid_moves(grid_pos)
 	
@@ -252,38 +243,58 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 
 func try_select_unit(grid_pos: Vector2):
 	print("\nUnitManager: Attempting to select unit at position: ", grid_pos)
+	print("Current state:")
+	print("- Selected unit: ", selected_unit)
+	print("- Last clicked position: ", last_clicked_pos)
+	print("- Current unit index: ", current_unit_index)
+	print("- Units at position: ", units_in_cells[grid_pos] if units_in_cells.has(grid_pos) else "None")
 	
 	# Get reference to combat manager
 	var combat_manager = get_parent().get_node("CombatManager")
 	
-	# If we have a selected unit and click on an enemy unit, initiate combat
+	# Check for combat initiation
 	if selected_unit and units_in_cells.has(grid_pos):
 		var enemy_units = get_enemy_units_at(grid_pos)
+		print("Enemy units found at position: ", enemy_units.size())
 		if enemy_units.size() > 0:
-			print("Found enemy units at position: ", grid_pos)
 			if is_adjacent(unit_start_pos, grid_pos):
-				print("Position is adjacent, initiating combat!")
-				print("Selected unit position: ", unit_start_pos)
-				print("Enemy unit position: ", grid_pos)
+				print("Initiating combat between adjacent units")
 				combat_manager.initiate_combat(unit_start_pos, grid_pos)
 				deselect_current_unit()
 				return
 			else:
-				print("Enemy found but not adjacent. Unit start pos: ", unit_start_pos, " Enemy pos: ", grid_pos)
+				print("Enemy units found but not adjacent")
 	
-	# If we have a selected unit and click outside valid moves, deselect
+	# Check if clicking outside valid moves
 	if selected_unit and !is_valid_move(grid_pos) and grid_pos != last_clicked_pos:
+		print("Clicked outside valid moves - deselecting")
 		deselect_current_unit()
 		return
 	
-	# If clicking the same tile, cycle through units
+	# Handle unit cycling
 	if grid_pos == last_clicked_pos:
-		print("UnitManager: Same tile clicked, cycling units")
-		cycle_through_units(grid_pos)
+		print("Same tile clicked - attempting to cycle units")
+		# Get all movable units at this position before cycling
+		var movable_units = get_movable_units_at_position(grid_pos)
+		print("Movable units at position: ", movable_units.size())
+		if movable_units.size() > 0:
+			# Reset current_unit_index if it's invalid
+			if current_unit_index >= movable_units.size():
+				current_unit_index = -1
+			cycle_through_units(grid_pos)
+		else:
+			print("No movable units to cycle through")
 	else:
-		# New tile clicked
+		print("New tile clicked - resetting cycle")
 		last_clicked_pos = grid_pos
+		current_unit_index = -1
 		cycle_through_units(grid_pos)
+	
+	print("After selection attempt:")
+	print("- Selected unit: ", selected_unit)
+	print("- Current unit index: ", current_unit_index)
+	if selected_unit:
+		print("- Selected unit type: ", selected_unit.scene_file_path)
 
 func get_enemy_units_at(pos: Vector2) -> Array:
 	var enemy_units = []
