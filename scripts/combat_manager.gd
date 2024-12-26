@@ -106,8 +106,9 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 	print("Number of defending units: ", defending_units.size())
 	
 	if attacking_units.size() > 0 and defending_units.size() > 0:
-		# For simplicity, just use the first unit from each side
-		var attacker = attacking_units[0]
+		# Get the selected unit for attack
+		var attacker = unit_manager.selected_unit if unit_manager.selected_unit else attacking_units[0]
+		# Still use the first unit as defender
 		var defender = defending_units[0]
 		
 		print("Combat Starting!")
