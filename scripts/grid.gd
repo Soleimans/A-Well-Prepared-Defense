@@ -117,51 +117,47 @@ func _process(_delta):
 	queue_redraw()
 
 func _draw():
+	# Fill ENTIRE grid with base color first
+	var full_rect = Rect2(0, 0, 
+		grid_size.x * tile_size.x,
+		grid_size.y * tile_size.y)
+	draw_rect(full_rect, Color(0.2, 0.2, 0.2, 1.0))
+
 	# Get reference to territory manager
 	var territory_manager = get_node("TerritoryManager")
-	var war_active = territory_manager.war_active if territory_manager else false
-
-	if war_active:
-		# During war, let territory manager handle ALL territory drawing
-		if territory_manager:
-			territory_manager.draw(self)
-	else:
-		# Pre-war territory drawing
-		# Draw background area (darker green)
-		var full_width = total_grid_size.x * tile_size.x
-		var full_height = total_grid_size.y * tile_size.y
-		var background_rect = Rect2(0, 0, full_width, full_height)
-		draw_rect(background_rect, Color(0.2, 0.4, 0.2, 1.0))
-
-		# Draw columns with different colors based on their state
-		for x in range(playable_area.x):
-			var column_rect = Rect2(
-				x * tile_size.x,
-				0,
+	
+	# Draw territories
+	for x in range(grid_size.x):
+		for y in range(grid_size.y):
+			var pos = Vector2(x, y)
+			var rect = Rect2(
+				pos.x * tile_size.x,
+				pos.y * tile_size.y,
 				tile_size.x,
-				playable_area.y * tile_size.y
+				tile_size.y
 			)
 			
-			if x in building_manager.buildable_columns:
-				draw_rect(column_rect, Color(0.3, 0.6, 0.3, 1.0))
-			elif x == building_manager.buildable_columns.size() and building_manager.can_unlock_next_column() and x <= building_manager.max_unlockable_column:
-				draw_rect(column_rect, Color(0.4, 0.5, 0.2, 1.0))
-				
-				var mouse_pos = get_global_mouse_position()
-				var grid_pos = world_to_grid(mouse_pos)
-				if grid_pos.x == x:
-					var cost = building_manager.get_next_column_cost()
-					draw_string(
-						ThemeDB.fallback_font,
-						Vector2(x * tile_size.x + 10, tile_size.y - 10),
-						"Cost: " + str(cost),
-						HORIZONTAL_ALIGNMENT_LEFT,
-						-1,
-						16,
-						Color.WHITE
-					)
+			var color
+			var territory_owner = "neutral"
+			
+			if territory_manager:
+				territory_owner = territory_manager.get_territory_owner(pos)
 			else:
-				draw_rect(column_rect, Color(0.2, 0.3, 0.2, 1.0))
+				# Default territory assignment if territory manager not found
+				if x < 3 or x in building_manager.buildable_columns:  # Starting columns OR unlocked by player
+					territory_owner = "player"
+				elif x >= grid_size.x - 3 or x in building_manager.enemy_buildable_columns:  # Starting columns OR unlocked by enemy
+					territory_owner = "enemy"
+			
+			match territory_owner:
+				"player":
+					color = Color(0, 0.5, 1, 1)  # Solid blue
+				"enemy":
+					color = Color(1, 0, 0, 1)    # Solid red
+				_: # neutral
+					color = Color(0.2, 0.2, 0.2, 1)  # Gray for neutral
+			
+			draw_rect(rect, color)
 	
 	# Always draw grid lines
 	for x in range(playable_area.x + 1):

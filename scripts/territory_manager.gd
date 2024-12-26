@@ -33,7 +33,7 @@ func initialize_territory():
 	for x in range(grid.grid_size.x):
 		for y in range(grid.grid_size.y):
 			var pos = Vector2(x, y)
-			# Check if column is already unlocked by either side
+			# Initialize starting territories
 			if x < 3 or x in building_manager.buildable_columns:  # Starting columns OR unlocked by player
 				territory_ownership[pos] = "player"
 			elif x >= grid.grid_size.x - 3 or x in building_manager.enemy_buildable_columns:  # Starting columns OR unlocked by enemy
@@ -46,63 +46,23 @@ func initialize_territory():
 func _on_turn_changed(current_turn: int):
 	if current_turn >= 10 and !war_active:  # War starts at turn 10
 		war_active = true
-		_on_war_started()
 		print("TerritoryManager: War has begun!")
-
-func _on_war_started():
-	# Disable column unlocking in BuildingManager
-	if building_manager:
-		building_manager.war_mode = true
-		print("TerritoryManager: Building Manager war mode enabled")
-	
-	# Completely reset territory ownership
-	territory_ownership.clear()
-	
-	# First initialize everything as neutral
-	for x in range(grid.grid_size.x):
-		for y in range(grid.grid_size.y):
-			territory_ownership[Vector2(x, y)] = "neutral"
-	
-	# Then set the pre-war territories explicitly
-	for x in range(grid.grid_size.x):
-		for y in range(grid.grid_size.y):
-			var pos = Vector2(x, y)
-			# First apply buildable columns from before war
-			if x in building_manager.buildable_columns:
-				territory_ownership[pos] = "player"
-			elif x in building_manager.enemy_buildable_columns:
-				territory_ownership[pos] = "enemy"
-			# Then override with starting territories
-			if x < 3:  # First 3 columns always player
-				territory_ownership[pos] = "player"
-			elif x >= grid.grid_size.x - 3:  # Last 3 columns always enemy
-				territory_ownership[pos] = "enemy"
-	
-	# Ensure ALL pre-war drawing is disabled
-	if grid:
-		grid.queue_redraw()
-	
-	print("TerritoryManager: Territory ownership reassigned for war start")
-	debug_print_territory()
+		debug_print_territory()
 
 func get_territory_owner(pos: Vector2) -> String:
 	return territory_ownership.get(pos, "neutral")
 
 func capture_territory(pos: Vector2, new_owner: String):
-	if !war_active:
-		print("TerritoryManager: Cannot capture territory - war not active")
-		return
-		
 	print("TerritoryManager: Capturing territory at ", pos, " for ", new_owner)
 	
-	# Set the new ownership directly without erasing first
+	# Set the new ownership
 	territory_ownership[pos] = new_owner
 	
 	# Handle buildings at this position
 	if building_manager.grid_cells.has(pos):
 		transfer_buildings(pos, new_owner)
 	
-	# Request a single redraw
+	# Request a redraw
 	grid.queue_redraw()
 
 func transfer_buildings(pos: Vector2, new_owner: String):
@@ -127,16 +87,7 @@ func transfer_buildings(pos: Vector2, new_owner: String):
 		construction.is_enemy = (new_owner == "enemy")
 
 func draw(grid_node: Node2D):
-	if !war_active:
-		return
-	
-	# Fill ENTIRE grid with base color first
-	var full_rect = Rect2(0, 0, 
-		grid.grid_size.x * grid.tile_size.x,
-		grid.grid_size.y * grid.tile_size.y)
-	grid_node.draw_rect(full_rect, Color(0.2, 0.2, 0.2, 1.0))
-	
-	# Then draw ALL territory tiles, including neutral ones
+	# Draw ALL territory tiles
 	for x in range(grid.grid_size.x):
 		for y in range(grid.grid_size.y):
 			var pos = Vector2(x, y)
@@ -154,7 +105,7 @@ func draw(grid_node: Node2D):
 				"enemy":
 					color = Color(1, 0, 0, 1)    # Solid red
 				_: # neutral
-					color = Color(0.2, 0.2, 0.2, 1)
+					color = Color(0.2, 0.2, 0.2, 1)  # Gray for neutral
 			
 			grid_node.draw_rect(rect, color)
 
