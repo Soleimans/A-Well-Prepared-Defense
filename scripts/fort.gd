@@ -11,3 +11,5 @@ func set_level(new_level):
 
 func update_label():
 	$Sprite2D/Label.text = "Fort Level " + str(level)
+	# Always set label to white regardless of building ownership
+	$Sprite2D/Label.add_theme_color_override("font_color", Color.WHITE)

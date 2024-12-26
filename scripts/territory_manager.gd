@@ -110,23 +110,21 @@ func transfer_buildings(pos: Vector2, new_owner: String):
 	if building_manager.grid_cells.has(pos):
 		var building = building_manager.grid_cells[pos]
 		if building:
-			# Change the main building's color if it has a sprite
+			# Change only the sprite texture color
 			if building.has_node("Sprite2D"):
-				building.get_node("Sprite2D").modulate = Color.RED if new_owner == "enemy" else Color.WHITE
+				var sprite = building.get_node("Sprite2D")
+				sprite.self_modulate = Color.RED if new_owner == "enemy" else Color.WHITE
 			
 			# If there are multiple buildings (like a fort under a factory), change those too
 			for child in building.get_children():
 				if child.has_node("Sprite2D"):
-					child.get_node("Sprite2D").modulate = Color.RED if new_owner == "enemy" else Color.WHITE
-			
-			print("TerritoryManager: Transferred building at ", pos, " to ", new_owner)
+					var child_sprite = child.get_node("Sprite2D")
+					child_sprite.self_modulate = Color.RED if new_owner == "enemy" else Color.WHITE
 	
 	# Handle any ongoing construction at this position
 	if pos in building_manager.buildings_under_construction:
 		var construction = building_manager.buildings_under_construction[pos]
-		# Update the construction ownership
 		construction.is_enemy = (new_owner == "enemy")
-		print("TerritoryManager: Updated construction ownership at ", pos)
 
 func draw(grid_node: Node2D):
 	if !war_active:

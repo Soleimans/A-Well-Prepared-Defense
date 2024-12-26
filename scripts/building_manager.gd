@@ -261,28 +261,25 @@ func process_construction():
 	for grid_pos in buildings_under_construction:
 		var construction = buildings_under_construction[grid_pos]
 		construction.turns_left -= 1
-		print("Construction at ", grid_pos, " has ", construction.turns_left, " turns left")
 		
 		if construction.turns_left <= 0:
 			var building
 			match construction.type:
 				"civilian_factory":
 					building = civilian_factory_scene.instantiate()
-					print("Completed civilian factory")
 				"military_factory":
 					building = military_factory_scene.instantiate()
-					print("Completed military factory")
 				"fort":
 					building = fort_scene.instantiate()
 					fort_levels[grid_pos] = construction.target_level
 					if building.has_method("set_level"):
 						building.set_level(fort_levels[grid_pos])
-					print("Completed fort level ", fort_levels[grid_pos])
 			
 			if building:
-				# Set enemy color if it's an enemy building
+				# Set enemy color only on the sprite texture, not the whole node
 				if construction.is_enemy and building.has_node("Sprite2D"):
-					building.get_node("Sprite2D").modulate = Color.RED
+					var sprite = building.get_node("Sprite2D")
+					sprite.self_modulate = Color.RED  # Use self_modulate instead of modulate
 				
 				if construction.type == "fort":
 					if grid_cells[grid_pos]:
@@ -318,7 +315,6 @@ func process_construction():
 	# Remove completed constructions
 	for pos in finished_positions:
 		buildings_under_construction.erase(pos)
-		print("Removed completed construction at ", pos)
 
 func draw(grid_node: Node2D):
 	# Only draw buildable zones before war
