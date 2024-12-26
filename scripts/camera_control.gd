@@ -9,6 +9,9 @@ var max_zoom = 2.0  # Maximum zoom in
 var zoom_speed = 0.1
 var current_zoom = 0.7
 
+# Camera movement
+var camera_speed = 1000
+
 func _ready():
 	# Set initial zoom level
 	zoom = Vector2(current_zoom, current_zoom)
@@ -34,12 +37,32 @@ func _ready():
 		print("Grid node not found!")
 
 func _input(event):
+	# Handle zoom only in _input
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			# Zoom in (now uses + for a smaller number = closer zoom)
 			current_zoom = clamp(current_zoom + zoom_speed, min_zoom, max_zoom)
 			zoom = Vector2(current_zoom, current_zoom)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			# Zoom out (now uses - for a larger number = further zoom)
 			current_zoom = clamp(current_zoom - zoom_speed, min_zoom, max_zoom)
 			zoom = Vector2(current_zoom, current_zoom)
+
+func _process(delta):
+	var input_dir = Vector2.ZERO
+	
+	# Check for held keys
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+		input_dir.x += 1
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+		input_dir.x -= 1
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		input_dir.y += 1
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		input_dir.y -= 1
+	
+	if input_dir.length() > 0:
+		input_dir = input_dir.normalized()
+		position += input_dir * camera_speed * (1.0 / current_zoom) * delta
+	
+	# Clamp position to limits
+	position.x = clamp(position.x, limit_left, limit_right)
+	position.y = clamp(position.y, limit_top, limit_bottom)
