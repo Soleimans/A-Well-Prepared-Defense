@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=26 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://images/image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://scripts/button.gd" id="1_d0gsr"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://scripts/turn_count.gd" id="5_r0qd4"]
 [ext_resource type="PackedScene" uid="uid://cn161ob8umr6q" path="res://scenes/politics_menu.tscn" id="5_rydge"]
 [ext_resource type="Script" path="res://scripts/turn_button.gd" id="6_rwev8"]
+[ext_resource type="PackedScene" uid="uid://cy45gxjdg2qsn" path="res://scenes/end_menu.tscn" id="7_36q0d"]
 [ext_resource type="Script" path="res://scripts/war_count.gd" id="7_m2aps"]
 [ext_resource type="Script" path="res://scripts/building_manager.gd" id="10_tbqb7"]
 [ext_resource type="Script" path="res://scripts/unit_manager.gd" id="11_f7f17"]
@@ -127,6 +128,8 @@ script = ExtResource("6_rwev8")
 
 [node name="Debug" parent="UILayer" instance=ExtResource("14_4peq5")]
 script = ExtResource("15_m3oiu")
+
+[node name="end_menu" parent="UILayer" instance=ExtResource("7_36q0d")]
 
 [node name="Background" type="Node2D" parent="."]
 

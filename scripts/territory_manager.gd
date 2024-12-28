@@ -9,6 +9,7 @@ var territory_ownership = {}
 @onready var building_manager = get_parent().get_node("BuildingManager")
 @onready var unit_manager = get_parent().get_node("UnitManager")
 @onready var resource_manager = get_parent().get_node("ResourceManager")
+@onready var end_menu = get_node("/root/Main/UILayer/end_menu")
 
 # Flag to track if war has started
 var war_active = false
@@ -69,6 +70,29 @@ func capture_territory(pos: Vector2, new_owner: String):
 	
 	# Request a redraw
 	grid.queue_redraw()
+	
+	# Check victory conditions after territory capture
+	check_victory_conditions()
+
+func check_victory_conditions():
+	var player_territory = 0
+	var enemy_territory = 0
+	var total_tiles = grid.grid_size.x * grid.grid_size.y
+	
+	# Count territories
+	for x in range(grid.grid_size.x):
+		for y in range(grid.grid_size.y):
+			var check_pos = Vector2(x, y)
+			var owner = get_territory_owner(check_pos)
+			match owner:
+				"player":
+					player_territory += 1
+				"enemy":
+					enemy_territory += 1
+	
+	# Show end menu if someone has won
+	if end_menu and (player_territory == total_tiles or enemy_territory == total_tiles):
+		end_menu.force_show()
 
 func transfer_buildings(pos: Vector2, new_owner: String):
 	# Check for buildings at this position
