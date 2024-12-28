@@ -252,7 +252,7 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 					print("Position already occupied by non-fort building")
 					return false
 		"fort":
-			if fort_levels[grid_pos] >= 10:
+			if fort_levels.get(grid_pos, 0) >= 10:
 				print("Maximum fort level reached")
 				return false
 	
@@ -277,6 +277,14 @@ func place_building(grid_pos: Vector2, building_type: String):
 	
 	# Start construction
 	if building_type == "fort":
+		# Remove any existing fort before starting construction
+		if grid_cells[grid_pos] and grid_cells[grid_pos].has_node("fort"):
+			grid_cells[grid_pos].get_node("fort").queue_free()
+			
+		# Initialize fort level if it doesn't exist
+		if !fort_levels.has(grid_pos):
+			fort_levels[grid_pos] = 0
+			
 		var current_level = fort_levels[grid_pos]
 		var construction_time = 1 if (fort_fast_construction or current_level < 5) else 2
 		buildings_under_construction[grid_pos] = {
@@ -317,54 +325,98 @@ func process_construction():
 		construction.turns_left -= 1
 		
 		if construction.turns_left <= 0:
-			var building
 			match construction.type:
 				"civilian_factory":
-					building = civilian_factory_scene.instantiate()
-				"military_factory":
-					building = military_factory_scene.instantiate()
-				"fort":
-					building = fort_scene.instantiate()
-					fort_levels[grid_pos] = construction.target_level
-					if building.has_method("set_level"):
-						building.set_level(fort_levels[grid_pos])
-			
-			if building:
-				# Set enemy color only on the sprite texture, not the whole node
-				if construction.is_enemy and building.has_node("Sprite2D"):
-					var sprite = building.get_node("Sprite2D")
-					sprite.self_modulate = Color.RED  # Use self_modulate instead of modulate
-				
-				if construction.type == "fort":
-					if grid_cells[grid_pos]:
-						grid_cells[grid_pos].add_child(building)
-						building.position = Vector2.ZERO
-					else:
+					var building = civilian_factory_scene.instantiate()
+					if building:
+						# Set enemy color only on the sprite texture, not the whole node
+						if construction.is_enemy and building.has_node("Sprite2D"):
+							var sprite = building.get_node("Sprite2D")
+							sprite.self_modulate = Color.RED
+
+						# Save existing fort if there is one
+						var existing_fort = null
+						if grid_cells[grid_pos] and grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
+							existing_fort = grid_cells[grid_pos]
+							existing_fort.get_parent().remove_child(existing_fort)
+
+						# Remove old building if it exists and isn't a fort
+						if grid_cells[grid_pos] and not grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
+							grid_cells[grid_pos].queue_free()
+
+						# Add the new factory
 						grid.add_child(building)
 						grid_cells[grid_pos] = building
 						building.position = grid.grid_to_world(grid_pos)
-				else:
-					# Save existing fort if there is one
+
+						# Re-add the fort if there was one
+						if existing_fort:
+							building.add_child(existing_fort)
+							existing_fort.position = Vector2.ZERO
+
+				"military_factory":
+					var building = military_factory_scene.instantiate()
+					if building:
+						if construction.is_enemy and building.has_node("Sprite2D"):
+							var sprite = building.get_node("Sprite2D")
+							sprite.self_modulate = Color.RED
+
+						# Save existing fort if there is one
+						var existing_fort = null
+						if grid_cells[grid_pos] and grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
+							existing_fort = grid_cells[grid_pos]
+							existing_fort.get_parent().remove_child(existing_fort)
+
+						# Remove old building if it exists and isn't a fort
+						if grid_cells[grid_pos] and not grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
+							grid_cells[grid_pos].queue_free()
+
+						# Add the new factory
+						grid.add_child(building)
+						grid_cells[grid_pos] = building
+						building.position = grid.grid_to_world(grid_pos)
+
+						# Re-add the fort if there was one
+						if existing_fort:
+							building.add_child(existing_fort)
+							existing_fort.position = Vector2.ZERO
+
+				"fort":
+					fort_levels[grid_pos] = construction.target_level
+					# If there's already a fort, just update its level
 					var existing_fort = null
-					if grid_cells[grid_pos] and grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
-						existing_fort = grid_cells[grid_pos]
-						existing_fort.get_parent().remove_child(existing_fort)
+					if grid_cells[grid_pos]:
+						if grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
+							existing_fort = grid_cells[grid_pos]
+						else:
+							# Check children for fort
+							for child in grid_cells[grid_pos].get_children():
+								if child.scene_file_path and child.scene_file_path.ends_with("fort.tscn"):
+									existing_fort = child
+									break
 					
-					# Remove old building if it exists and isn't a fort
-					if grid_cells[grid_pos] and not grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
-						grid_cells[grid_pos].queue_free()
-					
-					# Add the new factory
-					grid.add_child(building)
-					grid_cells[grid_pos] = building
-					building.position = grid.grid_to_world(grid_pos)
-					
-					# Re-add the fort if there was one
 					if existing_fort:
-						building.add_child(existing_fort)
-						existing_fort.position = Vector2.ZERO
-					
-				finished_positions.append(grid_pos)
+						if existing_fort.has_method("force_update_level"):
+							existing_fort.force_update_level(construction.target_level)
+					else:
+						# Create new fort if none exists
+						var building = fort_scene.instantiate()
+						if building.has_method("set_level"):
+							building.set_level(fort_levels[grid_pos])
+						
+						if construction.is_enemy and building.has_node("Sprite2D"):
+							var sprite = building.get_node("Sprite2D")
+							sprite.self_modulate = Color.RED
+
+						if grid_cells[grid_pos]:
+							grid_cells[grid_pos].add_child(building)
+							building.position = Vector2.ZERO
+						else:
+							grid.add_child(building)
+							grid_cells[grid_pos] = building
+							building.position = grid.grid_to_world(grid_pos)
+			
+			finished_positions.append(grid_pos)
 	
 	# Remove completed constructions
 	for pos in finished_positions:
