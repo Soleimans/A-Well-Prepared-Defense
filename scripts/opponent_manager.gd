@@ -42,7 +42,7 @@ func get_available_build_slots() -> int:
 				available_slots += 1
 		else:
 			available_slots += 1
-	
+	 
 	return available_slots
 
 func should_unlock_column() -> bool:
@@ -254,13 +254,46 @@ func attempt_build_at_position(position: Vector2, building_type: String) -> bool
 	building_manager.placing_enemy = false
 	return false
 
+func count_adjacent_buildings(pos: Vector2) -> int:
+	var count = 0
+	var directions = [
+		Vector2(1, 0),   # right
+		Vector2(-1, 0),  # left
+		Vector2(0, 1),   # down
+		Vector2(0, -1),  # up
+		Vector2(1, 1),   # down-right
+		Vector2(-1, 1),  # down-left
+		Vector2(1, -1),  # up-right
+		Vector2(-1, -1)  # up-left
+	]
+	
+	for dir in directions:
+		var check_pos = pos + dir
+		# Check if position is within grid bounds
+		if check_pos.x >= 0 and check_pos.x < grid.grid_size.x and \
+		   check_pos.y >= 0 and check_pos.y < grid.grid_size.y:
+			# Check if there's a building at this position
+			if building_manager.grid_cells.has(check_pos) and building_manager.grid_cells[check_pos] != null:
+				# Verify it's an enemy building
+				var building = building_manager.grid_cells[check_pos]
+				if building.has_node("Sprite2D") and building.get_node("Sprite2D").self_modulate == Color.RED:
+					# Count factories and positions with forts
+					if building.scene_file_path.ends_with("civilian_factory.tscn") or \
+					   building.scene_file_path.ends_with("military_factory.tscn") or \
+					   building.scene_file_path.ends_with("fort.tscn") or \
+					   building_manager.fort_levels.get(check_pos, 0) > 0:
+						count += 1
+	
+	print("Position ", pos, " has ", count, " adjacent enemy buildings")
+	return count
+
 func attempt_building():
 	print("\n=== ATTEMPTING ENEMY BUILDING ===")
 	var actions_taken = 0
 	const ACTIONS_PER_TURN = 2
 	
-	# Check if we should unlock a new column first
-	if should_unlock_column():
+	# Check if we should unlock a new column first (only before war)
+	if !territory_manager.war_active and should_unlock_column():
 		print("Unlocking new column for enemy")
 		building_manager.unlock_next_enemy_column()
 		actions_taken += 1
@@ -269,41 +302,88 @@ func attempt_building():
 		var buildable_positions = get_buildable_positions()
 		if !buildable_positions.is_empty():
 			# Try to use the remaining action to build
-			if enemy_civilian_factory_count < 5:
+			if enemy_civilian_factory_count < 8:
 				if attempt_build_at_position(buildable_positions[0], "civilian_factory"):
 					actions_taken += 1
 	
 	# If we didn't unlock a column or have actions remaining, proceed with normal building
 	if actions_taken < ACTIONS_PER_TURN:
-		# First phase: Build 5 civilian factories
-		if enemy_civilian_factory_count < 5:
-			print("Building initial civilian factories (", enemy_civilian_factory_count, "/5)")
-			var buildable_positions = get_buildable_positions()
+		var buildable_positions = get_buildable_positions()
+		var fort_positions = get_fort_buildable_positions()
+		
+		if territory_manager.war_active:
+			# During war, prioritize filling all available spaces
+			print("War is active - Filling all available positions")
+			print("Available build positions: ", buildable_positions.size())
+			print("Current military factories: ", enemy_military_factory_count)
+			print("Current civilian factories: ", enemy_civilian_factory_count)
 			
-			# Try to build civilian factories with remaining actions
-			while actions_taken < ACTIONS_PER_TURN and !buildable_positions.is_empty():
-				if attempt_build_at_position(buildable_positions[0], "civilian_factory"):
-					actions_taken += 1
-				buildable_positions.remove_at(0)
-		else:
-			# After 5 civilian factories, handle military factories and forts
-			var buildable_positions = get_buildable_positions()
-			var fort_positions = get_fort_buildable_positions()
+			# Sort buildable positions to prioritize filling gaps
+			buildable_positions.sort_custom(func(a, b): 
+				# Prioritize positions closer to existing buildings
+				var a_surrounded = count_adjacent_buildings(a)
+				var b_surrounded = count_adjacent_buildings(b)
+				if a_surrounded != b_surrounded:
+					return a_surrounded > b_surrounded
+				# If equal surroundings, prefer rightmost columns
+				return a.x > b.x
+			)
 			
-			# Determine if we need military factories
-			var need_military = enemy_military_factory_count < 5
-			
-			while actions_taken < ACTIONS_PER_TURN:
-				if need_military and !buildable_positions.is_empty():
-					if attempt_build_at_position(buildable_positions[0], "military_factory"):
+			while actions_taken < ACTIONS_PER_TURN and (!buildable_positions.is_empty() or !fort_positions.is_empty()):
+				# Always try to build in empty spaces first
+				if !buildable_positions.is_empty():
+					var build_pos = buildable_positions[0]
+					print("Attempting to build at position: ", build_pos)
+					print("Adjacent buildings: ", count_adjacent_buildings(build_pos))
+					
+					# During war, always try military factory first
+					if attempt_build_at_position(build_pos, "military_factory"):
 						actions_taken += 1
+						print("Successfully built military factory")
+					# If military factory fails (usually due to cost), try civilian factory
+					elif attempt_build_at_position(build_pos, "civilian_factory"):
+						actions_taken += 1
+						print("Successfully built civilian factory")
+					# If both fail, remove this position and try next one
 					buildable_positions.remove_at(0)
+				# If no empty spaces or building failed, upgrade forts
 				elif !fort_positions.is_empty():
+					print("Attempting to build/upgrade fort at ", fort_positions[0])
 					if attempt_build_at_position(fort_positions[0], "fort"):
 						actions_taken += 1
+						print("Successfully built/upgraded fort")
 					fort_positions.remove_at(0)
 				else:
 					break
+		else:
+			# Peace time building logic
+			print("Peace time - Building infrastructure")
+			if enemy_civilian_factory_count < 8:
+				print("Building civilian factories (", enemy_civilian_factory_count, "/8)")
+				while actions_taken < ACTIONS_PER_TURN and !buildable_positions.is_empty():
+					if attempt_build_at_position(buildable_positions[0], "civilian_factory"):
+						actions_taken += 1
+						print("Successfully built civilian factory")
+					buildable_positions.remove_at(0)
+			else:
+				# After 8 civilian factories, build military factories and forts
+				print("Building military infrastructure")
+				
+				while actions_taken < ACTIONS_PER_TURN and (!buildable_positions.is_empty() or !fort_positions.is_empty()):
+					if !buildable_positions.is_empty():
+						print("Attempting to build military factory")
+						if attempt_build_at_position(buildable_positions[0], "military_factory"):
+							actions_taken += 1
+							print("Successfully built military factory")
+						buildable_positions.remove_at(0)
+					elif !fort_positions.is_empty():
+						print("Attempting to build/upgrade fort")
+						if attempt_build_at_position(fort_positions[0], "fort"):
+							actions_taken += 1
+							print("Successfully built/upgraded fort")
+						fort_positions.remove_at(0)
+					else:
+						break
 	
 	print("Actions taken this turn: ", actions_taken)
 	print("=== ENEMY BUILDING ATTEMPT COMPLETE ===\n")
