@@ -71,6 +71,12 @@ func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
 		if selected_unit_type != "" and !selected_unit:
 			# Enemy can only place units in the rightmost column
 			if grid_pos.x == grid.grid_size.x - 1:
+				# Check if the territory is owned by the enemy
+				if territory_manager:
+					var territory_owner = territory_manager.get_territory_owner(grid_pos)
+					if territory_owner != "enemy":
+						print("Cannot place unit - territory not controlled by enemy")
+						return false
 				return true
 			print("Enemy can only place new units in the last column")
 			return false
@@ -91,6 +97,12 @@ func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
 		if selected_unit_type != "" and !selected_unit:
 			# Player can only place units in the leftmost column
 			if grid_pos.x == 0:
+				# Check if the territory is owned by the player
+				if territory_manager:
+					var territory_owner = territory_manager.get_territory_owner(grid_pos)
+					if territory_owner != "player":
+						print("Cannot place unit - territory not controlled by player")
+						return false
 				return true
 			print("Player can only place new units in the first column")
 			return false

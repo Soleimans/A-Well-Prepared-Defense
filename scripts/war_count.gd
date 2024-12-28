@@ -2,7 +2,7 @@ extends Label
 
 signal turn_changed(current_turn)
 
-const WAR_START_TURN = 10
+const WAR_START_TURN = 30
 
 func _ready():
 	# Set initial text

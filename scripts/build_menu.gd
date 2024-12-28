@@ -76,8 +76,8 @@ func _on_unlock_column_input(event):
 			building_selected.emit("unlock_column")
 
 func _on_turn_changed(current_turn: int):
-	# Update label immediately when turn 10 is reached
-	if current_turn == 10:
+	# Update label immediately when turn 30 is reached
+	if current_turn == 30:
 		var cost_label = $Panel/GridContainer/VBoxContainer/HBoxContainer4/Label2
 		cost_label.text = "All Unlocked"
 
@@ -94,8 +94,8 @@ func update_unlock_label():
 		print("ERROR: BuildingManager not found!")
 		return
 	
-	# Check if we're at turn 10 or later
-	if turn_count and turn_count.current_turn >= 10:
+	# Check if we're at turn 30 or later
+	if turn_count and turn_count.current_turn >= 30:
 		cost_label.text = "All Unlocked"
 		return
 		
