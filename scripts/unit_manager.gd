@@ -66,58 +66,51 @@ func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
 		print("BuildingManager not found")
 		return false
 	
-	if is_enemy:
-		# If placing a new unit (not moving)
-		if selected_unit_type != "" and !selected_unit:
-			# Enemy can only place units in the rightmost column
+	# If placing a new unit (not moving)
+	if selected_unit_type != "" and !selected_unit:
+		if placing_enemy:  # Changed from is_enemy to placing_enemy
+			# Enemy can only place units in the last column
 			if grid_pos.x == grid.grid_size.x - 1:
-				# Check if the territory is owned by the enemy
 				if territory_manager:
 					var territory_owner = territory_manager.get_territory_owner(grid_pos)
 					if territory_owner != "enemy":
 						print("Cannot place unit - territory not controlled by enemy")
 						return false
 				return true
-			print("Enemy can only place new units in the last column")
+			print("Enemy can only place units in the last column")
 			return false
-		# For moving existing units
 		else:
-			# During war, units can move anywhere
-			if territory_manager and territory_manager.war_active:
-				return true
-			# Before war, check if column is in enemy territory
-			for column in building_manager.enemy_buildable_columns:
-				if grid_pos.x == column:
-					return true
-			print("Enemy attempted to move outside their territory at column: ", grid_pos.x)
-			print("Enemy buildable columns: ", building_manager.enemy_buildable_columns)
-			return false
-	else:
-		# If placing a new unit (not moving)
-		if selected_unit_type != "" and !selected_unit:
-			# Player can only place units in the leftmost column
+			# Player can only place units in the first column
 			if grid_pos.x == 0:
-				# Check if the territory is owned by the player
 				if territory_manager:
 					var territory_owner = territory_manager.get_territory_owner(grid_pos)
 					if territory_owner != "player":
 						print("Cannot place unit - territory not controlled by player")
 						return false
 				return true
-			print("Player can only place new units in the first column")
+			print("Player can only place units in the first column")
 			return false
-		# For moving existing units
-		else:
-			# During war, units can move anywhere
-			if territory_manager and territory_manager.war_active:
-				return true
-			# Before war, check if column is in player territory
-			for column in building_manager.buildable_columns:
-				if grid_pos.x == column:
-					return true
-			print("Player attempted to move outside their territory at column: ", grid_pos.x)
-			print("Player buildable columns: ", building_manager.buildable_columns)
-			return false
+	
+	# For moving existing units
+	else:
+		# During war, units can move anywhere
+		if territory_manager and territory_manager.war_active:
+			return true
+			
+		# Before war, check territory ownership
+		if territory_manager:
+			var territory_owner = territory_manager.get_territory_owner(grid_pos)
+			if is_enemy and territory_owner != "enemy":
+				print("Enemy attempted to move outside their territory")
+				return false
+			elif !is_enemy and territory_owner != "player":
+				print("Player attempted to move outside their territory")
+				return false
+			return true
+			
+		return false # Default to false if no territory manager found
+	
+	return false # Default case
 
 func is_valid_move(grid_pos: Vector2) -> bool:
 	return grid_pos in valid_move_tiles

@@ -107,23 +107,34 @@ func try_deploy_unit(position: Vector2, unit_type: String) -> bool:
 		unit_manager.placing_enemy = true
 		
 		# Attempt to place the unit
-		if unit_manager.try_place_unit(position):
+		var success = unit_manager.try_place_unit(position)
+		
+		# Always reset the flags
+		unit_manager.selected_unit_type = ""
+		unit_manager.placing_enemy = false
+		
+		if success:
 			print("Successfully deployed ", unit_type, " at ", position)
 			return true
 		else:
 			print("Failed to deploy unit at ", position)
+			return false
 	else:
 		print("Insufficient resources to deploy ", unit_type)
 		print("Available: Military Points = ", resource_manager.enemy_military_points, 
 			  ", Manpower = ", resource_manager.enemy_manpower)
-	
-	# Reset unit manager state
-	unit_manager.selected_unit_type = ""
-	unit_manager.placing_enemy = false
-	return false
+		
+		unit_manager.selected_unit_type = ""
+		unit_manager.placing_enemy = false
+		return false
 
 func attempt_unit_deployment():
 	print("\n=== ATTEMPTING ENEMY UNIT DEPLOYMENT ===")
+	
+	# Always reset placing_enemy at the start
+	unit_manager.placing_enemy = false
+	unit_manager.selected_unit_type = ""
+	
 	var available_positions = get_available_deployment_positions()
 	
 	if available_positions.is_empty():
@@ -155,6 +166,10 @@ func attempt_unit_deployment():
 	
 	print("Deployed ", deployments, " units this turn")
 	print("=== ENEMY UNIT DEPLOYMENT COMPLETE ===\n")
+	
+	# Always ensure placing_enemy is reset at the end
+	unit_manager.placing_enemy = false
+	unit_manager.selected_unit_type = ""
 
 func _on_turn_button_pressed():
 	print("\n=== ENEMY UNIT DEPLOYMENT START ===")
