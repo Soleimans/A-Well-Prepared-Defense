@@ -60,7 +60,25 @@ func initialize(size: Vector2):
 		for y in range(size.y):
 			grid_cells[Vector2(x, y)] = null
 			fort_levels[Vector2(x, y)] = 0
-	print("BuildingManager initialized")
+	
+	# Add starting civilian factories
+	# Player factory in top left (0,0)
+	var player_factory = civilian_factory_scene.instantiate()
+	grid.add_child(player_factory)
+	grid_cells[Vector2(0, 0)] = player_factory
+	player_factory.position = grid.grid_to_world(Vector2(0, 0))
+	
+	# Enemy factory in bottom right (14,4)
+	var enemy_factory = civilian_factory_scene.instantiate()
+	grid.add_child(enemy_factory)
+	grid_cells[Vector2(14, 4)] = enemy_factory
+	enemy_factory.position = grid.grid_to_world(Vector2(14, 4))
+	
+	# Set enemy factory color
+	if enemy_factory.has_node("Sprite2D"):
+		enemy_factory.get_node("Sprite2D").self_modulate = Color.RED
+		
+	print("BuildingManager initialized with starting factories")
 
 func set_fort_fast_construction(enabled: bool):
 	fort_fast_construction = enabled
