@@ -49,9 +49,10 @@ func _ready():
 	update_unlock_label()
 
 func _on_close_button_pressed():
-	hide()
-	building_selected.emit("")  # Clear building selection
-	menu_closed.emit()
+	if visible:  # Only emit signals if the menu was actually visible
+		hide()
+		building_selected.emit("")  # Clear building selection
+		menu_closed.emit()
 
 func _on_civilian_factory_input(event):
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:

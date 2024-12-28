@@ -23,9 +23,13 @@ func _on_button_pressed():
 	print("\n=== TURN BUTTON PRESSED ===")
 	print("Processing turn effects...")
 	
+	# Save current building selection
+	var current_selection = ""
 	if grid_node:
-		var unit_manager = grid_node.get_node("UnitManager")
 		var building_manager = grid_node.get_node("BuildingManager")
+		current_selection = building_manager.selected_building_type if building_manager else ""
+		
+		var unit_manager = grid_node.get_node("UnitManager")
 		var resource_manager = grid_node.get_node("ResourceManager")
 		var combat_manager = grid_node.get_node("CombatManager")
 		var opponent_manager = grid_node.get_node("OpponentManager")
@@ -146,6 +150,14 @@ func _on_button_pressed():
 	value += 100
 	label.text = "Build " + str(value)
 	print("Build value updated to: ", value)
+	
+	# Restore building selection if it was active
+	if grid_node and current_selection != "":
+		var building_manager = grid_node.get_node("BuildingManager")
+		if building_manager:
+			building_manager.selected_building_type = current_selection
+			print("Restored building selection to: ", current_selection)
+	
 	print("=== TURN PROCESSING COMPLETE ===\n")
 
 func _unhandled_input(event):
