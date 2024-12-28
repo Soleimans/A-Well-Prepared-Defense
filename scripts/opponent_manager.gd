@@ -29,6 +29,51 @@ func _ready():
 	# Count initial enemy buildings
 	count_enemy_buildings()
 
+
+func get_available_build_slots() -> int:
+	var available_slots = 0
+	var buildable_positions = get_buildable_positions()
+	
+	for pos in buildable_positions:
+		# Check if position already has a factory
+		if building_manager.grid_cells.has(pos):
+			var cell = building_manager.grid_cells[pos]
+			if cell == null or cell.scene_file_path.ends_with("fort.tscn"):
+				available_slots += 1
+		else:
+			available_slots += 1
+	
+	return available_slots
+
+func should_unlock_column() -> bool:
+	# Check if we have less than 2 available build slots
+	var available_slots = get_available_build_slots()
+	print("\nChecking if should unlock column:")
+	print("Available build slots: ", available_slots)
+	
+	# Get the next possible column to unlock
+	var next_column = building_manager.enemy_buildable_columns[0] - 1
+	
+	# Check if we can unlock more columns
+	if next_column < 3:
+		print("Cannot unlock more columns - at minimum limit")
+		return false
+		
+	# Check if the column is already claimed
+	if next_column in building_manager.buildable_columns or next_column in building_manager.all_unlocked_columns:
+		print("Next column already claimed")
+		return false
+	
+	# If we're in war mode, don't unlock new columns
+	if territory_manager and territory_manager.war_active:
+		print("War is active - no column unlocking")
+		return false
+	
+	# Unlock if we have less than 2 available slots
+	var should_unlock = available_slots < 2
+	print("Should unlock new column: ", should_unlock)
+	return should_unlock
+
 func count_enemy_buildings():
 	enemy_civilian_factory_count = 0
 	enemy_military_factory_count = 0
@@ -214,50 +259,51 @@ func attempt_building():
 	var actions_taken = 0
 	const ACTIONS_PER_TURN = 2
 	
-	# First phase: Build 5 civilian factories
-	if enemy_civilian_factory_count < 5:
-		print("Building initial civilian factories (", enemy_civilian_factory_count, "/5)")
+	# Check if we should unlock a new column first
+	if should_unlock_column():
+		print("Unlocking new column for enemy")
+		building_manager.unlock_next_enemy_column()
+		actions_taken += 1
+		
+		# Refresh buildable positions after unlocking
 		var buildable_positions = get_buildable_positions()
-		
-		# Try to build up to 2 civilian factories
-		for position in buildable_positions:
-			if actions_taken >= ACTIONS_PER_TURN:
-				break
-			if attempt_build_at_position(position, "civilian_factory"):
-				actions_taken += 1
-		
-		print("=== ENEMY BUILDING ATTEMPT COMPLETE ===\n")
-		return  # Don't build anything else until we have 5 civilian factories
-	
-	# After 5 civilian factories, handle military factories and forts
-	var buildable_positions = get_buildable_positions()
-	var fort_positions = get_fort_buildable_positions()
-	
-	# Determine if we need military factories
-	var need_military = enemy_military_factory_count < 5
-	
-	# Try first action
-	if need_military and !buildable_positions.is_empty():
-		if attempt_build_at_position(buildable_positions[0], "military_factory"):
-			actions_taken += 1
-	elif !fort_positions.is_empty():
-		if attempt_build_at_position(fort_positions[0], "fort"):
-			actions_taken += 1
-	
-	# Try second action if first was successful
-	if actions_taken > 0:
-		# Update positions after first build
-		buildable_positions = get_buildable_positions()
-		fort_positions = get_fort_buildable_positions()
-		
-		# For second action, prioritize different type than first action
-		if actions_taken == 1:
-			if need_military and !buildable_positions.is_empty():
-				if attempt_build_at_position(buildable_positions[0], "military_factory"):
+		if !buildable_positions.is_empty():
+			# Try to use the remaining action to build
+			if enemy_civilian_factory_count < 5:
+				if attempt_build_at_position(buildable_positions[0], "civilian_factory"):
 					actions_taken += 1
-			elif !fort_positions.is_empty():
-				if attempt_build_at_position(fort_positions[0], "fort"):
+	
+	# If we didn't unlock a column or have actions remaining, proceed with normal building
+	if actions_taken < ACTIONS_PER_TURN:
+		# First phase: Build 5 civilian factories
+		if enemy_civilian_factory_count < 5:
+			print("Building initial civilian factories (", enemy_civilian_factory_count, "/5)")
+			var buildable_positions = get_buildable_positions()
+			
+			# Try to build civilian factories with remaining actions
+			while actions_taken < ACTIONS_PER_TURN and !buildable_positions.is_empty():
+				if attempt_build_at_position(buildable_positions[0], "civilian_factory"):
 					actions_taken += 1
+				buildable_positions.remove_at(0)
+		else:
+			# After 5 civilian factories, handle military factories and forts
+			var buildable_positions = get_buildable_positions()
+			var fort_positions = get_fort_buildable_positions()
+			
+			# Determine if we need military factories
+			var need_military = enemy_military_factory_count < 5
+			
+			while actions_taken < ACTIONS_PER_TURN:
+				if need_military and !buildable_positions.is_empty():
+					if attempt_build_at_position(buildable_positions[0], "military_factory"):
+						actions_taken += 1
+					buildable_positions.remove_at(0)
+				elif !fort_positions.is_empty():
+					if attempt_build_at_position(fort_positions[0], "fort"):
+						actions_taken += 1
+					fort_positions.remove_at(0)
+				else:
+					break
 	
 	print("Actions taken this turn: ", actions_taken)
 	print("=== ENEMY BUILDING ATTEMPT COMPLETE ===\n")
