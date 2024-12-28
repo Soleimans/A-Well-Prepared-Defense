@@ -28,8 +28,10 @@ func _on_button_pressed():
 		var building_manager = grid_node.get_node("BuildingManager")
 		var resource_manager = grid_node.get_node("ResourceManager")
 		var combat_manager = grid_node.get_node("CombatManager")
+		var opponent_manager = grid_node.get_node("OpponentManager")
 		
 		print("Found building manager: ", building_manager != null)
+		print("Found opponent manager: ", opponent_manager != null)
 		
 		# Process combat first
 		if combat_manager:
@@ -118,6 +120,14 @@ func _on_button_pressed():
 		# Process construction progress
 		building_manager.process_construction()
 		print("Construction processing complete")
+		
+		# Process enemy AI turn
+		if opponent_manager:
+			print("\nProcessing enemy AI turn...")
+			opponent_manager._on_turn_button_pressed()
+			print("Enemy AI turn complete")
+		else:
+			print("ERROR: OpponentManager not found!")
 		
 		# Clear any selected unit and valid move tiles
 		unit_manager.selected_unit = null
