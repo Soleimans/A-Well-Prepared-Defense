@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=27 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://images/image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://scripts/button.gd" id="1_d0gsr"]
@@ -23,6 +23,7 @@
 [ext_resource type="Script" path="res://scripts/territory_manager.gd" id="19_sl3ds"]
 [ext_resource type="Script" path="res://scripts/combat_manager.gd" id="20_v3hpl"]
 [ext_resource type="Script" path="res://scripts/opponent_manager.gd" id="21_mh2jy"]
+[ext_resource type="Script" path="res://scripts/combatant_manager.gd" id="23_yrmve"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hhyts"]
 texture = ExtResource("2_enqgi")
@@ -166,6 +167,9 @@ script = ExtResource("20_v3hpl")
 
 [node name="OpponentManager" type="Node2D" parent="Grid"]
 script = ExtResource("21_mh2jy")
+
+[node name="CombatantManager" type="Node2D" parent="Grid"]
+script = ExtResource("23_yrmve")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(960, 320)
