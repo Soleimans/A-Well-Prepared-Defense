@@ -14,6 +14,7 @@ var hard_attack = 50
 var in_combat_this_turn = false
 
 @onready var sprite = $Sprite2D
+@onready var label = $Label
 @onready var health_bar = $Health
 @onready var equipment_bar = $Equipment
 
@@ -107,8 +108,9 @@ func can_move():
 	return !has_moved && movement_points > 0
 
 func set_highlighted(value: bool):
-	if sprite:
-		sprite.modulate = Color(1.5, 1.5, 0.5) if value else Color.WHITE
+	if label:
+		label.modulate = Color(1, 1, 0) if value else Color(1, 1, 1)
+		label.text = ("* " if value else "") + "Garrison"
 
 func _process(_delta):
 	update_bars()
