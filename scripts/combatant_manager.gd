@@ -311,7 +311,20 @@ func move_combat_units():
 		var attack_opportunities = []
 		var unit_type = "armoured" if unit.scene_file_path.ends_with("armoured.tscn") else "infantry"
 		
-		for check_pos in get_valid_moves(current_pos, unit_type, 1):
+		# Get adjacent tiles only for attack checks
+		var adjacent_tiles = []
+		var directions = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1), 
+						 Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]
+		
+		for dir in directions:
+			var check_pos = current_pos + dir
+			# Check if position is within grid bounds
+			if check_pos.x >= 0 and check_pos.x < grid.grid_size.x and \
+			   check_pos.y >= 0 and check_pos.y < grid.grid_size.y:
+				adjacent_tiles.append(check_pos)
+		
+		# Check only adjacent tiles for attack opportunities
+		for check_pos in adjacent_tiles:
 			if check_pos in unit_manager.units_in_cells:
 				for check_unit in unit_manager.units_in_cells[check_pos]:
 					if !check_unit.is_enemy:
@@ -320,7 +333,7 @@ func move_combat_units():
 							"position": check_pos,
 							"score": attack_score
 						})
-						print("Found attack opportunity at ", check_pos, " with score ", attack_score)
+						print("Found adjacent attack opportunity at ", check_pos, " with score ", attack_score)
 						break
 		
 		# If we have attack opportunities, execute the best one

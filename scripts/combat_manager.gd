@@ -19,32 +19,20 @@ func get_unit_position(unit: Node2D) -> Vector2:
 # Process combat between two units
 # In combat_manager.gd
 
-func resolve_combat(attacker: Node2D, defender: Node2D):
+func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, defender_pos: Vector2):
 	if !is_instance_valid(attacker) or !is_instance_valid(defender):
 		print("Combat cancelled - invalid units")
 		return
 		
-	print("\nCOMBAT RESOLUTION:")
-	print("Starting combat calculation...")
-	
-	# Get positions before any potential unit removal
-	var attacker_pos = Vector2.ZERO
-	var defender_pos = Vector2.ZERO
-	
-	# Find positions by iterating through the units_in_cells dictionary
-	for pos in unit_manager.units_in_cells:
-		var units = unit_manager.units_in_cells[pos]
-		if attacker in units:
-			attacker_pos = pos
-		if defender in units:
-			defender_pos = pos
-	
-	print("Attacker position found: ", attacker_pos)
-	print("Defender position found: ", defender_pos)
-	
-	if attacker_pos == Vector2.ZERO or defender_pos == Vector2.ZERO:
-		print("Combat cancelled - couldn't find unit positions")
-		return
+	print("\nDEBUG: COMBAT RESOLUTION:")
+	print("Attacker scene path: ", attacker.scene_file_path)
+	print("Defender scene path: ", defender.scene_file_path)
+	print("Attacker is enemy: ", attacker.is_enemy)
+	print("Defender is enemy: ", defender.is_enemy)
+	print("Attacker grid position: ", attacker_pos)
+	print("Defender grid position: ", defender_pos)
+	print("Attacker position in world: ", attacker.position)
+	print("Defender position in world: ", defender.position)
 	
 	# Store initial stats
 	var initial_attacker_stats = {
@@ -72,6 +60,10 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 	var base_damage_to_attacker_soft = defender.soft_attack
 	var base_damage_to_attacker_hard = defender.hard_attack
 	
+	print("Base damage calculations:")
+	print("To defender - Soft: ", base_damage_to_defender_soft, " Hard: ", base_damage_to_defender_hard)
+	print("To attacker - Soft: ", base_damage_to_attacker_soft, " Hard: ", base_damage_to_attacker_hard)
+	
 	# Calculate defense bonuses
 	var base_defense_reduction = 0.2  # 20% base defense
 	var fort_reduction = 0.0
@@ -93,7 +85,7 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 	var final_damage_to_attacker_hard = base_damage_to_attacker_hard
 	var final_damage_to_attacker_equipment = (base_damage_to_attacker_soft + base_damage_to_attacker_hard) * 0.5
 	
-	print("Calculated damage:")
+	print("Final damage calculations:")
 	print("To defender - Soft: ", final_damage_to_defender_soft, 
 		  " Hard: ", final_damage_to_defender_hard,
 		  " Equipment: ", final_damage_to_defender_equipment)
@@ -102,24 +94,23 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 		  " Equipment: ", final_damage_to_attacker_equipment)
 	
 	# Mark combat participation
-	if is_instance_valid(attacker):
-		attacker.in_combat_this_turn = true
-	if is_instance_valid(defender):
-		defender.in_combat_this_turn = true
+	attacker.in_combat_this_turn = true
+	defender.in_combat_this_turn = true
 	
-	# Apply damage and check for destruction
+	# Units to be destroyed
 	var units_to_destroy = []
 	
 	# Apply damage to defender
 	if is_instance_valid(defender):
+		print("\nApplying damage to defender:")
+		print("Before - Soft: ", defender.soft_health, " Hard: ", defender.hard_health, " Equipment: ", defender.equipment)
+		
 		defender.soft_health = max(0, defender.soft_health - final_damage_to_defender_soft)
 		defender.hard_health = max(0, defender.hard_health - final_damage_to_defender_hard)
 		defender.equipment = max(0, defender.equipment - final_damage_to_defender_equipment)
 		
-		print("Defender after damage - Soft: ", defender.soft_health,
-			  " Hard: ", defender.hard_health,
-			  " Equipment: ", defender.equipment)
-			  
+		print("After - Soft: ", defender.soft_health, " Hard: ", defender.hard_health, " Equipment: ", defender.equipment)
+		
 		defender.update_bars()
 		
 		if (defender.soft_health <= 0 and defender.hard_health <= 0) or defender.equipment <= 0:
@@ -127,43 +118,84 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 	
 	# Apply damage to attacker
 	if is_instance_valid(attacker):
+		print("\nApplying damage to attacker:")
+		print("Before - Soft: ", attacker.soft_health, " Hard: ", attacker.hard_health, " Equipment: ", attacker.equipment)
+		
 		attacker.soft_health = max(0, attacker.soft_health - final_damage_to_attacker_soft)
 		attacker.hard_health = max(0, attacker.hard_health - final_damage_to_attacker_hard)
 		attacker.equipment = max(0, attacker.equipment - final_damage_to_attacker_equipment)
 		
-		print("Attacker after damage - Soft: ", attacker.soft_health,
-			  " Hard: ", attacker.hard_health,
-			  " Equipment: ", attacker.equipment)
-			  
+		print("After - Soft: ", attacker.soft_health, " Hard: ", attacker.hard_health, " Equipment: ", attacker.equipment)
+		
 		attacker.update_bars()
 		
 		if (attacker.soft_health <= 0 and attacker.hard_health <= 0) or attacker.equipment <= 0:
 			units_to_destroy.append({"unit": attacker, "position": attacker_pos})
 	
 	# Handle unit destruction
+	print("\nDestroying units:")
 	for unit_data in units_to_destroy:
 		var unit = unit_data["unit"]
 		var pos = unit_data["position"]
 		
-		if is_instance_valid(unit) and pos != Vector2.ZERO:
+		if is_instance_valid(unit):
+			print("Destroying unit at position: ", pos)
 			if pos in unit_manager.units_in_cells:
 				unit_manager.units_in_cells[pos].erase(unit)
-				print("Removed unit from position: ", pos)
 			unit.queue_free()
-			print("Unit destroyed!")
 
 func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
-	print("\nINITIATING COMBAT:")
+	print("\nDEBUG: INITIATING COMBAT:")
 	print("Attacker position: ", attacker_pos)
 	print("Defender position: ", defender_pos)
+	
+	# Validate positions are within grid bounds
+	if attacker_pos.x < 0 or attacker_pos.x >= unit_manager.grid.grid_size.x or \
+	   attacker_pos.y < 0 or attacker_pos.y >= unit_manager.grid.grid_size.y or \
+	   defender_pos.x < 0 or defender_pos.x >= unit_manager.grid.grid_size.x or \
+	   defender_pos.y < 0 or defender_pos.y >= unit_manager.grid.grid_size.y:
+		print("Combat cancelled - positions out of bounds")
+		return
 	
 	var attacking_units = unit_manager.units_in_cells[attacker_pos]
 	var defending_units = unit_manager.units_in_cells[defender_pos]
 	
+	# Debug print the units at both positions
+	print("\nUnits at attacker position:")
+	if attacker_pos in unit_manager.units_in_cells:
+		for unit in unit_manager.units_in_cells[attacker_pos]:
+			print("- ", unit.scene_file_path, " (enemy: ", unit.is_enemy, ")")
+	
+	print("\nUnits at defender position:")
+	if defender_pos in unit_manager.units_in_cells:
+		for unit in unit_manager.units_in_cells[defender_pos]:
+			print("- ", unit.scene_file_path, " (enemy: ", unit.is_enemy, ")")
+	
 	if attacking_units.size() > 0 and defending_units.size() > 0:
-		var attacker = unit_manager.selected_unit if unit_manager.selected_unit else attacking_units[0]
-		var defender = defending_units[0]
+		# Find the first valid attacking unit
+		var attacker = null
+		if unit_manager.selected_unit and unit_manager.selected_unit in attacking_units:
+			attacker = unit_manager.selected_unit
+			print("Using selected unit as attacker: ", attacker.scene_file_path)
+		else:
+			for unit in attacking_units:
+				if !unit.in_combat_this_turn:
+					attacker = unit
+					print("Found valid attacking unit: ", attacker.scene_file_path)
+					break
 		
+		# Find the first valid defending unit
+		var defender = null
+		for unit in defending_units:
+			if !unit.in_combat_this_turn:
+				defender = unit
+				print("Found valid defending unit: ", defender.scene_file_path)
+				break
+		
+		if !attacker or !defender:
+			print("Combat cancelled - no valid units found")
+			return
+			
 		if !is_instance_valid(attacker) or !is_instance_valid(defender):
 			print("Combat cancelled - invalid units")
 			return
@@ -171,6 +203,10 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 		print("Combat Starting!")
 		print("Attacker type: ", attacker.scene_file_path)
 		print("Defender type: ", defender.scene_file_path)
+		print("Attacker position in world: ", attacker.position)
+		print("Defender position in world: ", defender.position)
+		print("Attacker health - Soft: ", attacker.soft_health, " Hard: ", attacker.hard_health)
+		print("Defender health - Soft: ", defender.soft_health, " Hard: ", defender.hard_health)
 		
 		# Add flash effect
 		if attacker.has_node("Sprite2D"):
@@ -178,8 +214,8 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 		if defender.has_node("Sprite2D"):
 			defender.get_node("Sprite2D").modulate = Color(1, 0, 0)
 		
-		# Resolve combat
-		resolve_combat(attacker, defender)
+		# Resolve combat with grid positions
+		resolve_combat(attacker, defender, attacker_pos, defender_pos)
 		
 		# Wait a moment
 		await get_tree().create_timer(0.2).timeout
