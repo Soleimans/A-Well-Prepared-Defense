@@ -37,12 +37,6 @@ layout_mode = 2
 layout_mode = 2
 texture = ExtResource("3_iixdp")
 
-[node name="Button" type="Button" parent="Panel/GridContainer/VBoxContainer/HBoxContainer/TextureRect"]
-layout_mode = 2
-offset_left = -139.0
-offset_right = -131.0
-offset_bottom = 225.0
-
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 mouse_filter = 0
