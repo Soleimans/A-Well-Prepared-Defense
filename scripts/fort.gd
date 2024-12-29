@@ -27,7 +27,7 @@ func set_level(new_level):
 
 func update_label():
 	if label:
-		label.text = "Fort Level " + str(level)
+		label.text = str(level)
 		# Always set label to white regardless of building ownership
 		label.add_theme_color_override("font_color", Color.WHITE)
 

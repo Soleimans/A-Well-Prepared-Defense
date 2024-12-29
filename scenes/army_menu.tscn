@@ -2,9 +2,9 @@
 
 [ext_resource type="Script" path="res://scripts/army_menu.gd" id="1_5n487"]
 [ext_resource type="Script" path="res://scripts/panel.gd" id="1_l270i"]
-[ext_resource type="Texture2D" uid="uid://dwyeu5dp1tqw1" path="res://images/Infantry.png" id="3_1iiqj"]
-[ext_resource type="Texture2D" uid="uid://baic1d3kc1pii" path="res://images/Medium_tank.png" id="4_j8vap"]
-[ext_resource type="Texture2D" uid="uid://fjpb7i3qagh3" path="res://images/Militia.png" id="5_am7h7"]
+[ext_resource type="Texture2D" uid="uid://u7vdwggmnfrf" path="res://images/stahlhelm (1).png" id="3_fexui"]
+[ext_resource type="Texture2D" uid="uid://b3pjgfulqrnvj" path="res://images/battle-tank (1).png" id="4_jjks8"]
+[ext_resource type="Texture2D" uid="uid://dbu6q06vf1ubc" path="res://images/chess-pawn (1).png" id="5_w3133"]
 
 [node name="army_menu" type="Control"]
 layout_mode = 3
@@ -34,7 +34,7 @@ layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
-texture = ExtResource("3_1iiqj")
+texture = ExtResource("3_fexui")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
@@ -51,7 +51,7 @@ layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
-texture = ExtResource("4_j8vap")
+texture = ExtResource("4_jjks8")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
@@ -68,7 +68,7 @@ layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
-texture = ExtResource("5_am7h7")
+texture = ExtResource("5_w3133")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2

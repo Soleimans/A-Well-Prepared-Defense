@@ -20,9 +20,9 @@ const MANPOWER_COSTS = {
 	"garrison": 500
 }
 const UNIT_WEIGHTS = {
-	"infantry": 0.5,    # 50% chance
-	"armoured": 0.2,    # 20% chance
-	"garrison": 0.3     # 30% chance
+	"infantry": 0.6,    # 60% chance
+	"armoured": 0.3,    # 30% chance
+	"garrison": 0.1     # 10% chance
 }
 
 func _ready():

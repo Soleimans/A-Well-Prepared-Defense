@@ -1,28 +1,36 @@
 [gd_scene load_steps=3 format=3 uid="uid://yvq3k48ienvs"]
 
 [ext_resource type="Script" path="res://scripts/infantry.gd" id="1_2o26r"]
-[ext_resource type="Texture2D" uid="uid://dwyeu5dp1tqw1" path="res://images/Infantry.png" id="2_1avm7"]
+[ext_resource type="Texture2D" uid="uid://bbto8cxlpgbgv" path="res://images/stahlhelm.png" id="2_if6jn"]
 
 [node name="Infantry" type="Node2D"]
 script = ExtResource("1_2o26r")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("2_1avm7")
+position = Vector2(-33, -0.499999)
+scale = Vector2(0.25, 0.228346)
+texture = ExtResource("2_if6jn")
 
 [node name="Label" type="Label" parent="."]
-offset_right = 40.0
-offset_bottom = 23.0
+offset_left = -14.0
+offset_top = -11.0
+offset_right = 41.0
+offset_bottom = 12.0
+theme_override_font_sizes/font_size = 14
+text = "Infantry"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Health" type="ProgressBar" parent="."]
-offset_left = -25.0
+offset_left = -60.0
 offset_top = -9.0
-offset_right = -21.0
+offset_right = -56.0
 offset_bottom = 9.0
 show_percentage = false
 
 [node name="Equipment" type="ProgressBar" parent="."]
-offset_left = -20.0
+offset_left = -55.0
 offset_top = -9.0
-offset_right = -16.0
+offset_right = -51.0
 offset_bottom = 9.0
 show_percentage = false

@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3 uid="uid://23oobmg40yue"]
+[gd_scene load_steps=7 format=3 uid="uid://23oobmg40yue"]
 
 [ext_resource type="Script" path="res://scripts/build_menu.gd" id="1_jbuco"]
 [ext_resource type="Script" path="res://scripts/panel.gd" id="2_0stii"]
-[ext_resource type="Texture2D" uid="uid://dlp06pu174io0" path="res://images/22px-Civilian_factories.png" id="3_35m6j"]
-[ext_resource type="Texture2D" uid="uid://b45rp5jt6ptgs" path="res://images/22px-Military_factories.png" id="4_jy0fa"]
-[ext_resource type="Texture2D" uid="uid://c3eoamcxx3n5" path="res://images/Land_fort.png" id="5_e4wuq"]
+[ext_resource type="Texture2D" uid="uid://dsd3cpburev8p" path="res://images/factory (4).png" id="3_iixdp"]
+[ext_resource type="Texture2D" uid="uid://0tta0briy6k4" path="res://images/factory (3).png" id="4_20kol"]
+[ext_resource type="Texture2D" uid="uid://cg4jgq1sq4g40" path="res://images/locked-fortress (1).png" id="5_y3fnp"]
+[ext_resource type="Texture2D" uid="uid://duofluangt03a" path="res://images/i-brick.png" id="6_ylddx"]
 
 [node name="build_menu" type="Control"]
 layout_mode = 3
@@ -34,7 +35,7 @@ layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
-texture = ExtResource("3_35m6j")
+texture = ExtResource("3_iixdp")
 
 [node name="Button" type="Button" parent="Panel/GridContainer/VBoxContainer/HBoxContainer/TextureRect"]
 layout_mode = 2
@@ -56,7 +57,7 @@ layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
-texture = ExtResource("4_jy0fa")
+texture = ExtResource("4_20kol")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
@@ -72,7 +73,7 @@ layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
-texture = ExtResource("5_e4wuq")
+texture = ExtResource("5_y3fnp")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
@@ -88,6 +89,7 @@ layout_mode = 2
 
 [node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer4"]
 layout_mode = 2
+texture = ExtResource("6_ylddx")
 
 [node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer4"]
 layout_mode = 2

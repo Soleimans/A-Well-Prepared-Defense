@@ -1,12 +1,20 @@
-[gd_scene load_steps=2 format=3 uid="uid://dfgmtosoasthv"]
+[gd_scene load_steps=3 format=3 uid="uid://dfgmtosoasthv"]
 
 [ext_resource type="Script" path="res://scripts/civilian_factory.gd" id="1_t5hdm"]
+[ext_resource type="Texture2D" uid="uid://dg07q4t6scjei" path="res://images/factory (2).png" id="2_ooh1o"]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_t5hdm")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-35, 32.9375)
+scale = Vector2(0.438976, 0.376968)
+texture = ExtResource("2_ooh1o")
 
 [node name="Label" type="Label" parent="Sprite2D"]
-offset_right = 40.0
-offset_bottom = 23.0
+visible = false
+offset_left = -59.4522
+offset_top = 54.9337
+offset_right = 58.5478
+offset_bottom = 77.9337
+text = "Civilian Factory"

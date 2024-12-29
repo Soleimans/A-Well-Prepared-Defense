@@ -1,12 +1,17 @@
-[gd_scene load_steps=2 format=3 uid="uid://dtndasypk8s8p"]
+[gd_scene load_steps=3 format=3 uid="uid://dtndasypk8s8p"]
 
 [ext_resource type="Script" path="res://scripts/military_factory.gd" id="1_g7hvw"]
+[ext_resource type="Texture2D" uid="uid://4pr7awgi8585" path="res://images/factory (1).png" id="2_kus8j"]
 
 [node name="Node2D" type="Node2D"]
 script = ExtResource("1_g7hvw")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
+position = Vector2(-35, 32.938)
+scale = Vector2(0.439, 0.377)
+texture = ExtResource("2_kus8j")
 
 [node name="Label" type="Label" parent="Sprite2D"]
+visible = false
 offset_right = 40.0
 offset_bottom = 23.0

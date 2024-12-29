@@ -358,7 +358,14 @@ func attempt_building():
 		else:
 			# Peace time building logic
 			print("Peace time - Building infrastructure")
-			if enemy_civilian_factory_count < 8:
+			if enemy_military_factory_count < 1:
+				print("Building first military factory")
+				while actions_taken < ACTIONS_PER_TURN and !buildable_positions.is_empty():
+					if attempt_build_at_position(buildable_positions[0], "military_factory"):
+						actions_taken += 1
+						print("Successfully built military factory")
+					buildable_positions.remove_at(0)
+			elif enemy_civilian_factory_count < 8:
 				print("Building civilian factories (", enemy_civilian_factory_count, "/8)")
 				while actions_taken < ACTIONS_PER_TURN and !buildable_positions.is_empty():
 					if attempt_build_at_position(buildable_positions[0], "civilian_factory"):

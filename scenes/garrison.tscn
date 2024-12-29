@@ -1,28 +1,37 @@
 [gd_scene load_steps=3 format=3 uid="uid://boldsy0qd5pny"]
 
 [ext_resource type="Script" path="res://scripts/garrison.gd" id="1_hwkae"]
-[ext_resource type="Texture2D" uid="uid://fjpb7i3qagh3" path="res://images/Militia.png" id="2_xvtqh"]
+[ext_resource type="Texture2D" uid="uid://caksgi1co1gfe" path="res://images/chess-pawn.png" id="2_rm6id"]
 
 [node name="Garrison" type="Node2D"]
+position = Vector2(12, 0)
 script = ExtResource("1_hwkae")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
-texture = ExtResource("2_xvtqh")
+position = Vector2(-34, -2.5625)
+scale = Vector2(0.25, 0.180118)
+texture = ExtResource("2_rm6id")
 
 [node name="Label" type="Label" parent="."]
-offset_right = 40.0
-offset_bottom = 23.0
+offset_left = -18.0
+offset_top = -11.0
+offset_right = 49.0
+offset_bottom = 12.0
+theme_override_font_sizes/font_size = 14
+text = "Garrison"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Health" type="ProgressBar" parent="."]
-offset_left = -32.0
+offset_left = -60.0
 offset_top = -9.0
-offset_right = -28.0
+offset_right = -56.0
 offset_bottom = 9.0
 show_percentage = false
 
 [node name="Equipment" type="ProgressBar" parent="."]
-offset_left = -27.0
+offset_left = -55.0
 offset_top = -9.0
-offset_right = -23.0
+offset_right = -51.0
 offset_bottom = 9.0
 show_percentage = false
