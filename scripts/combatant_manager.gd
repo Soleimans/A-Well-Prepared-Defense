@@ -218,12 +218,21 @@ func get_valid_moves(from_pos: Vector2, unit_type: String, max_distance: int = 1
 			if get_manhattan_distance(from_pos, test_pos) > max_distance:
 				continue
 			
-			# Check if destination is full
-			if test_pos in unit_manager.units_in_cells and \
-			   unit_manager.units_in_cells[test_pos].size() >= unit_manager.MAX_UNITS_PER_CELL:
-				continue
+			# Check for player units
+			var has_player_units = false
+			if test_pos in unit_manager.units_in_cells:
+				for unit in unit_manager.units_in_cells[test_pos]:
+					if !unit.is_enemy:  # Found player unit
+						has_player_units = true
+						break
 			
-			valid_moves.append(test_pos)
+			# Include position if:
+			# 1. It has player units (for combat) regardless of stack size, OR
+			# 2. It has space for movement
+			if has_player_units or \
+			   !unit_manager.units_in_cells.has(test_pos) or \
+			   unit_manager.units_in_cells[test_pos].size() < unit_manager.MAX_UNITS_PER_CELL:
+				valid_moves.append(test_pos)
 	
 	return valid_moves
 
@@ -288,14 +297,53 @@ func move_combat_units():
 	var infantry_units = get_enemy_units_of_type("infantry")
 	var armoured_units = get_enemy_units_of_type("armoured")
 	
-	# Process armoured units first, then infantry
+	# First pass: Check for immediate attack opportunities
 	for unit_data in armoured_units + infantry_units:
 		var unit = unit_data["unit"]
 		var current_pos = unit_data["position"]
 		
-		if !unit.can_move():
+		if !unit.can_move() or unit.in_combat_this_turn:
 			continue
+			
+		print("Checking attack opportunities for unit at ", current_pos)
 		
+		# Check adjacent tiles for attack opportunities
+		var attack_opportunities = []
+		var unit_type = "armoured" if unit.scene_file_path.ends_with("armoured.tscn") else "infantry"
+		
+		for check_pos in get_valid_moves(current_pos, unit_type, 1):
+			if check_pos in unit_manager.units_in_cells:
+				for check_unit in unit_manager.units_in_cells[check_pos]:
+					if !check_unit.is_enemy:
+						var attack_score = evaluate_attack_position(check_pos, unit)
+						attack_opportunities.append({
+							"position": check_pos,
+							"score": attack_score
+						})
+						print("Found attack opportunity at ", check_pos, " with score ", attack_score)
+						break
+		
+		# If we have attack opportunities, execute the best one
+		if !attack_opportunities.is_empty():
+			attack_opportunities.sort_custom(func(a, b): return a.score > b.score)
+			var best_attack = attack_opportunities[0]
+			print("Executing attack at ", best_attack.position, " with score ", best_attack.score)
+			
+			unit_manager.selected_unit = unit
+			unit_manager.unit_start_pos = current_pos
+			var combat_manager = grid.get_node("CombatManager")
+			if combat_manager:
+				combat_manager.initiate_combat(current_pos, best_attack.position)
+				continue  # Skip movement phase for this unit
+	
+	# Second pass: Move units that didn't attack
+	for unit_data in armoured_units + infantry_units:
+		var unit = unit_data["unit"]
+		var current_pos = unit_data["position"]
+		
+		if !unit.can_move() or unit.in_combat_this_turn:
+			continue
+			
 		var unit_type = "armoured" if unit.scene_file_path.ends_with("armoured.tscn") else "infantry"
 		var valid_moves = get_valid_moves(current_pos, unit_type)
 		
@@ -307,14 +355,14 @@ func move_combat_units():
 		for move in valid_moves:
 			var score = 0
 			
-			# Check for adjacent enemy units to attack
+			# Check for adjacent player units after potential move
 			var has_adjacent_enemies = false
 			for check_pos in get_valid_moves(move, unit_type, 1):
 				if check_pos in unit_manager.units_in_cells:
 					for check_unit in unit_manager.units_in_cells[check_pos]:
 						if !check_unit.is_enemy:
 							has_adjacent_enemies = true
-							score += 100  # High priority for attacking
+							score += 150  # High priority for positions adjacent to enemies
 							break
 			
 			# If no immediate attacks, prefer moving towards player territory
@@ -322,7 +370,7 @@ func move_combat_units():
 				# Prefer moving left (towards player territory)
 				score += (grid.grid_size.x - move.x) * 5
 				
-				# Extra points for moving into neutral or player territory
+				# Extra points for moving into player or neutral territory
 				var territory_owner = territory_manager.get_territory_owner(move)
 				if territory_owner == "player":
 					score += 50
@@ -331,34 +379,45 @@ func move_combat_units():
 			
 			scored_moves.append({"position": move, "score": score})
 		
-		# Sort moves by score
-		scored_moves.sort_custom(func(a, b): return a.score > b.score)
-		
-		# Execute best move
+		# Sort moves by score and execute best move
 		if !scored_moves.is_empty():
+			scored_moves.sort_custom(func(a, b): return a.score > b.score)
 			var best_move = scored_moves[0].position
+			
 			if best_move != current_pos:
 				unit_manager.selected_unit = unit
 				unit_manager.unit_start_pos = current_pos
+				unit_manager.execute_move(best_move)
+
+# New function to evaluate attack positions
+func evaluate_attack_position(pos: Vector2, attacker) -> int:
+	var score = 0
+	
+	# Check enemy units at position
+	for target_unit in unit_manager.units_in_cells[pos]:
+		if !target_unit.is_enemy:
+			# Base score on potential damage based on unit types
+			if target_unit.scene_file_path.ends_with("armoured.tscn"):
+				score += attacker.hard_attack * 2  # Double score for attacking armored with appropriate units
+			else:
+				score += attacker.soft_attack  # Regular score for soft targets
+			
+			# Add bonus for low health targets
+			var health_percentage = (target_unit.soft_health + target_unit.hard_health) / (target_unit.max_soft_health + target_unit.max_hard_health)
+			if health_percentage < 0.5:
+				score += 100  # Significant bonus for attacking damaged units
 				
-				# Check for attack opportunity
-				var attack_pos = null
-				for check_pos in get_valid_moves(best_move, unit_type, 1):
-					if check_pos in unit_manager.units_in_cells:
-						for check_unit in unit_manager.units_in_cells[check_pos]:
-							if !check_unit.is_enemy and !unit.in_combat_this_turn:
-								attack_pos = check_pos
-								break
-				
-				if attack_pos:
-					# Move and attack
-					unit_manager.execute_move(best_move)
-					var combat_manager = grid.get_node("CombatManager")
-					if combat_manager:
-						combat_manager.initiate_combat(best_move, attack_pos)
-				else:
-					# Just move
-					unit_manager.execute_move(best_move)
+			# Add bonus for low equipment
+			var equipment_percentage = target_unit.equipment / target_unit.max_equipment
+			if equipment_percentage < 0.5:
+				score += 100  # Significant bonus for attacking under-equipped units
+			
+			# Add bonus for strategic positions
+			var territory_owner = territory_manager.get_territory_owner(pos)
+			if territory_owner == "player":
+				score += 50  # Bonus for attacking units in player territory
+	
+	return score
 
 func process_enemy_movements():
 	print("\n=== PROCESSING ENEMY UNIT MOVEMENTS ===")

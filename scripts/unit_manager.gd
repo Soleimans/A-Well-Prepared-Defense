@@ -410,15 +410,23 @@ func highlight_valid_moves(from_pos: Vector2):
 				if !is_position_in_territory(test_pos, selected_unit.is_enemy):
 					break
 				
-				# Check if tile is occupied by max units
-				if test_pos in units_in_cells and units_in_cells[test_pos].size() >= MAX_UNITS_PER_CELL:
-					break
-					
-				# Check if path is blocked by enemy units
-				if is_path_blocked(from_pos, test_pos):
-					break
+				# Check for enemy units
+				var has_enemy = false
+				if test_pos in units_in_cells:
+					for unit in units_in_cells[test_pos]:
+						if unit.is_enemy != selected_unit.is_enemy:
+							has_enemy = true
+							break
 				
-				valid_move_tiles.append(test_pos)
+				# Add position if:
+				# 1. It has enemy units (for combat), OR
+				# 2. It has space for movement
+				if has_enemy or !units_in_cells.has(test_pos) or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
+					valid_move_tiles.append(test_pos)
+				
+				# Stop checking this direction if we hit enemy units or full tile
+				if has_enemy or (test_pos in units_in_cells and units_in_cells[test_pos].size() >= MAX_UNITS_PER_CELL):
+					break
 	else:
 		# Infantry and garrison movement (1 tile orthogonally)
 		for x in range(max(0, from_pos.x - 1), min(grid.grid_size.x, from_pos.x + 2)):
@@ -438,10 +446,11 @@ func highlight_valid_moves(from_pos: Vector2):
 									has_enemy = true
 									break
 						
-						if !has_enemy and (test_pos not in units_in_cells or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL):
+						# Add position if:
+						# 1. It has enemy units (for combat), OR
+						# 2. It has space for movement
+						if has_enemy or !units_in_cells.has(test_pos) or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
 							valid_move_tiles.append(test_pos)
-	
-	print("UnitManager: Found ", valid_move_tiles.size(), " valid moves")
 
 
 func manhattan_distance(from: Vector2, to: Vector2) -> int:
@@ -476,14 +485,8 @@ func check_territory_capture(from_pos: Vector2, to_pos: Vector2):
 			if current_owner != capturing_player:
 				territory_mgr.capture_territory(to_pos, capturing_player)
 
-
 func execute_move(to_pos: Vector2) -> bool:
 	print("UnitManager: Executing unit move to ", to_pos)
-	
-	# Clear highlight of the moving unit
-	if currently_highlighted_unit:
-		set_unit_highlight(currently_highlighted_unit, false)
-		currently_highlighted_unit = null
 	
 	if !selected_unit or !selected_unit.has_method("can_move") or !selected_unit.can_move():
 		print("UnitManager: Cannot move - invalid unit state")
@@ -493,6 +496,21 @@ func execute_move(to_pos: Vector2) -> bool:
 	if unit_index == -1:
 		print("UnitManager: Cannot move - unit not found in starting position")
 		return false
+	
+	# Check if the destination has enemy units
+	var has_enemy = false
+	if to_pos in units_in_cells:
+		for unit in units_in_cells[to_pos]:
+			if unit.is_enemy != selected_unit.is_enemy:
+				has_enemy = true
+				break
+	
+	# If there are enemy units, don't check space limitations
+	if !has_enemy:
+		# Only check space limitations for non-combat moves
+		if to_pos in units_in_cells and units_in_cells[to_pos].size() >= MAX_UNITS_PER_CELL:
+			print("UnitManager: Cannot move - destination is full")
+			return false
 	
 	# Verify the path isn't blocked before moving
 	if is_path_blocked(unit_start_pos, to_pos):
@@ -511,27 +529,29 @@ func execute_move(to_pos: Vector2) -> bool:
 	
 	selected_unit.movement_points -= movement_cost
 	
-	# Remove unit from starting position
-	units_in_cells[unit_start_pos].remove_at(unit_index)
-	
-	# Add unit to new position
-	if to_pos not in units_in_cells:
-		units_in_cells[to_pos] = []
-	units_in_cells[to_pos].append(selected_unit)
-	
-	# Reposition ALL units in the destination stack with proper offsets
-	var world_pos = grid.grid_to_world(to_pos)
-	for i in range(units_in_cells[to_pos].size()):
-		var unit = units_in_cells[to_pos][i]
-		var offset = Vector2(0, -20 * i)  # -20 pixels offset for each unit in stack
-		unit.position = world_pos + offset
-	
-	# Also reposition units in the starting position if any remain
-	world_pos = grid.grid_to_world(unit_start_pos)
-	for i in range(units_in_cells[unit_start_pos].size()):
-		var unit = units_in_cells[unit_start_pos][i]
-		var offset = Vector2(0, -20 * i)
-		unit.position = world_pos + offset
+	# Only move the unit if there are no enemy units at the destination
+	if !has_enemy:
+		# Remove unit from starting position
+		units_in_cells[unit_start_pos].remove_at(unit_index)
+		
+		# Add unit to new position
+		if to_pos not in units_in_cells:
+			units_in_cells[to_pos] = []
+		units_in_cells[to_pos].append(selected_unit)
+		
+		# Reposition ALL units in the destination stack with proper offsets
+		var world_pos = grid.grid_to_world(to_pos)
+		for i in range(units_in_cells[to_pos].size()):
+			var unit = units_in_cells[to_pos][i]
+			var offset = Vector2(0, -20 * i)  # -20 pixels offset for each unit in stack
+			unit.position = world_pos + offset
+		
+		# Also reposition units in the starting position if any remain
+		world_pos = grid.grid_to_world(unit_start_pos)
+		for i in range(units_in_cells[unit_start_pos].size()):
+			var unit = units_in_cells[unit_start_pos][i]
+			var offset = Vector2(0, -20 * i)
+			unit.position = world_pos + offset
 	
 	if selected_unit.movement_points <= 0:
 		selected_unit.has_moved = true

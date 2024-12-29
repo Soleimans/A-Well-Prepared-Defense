@@ -17,6 +17,8 @@ func get_unit_position(unit: Node2D) -> Vector2:
 	return Vector2.ZERO
 
 # Process combat between two units
+# In combat_manager.gd
+
 func resolve_combat(attacker: Node2D, defender: Node2D):
 	if !is_instance_valid(attacker) or !is_instance_valid(defender):
 		print("Combat cancelled - invalid units")
@@ -26,11 +28,22 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 	print("Starting combat calculation...")
 	
 	# Get positions before any potential unit removal
-	var attacker_pos = get_unit_position(attacker)
-	var defender_pos = get_unit_position(defender)
+	var attacker_pos = Vector2.ZERO
+	var defender_pos = Vector2.ZERO
+	
+	# Find positions by iterating through the units_in_cells dictionary
+	for pos in unit_manager.units_in_cells:
+		var units = unit_manager.units_in_cells[pos]
+		if attacker in units:
+			attacker_pos = pos
+		if defender in units:
+			defender_pos = pos
+	
+	print("Attacker position found: ", attacker_pos)
+	print("Defender position found: ", defender_pos)
 	
 	if attacker_pos == Vector2.ZERO or defender_pos == Vector2.ZERO:
-		print("Combat cancelled - invalid positions")
+		print("Combat cancelled - couldn't find unit positions")
 		return
 	
 	# Store initial stats
@@ -46,6 +59,13 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 		"equipment": defender.equipment
 	}
 	
+	print("Initial attacker stats - Soft: ", initial_attacker_stats.soft_health, 
+		  " Hard: ", initial_attacker_stats.hard_health,
+		  " Equipment: ", initial_attacker_stats.equipment)
+	print("Initial defender stats - Soft: ", initial_defender_stats.soft_health,
+		  " Hard: ", initial_defender_stats.hard_health,
+		  " Equipment: ", initial_defender_stats.equipment)
+	
 	# Calculate all damage first
 	var base_damage_to_defender_soft = attacker.soft_attack
 	var base_damage_to_defender_hard = attacker.hard_attack
@@ -53,13 +73,15 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 	var base_damage_to_attacker_hard = defender.hard_attack
 	
 	# Calculate defense bonuses
-	var base_defense_reduction = 0.2
+	var base_defense_reduction = 0.2  # 20% base defense
 	var fort_reduction = 0.0
 	
 	if building_manager.fort_levels.has(defender_pos):
-		fort_reduction = building_manager.fort_levels[defender_pos] * 0.02
+		fort_reduction = building_manager.fort_levels[defender_pos] * 0.02  # 2% per fort level
+		print("Fort level at defender position: ", building_manager.fort_levels[defender_pos])
 	
 	var total_reduction = base_defense_reduction + fort_reduction
+	print("Total defense reduction: ", total_reduction)
 	var damage_multiplier = 1.0 - total_reduction
 	
 	# Calculate final damage values
@@ -70,6 +92,14 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 	var final_damage_to_attacker_soft = base_damage_to_attacker_soft
 	var final_damage_to_attacker_hard = base_damage_to_attacker_hard
 	var final_damage_to_attacker_equipment = (base_damage_to_attacker_soft + base_damage_to_attacker_hard) * 0.5
+	
+	print("Calculated damage:")
+	print("To defender - Soft: ", final_damage_to_defender_soft, 
+		  " Hard: ", final_damage_to_defender_hard,
+		  " Equipment: ", final_damage_to_defender_equipment)
+	print("To attacker - Soft: ", final_damage_to_attacker_soft,
+		  " Hard: ", final_damage_to_attacker_hard,
+		  " Equipment: ", final_damage_to_attacker_equipment)
 	
 	# Mark combat participation
 	if is_instance_valid(attacker):
@@ -85,6 +115,11 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 		defender.soft_health = max(0, defender.soft_health - final_damage_to_defender_soft)
 		defender.hard_health = max(0, defender.hard_health - final_damage_to_defender_hard)
 		defender.equipment = max(0, defender.equipment - final_damage_to_defender_equipment)
+		
+		print("Defender after damage - Soft: ", defender.soft_health,
+			  " Hard: ", defender.hard_health,
+			  " Equipment: ", defender.equipment)
+			  
 		defender.update_bars()
 		
 		if (defender.soft_health <= 0 and defender.hard_health <= 0) or defender.equipment <= 0:
@@ -95,19 +130,15 @@ func resolve_combat(attacker: Node2D, defender: Node2D):
 		attacker.soft_health = max(0, attacker.soft_health - final_damage_to_attacker_soft)
 		attacker.hard_health = max(0, attacker.hard_health - final_damage_to_attacker_hard)
 		attacker.equipment = max(0, attacker.equipment - final_damage_to_attacker_equipment)
+		
+		print("Attacker after damage - Soft: ", attacker.soft_health,
+			  " Hard: ", attacker.hard_health,
+			  " Equipment: ", attacker.equipment)
+			  
 		attacker.update_bars()
 		
 		if (attacker.soft_health <= 0 and attacker.hard_health <= 0) or attacker.equipment <= 0:
 			units_to_destroy.append({"unit": attacker, "position": attacker_pos})
-	
-	# Print combat results
-	print("\nCombat Results:")
-	print("Damage dealt to defender - Soft: ", final_damage_to_defender_soft, 
-		  " Hard: ", final_damage_to_defender_hard, 
-		  " Equipment: ", final_damage_to_defender_equipment)
-	print("Damage dealt to attacker - Soft: ", final_damage_to_attacker_soft, 
-		  " Hard: ", final_damage_to_attacker_hard, 
-		  " Equipment: ", final_damage_to_attacker_equipment)
 	
 	# Handle unit destruction
 	for unit_data in units_to_destroy:
