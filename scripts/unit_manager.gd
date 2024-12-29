@@ -508,69 +508,121 @@ func highlight_valid_moves(from_pos: Vector2):
 	if !selected_unit:
 		print("UnitManager: No unit selected to highlight moves for")
 		return
-		
-	var is_armoured = selected_unit.scene_file_path.contains("armoured")
-	var max_range = 2 if is_armoured else 1
 	
-	# First, find all positions we can move to if we have movement points
-	var moveable_positions = []
+	# Get unit type from scene path
+	var unit_type = ""
+	if selected_unit.scene_file_path.contains("infantry"):
+		unit_type = "infantry"
+	elif selected_unit.scene_file_path.contains("armoured"):
+		unit_type = "armoured"
+	elif selected_unit.scene_file_path.contains("garrison"):
+		unit_type = "garrison"
+	
+	# Only process moves if unit has movement points
 	if selected_unit.movement_points > 0:
-		for x in range(max(0, from_pos.x - max_range), min(grid.grid_size.x, from_pos.x + max_range + 1)):
-			for y in range(max(0, from_pos.y - max_range), min(grid.grid_size.y, from_pos.y + max_range + 1)):
-				var test_pos = Vector2(x, y)
-				if test_pos == from_pos:
-					continue
+		match unit_type:
+			"garrison":
+				# Garrison moves only up, down, left, right (no diagonals)
+				var directions = [
+					Vector2(1, 0),   # right
+					Vector2(-1, 0),  # left
+					Vector2(0, 1),   # down
+					Vector2(0, -1)   # up
+				]
 				
-				# Calculate the movement cost to this position
-				var distance = max(abs(test_pos.x - from_pos.x), abs(test_pos.y - from_pos.y))
-				if !is_armoured and distance > 1:
-					continue
-					
-				if distance > selected_unit.movement_points:
-					continue
-				
-				# Check territory restrictions before war
-				if !is_position_in_territory(test_pos, selected_unit.is_enemy):
-					continue
-				
-				# Check if path is blocked
-				if is_path_blocked(from_pos, test_pos):
-					continue
-				
-				# Add position if it has space for movement
-				if !units_in_cells.has(test_pos) or units_in_cells[test_pos].size() < MAX_UNITS_PER_CELL:
-					moveable_positions.append(test_pos)
-					valid_move_tiles.append(test_pos)
-	
-	# If unit hasn't attacked this turn, check for attackable enemies
-	if !selected_unit.in_combat_this_turn:
-		# Check from current position (for units that can't move but can still attack)
-		var attack_positions = [from_pos]
-		# Add moveable positions if we can move
-		if selected_unit.movement_points > 0:
-			attack_positions.append_array(moveable_positions)
-		
-		# From each possible attack position, check for attackable enemies
-		for attack_pos in attack_positions:
-			# Check all positions within attack range of this potential position
-			for x in range(max(0, attack_pos.x - max_range), min(grid.grid_size.x, attack_pos.x + max_range + 1)):
-				for y in range(max(0, attack_pos.y - max_range), min(grid.grid_size.y, attack_pos.y + max_range + 1)):
-					var target_pos = Vector2(x, y)
-					if target_pos == attack_pos:
-						continue
+				for dir in directions:
+					var test_pos = from_pos + dir
+					if is_valid_movement_position(test_pos):
+						valid_move_tiles.append(test_pos)
 						
-					# Calculate attack distance from the potential position
-					var attack_distance = max(abs(target_pos.x - attack_pos.x), abs(target_pos.y - attack_pos.y))
-					if !is_armoured and attack_distance > 1:
-						continue
-					
-					# Check if this position has an enemy
-					if target_pos in units_in_cells:
-						for unit in units_in_cells[target_pos]:
-							if unit.is_enemy != selected_unit.is_enemy:
-								if !valid_move_tiles.has(target_pos):
-									valid_move_tiles.append(target_pos)
-								break
+			"infantry":
+				# Infantry can move in any direction within 1 tile radius
+				for x in range(-1, 2):
+					for y in range(-1, 2):
+						if x == 0 and y == 0:
+							continue
+						var test_pos = from_pos + Vector2(x, y)
+						if is_valid_movement_position(test_pos):
+							valid_move_tiles.append(test_pos)
+							
+			"armoured":
+				# Armoured moves like a queen in chess with range of 2
+				var directions = [
+					Vector2(1, 0),    # right
+					Vector2(-1, 0),   # left
+					Vector2(0, 1),    # down
+					Vector2(0, -1),   # up
+					Vector2(1, 1),    # diagonal down-right
+					Vector2(-1, 1),   # diagonal down-left
+					Vector2(1, -1),   # diagonal up-right
+					Vector2(-1, -1)   # diagonal up-left
+				]
+				
+				for dir in directions:
+					# Can move 1 or 2 spaces in each direction
+					for distance in range(1, 3):
+						var test_pos = from_pos + (dir * distance)
+						if is_valid_movement_position(test_pos):
+							valid_move_tiles.append(test_pos)
+	
+	# Add combat tiles - units can attack even if they can't move
+	if !selected_unit.in_combat_this_turn:
+		var combat_range = 2 if unit_type == "armoured" else 1
+		add_combat_tiles(from_pos, combat_range)
+
+func is_valid_movement_position(pos: Vector2) -> bool:
+	# Check if position is within grid bounds
+	if pos.x < 0 or pos.x >= grid.grid_size.x or \
+	   pos.y < 0 or pos.y >= grid.grid_size.y:
+		return false
+	
+	# Check territory restrictions before war
+	if !is_position_in_territory(pos, selected_unit.is_enemy):
+		return false
+	
+	# Check if path is blocked by enemy units
+	if is_path_blocked(unit_start_pos, pos):
+		return false
+	
+	# Check if position has space for movement
+	if pos in units_in_cells:
+		# Allow moving to position with enemy units for combat
+		var has_only_enemy_units = true
+		for unit in units_in_cells[pos]:
+			if unit.is_enemy == selected_unit.is_enemy:
+				if units_in_cells[pos].size() >= MAX_UNITS_PER_CELL:
+					return false
+				has_only_enemy_units = false
+		
+		if has_only_enemy_units:
+			return true
+			
+	return true
+
+func add_combat_tiles(from_pos: Vector2, combat_range: int):
+	# Add tiles where enemy units are present within combat range
+	for x in range(-combat_range, combat_range + 1):
+		for y in range(-combat_range, combat_range + 1):
+			if x == 0 and y == 0:
+				continue
+				
+			var test_pos = from_pos + Vector2(x, y)
+			
+			# Check if position is within grid bounds
+			if test_pos.x < 0 or test_pos.x >= grid.grid_size.x or \
+			   test_pos.y < 0 or test_pos.y >= grid.grid_size.y:
+				continue
+			
+			# For non-armoured units, only allow adjacent attacks
+			if combat_range == 1 and abs(x) + abs(y) > 1:
+				continue
+			
+			# Check if there are enemy units at this position
+			if test_pos in units_in_cells:
+				for unit in units_in_cells[test_pos]:
+					if unit.is_enemy != selected_unit.is_enemy:
+						valid_move_tiles.append(test_pos)
+						break
 
 func manhattan_distance(from: Vector2, to: Vector2) -> int:
 	return int(abs(from.x - to.x) + abs(from.y - to.y))

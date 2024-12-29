@@ -198,43 +198,79 @@ func get_enemy_units_of_type(type: String) -> Array:
 
 func get_valid_moves(from_pos: Vector2, unit_type: String, max_distance: int = 1) -> Array:
 	var valid_moves = []
-	var directions = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
 	
-	if unit_type == "armoured":
-		# Add diagonal moves for armoured units
-		directions.append_array([Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)])
-		max_distance = 2
-	
-	for y in range(-max_distance, max_distance + 1):
-		for x in range(-max_distance, max_distance + 1):
-			var test_pos = from_pos + Vector2(x, y)
+	# Different movement patterns for each unit type
+	match unit_type:
+		"garrison":
+			# Garrison moves only up, down, left, right (no diagonals)
+			var directions = [
+				Vector2(1, 0),   # right
+				Vector2(-1, 0),  # left
+				Vector2(0, 1),   # down
+				Vector2(0, -1)   # up
+			]
 			
-			# Check if position is within grid bounds
-			if test_pos.x < 0 or test_pos.x >= grid.grid_size.x or \
-			   test_pos.y < 0 or test_pos.y >= grid.grid_size.y:
-				continue
+			for dir in directions:
+				var test_pos = from_pos + dir
+				if is_valid_position(test_pos):
+					valid_moves.append(test_pos)
+					
+		"infantry":
+			# Infantry can move in any direction within 1 tile radius
+			for x in range(-1, 2):
+				for y in range(-1, 2):
+					if x == 0 and y == 0:
+						continue
+					var test_pos = from_pos + Vector2(x, y)
+					if is_valid_position(test_pos):
+						valid_moves.append(test_pos)
+						
+		"armoured":
+			# Armoured moves like a queen in chess with range of 2
+			var directions = [
+				Vector2(1, 0),    # right
+				Vector2(-1, 0),   # left
+				Vector2(0, 1),    # down
+				Vector2(0, -1),   # up
+				Vector2(1, 1),    # diagonal down-right
+				Vector2(-1, 1),   # diagonal down-left
+				Vector2(1, -1),   # diagonal up-right
+				Vector2(-1, -1)   # diagonal up-left
+			]
 			
-			# Check distance
-			if get_manhattan_distance(from_pos, test_pos) > max_distance:
-				continue
-			
-			# Check for player units
-			var has_player_units = false
-			if test_pos in unit_manager.units_in_cells:
-				for unit in unit_manager.units_in_cells[test_pos]:
-					if !unit.is_enemy:  # Found player unit
-						has_player_units = true
-						break
-			
-			# Include position if:
-			# 1. It has player units (for combat) regardless of stack size, OR
-			# 2. It has space for movement
-			if has_player_units or \
-			   !unit_manager.units_in_cells.has(test_pos) or \
-			   unit_manager.units_in_cells[test_pos].size() < unit_manager.MAX_UNITS_PER_CELL:
-				valid_moves.append(test_pos)
+			for dir in directions:
+				# Can move 1 or 2 spaces in each direction
+				for distance in range(1, 3):
+					var test_pos = from_pos + (dir * distance)
+					if is_valid_position(test_pos):
+						valid_moves.append(test_pos)
 	
 	return valid_moves
+
+func is_valid_position(pos: Vector2) -> bool:
+	# Check if position is within grid bounds
+	if pos.x < 0 or pos.x >= grid.grid_size.x or pos.y < 0 or pos.y >= grid.grid_size.y:
+		return false
+		
+	# Make sure we have a valid selected unit
+	if !unit_manager or !unit_manager.selected_unit:
+		return false
+		
+	# Check if position has space for movement
+	if pos in unit_manager.units_in_cells:
+		# Allow moving to position with enemy units for combat
+		var has_only_enemy_units = true
+		for unit in unit_manager.units_in_cells[pos]:
+			if unit and unit.has_method("get") and unit_manager.selected_unit.has_method("get"):
+				if unit.is_enemy == unit_manager.selected_unit.is_enemy:
+					if unit_manager.units_in_cells[pos].size() >= unit_manager.MAX_UNITS_PER_CELL:
+						return false
+					has_only_enemy_units = false
+		
+		if has_only_enemy_units:
+			return true
+			
+	return true
 
 func move_garrison_units():
 	print("\nMoving garrison units...")
@@ -246,48 +282,43 @@ func move_garrison_units():
 		
 		if !unit.can_move():
 			continue
-			
-		# Get valid moves within 1 tile
-		var valid_moves = get_valid_moves(current_pos, "garrison")
-		if valid_moves.is_empty():
-			continue
-			
-		# Score each move based on position
+		
+		print("Checking garrison at ", current_pos)
+		
+		# Get possible orthogonal moves
+		var possible_moves = []
+		var directions = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
+		
+		for dir in directions:
+			var test_pos = current_pos + dir
+			if test_pos.x >= 0 and test_pos.x < grid.grid_size.x and \
+			   test_pos.y >= 0 and test_pos.y < grid.grid_size.y:
+				possible_moves.append(test_pos)
+		
+		# Score each possible move
 		var scored_moves = []
-		for move in valid_moves:
-			# Skip the last column entirely
-			if move.x == grid.grid_size.x - 1:
-				continue
-				
+		for move in possible_moves:
 			var score = 0
 			
-			# Prioritize positions further to the right (except last column)
-			score += move.x * 100  # Higher score for rightmost positions
+			# During war, garrisons should move towards player territory
+			score += (grid.grid_size.x - move.x) * 50
 			
-			# Extra incentive to move out of the last column if we're in it
+			# Extra score for moving out of the starting column
 			if current_pos.x == grid.grid_size.x - 1:
-				score += 1000  # High priority to move out of last column
+				score += 500
 			
-			# Check for enemy units in range
-			var has_enemies = false
-			for check_pos in get_valid_moves(move, "garrison", 2):
-				if check_pos in unit_manager.units_in_cells:
-					for check_unit in unit_manager.units_in_cells[check_pos]:
-						if !check_unit.is_enemy:
-							has_enemies = true
-							break
-			
-			# Only move to empty tiles
-			if !has_enemies:
+			# Only consider moves to empty spaces or spaces with room
+			if !unit_manager.units_in_cells.has(move) or \
+			   unit_manager.units_in_cells[move].size() < unit_manager.MAX_UNITS_PER_CELL:
 				scored_moves.append({"position": move, "score": score})
 		
-		# Sort moves by score
-		scored_moves.sort_custom(func(a, b): return a.score > b.score)
-		
-		# Execute best move
+		# Execute the highest-scored move
 		if !scored_moves.is_empty():
+			scored_moves.sort_custom(func(a, b): return a.score > b.score)
 			var best_move = scored_moves[0].position
+			
 			if best_move != current_pos:
+				print("Moving garrison from ", current_pos, " to ", best_move)
 				unit_manager.selected_unit = unit
 				unit_manager.unit_start_pos = current_pos
 				unit_manager.execute_move(best_move)
@@ -305,102 +336,100 @@ func move_combat_units():
 		if !unit.can_move() or unit.in_combat_this_turn:
 			continue
 			
-		print("Checking attack opportunities for unit at ", current_pos)
+		print("Checking unit at ", current_pos)
 		
-		# Check adjacent tiles for attack opportunities
-		var attack_opportunities = []
 		var unit_type = "armoured" if unit.scene_file_path.ends_with("armoured.tscn") else "infantry"
+		var movement_range = 2 if unit_type == "armoured" else 1
 		
-		# Get adjacent tiles only for attack checks
-		var adjacent_tiles = []
-		var directions = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1), 
-						 Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]
+		# Get all possible positions within range
+		var possible_moves = []
+		for x in range(-movement_range, movement_range + 1):
+			for y in range(-movement_range, movement_range + 1):
+				if x == 0 and y == 0:
+					continue
+					
+				var test_pos = current_pos + Vector2(x, y)
+				
+				# Check if position is within grid bounds
+				if test_pos.x >= 0 and test_pos.x < grid.grid_size.x and \
+				   test_pos.y >= 0 and test_pos.y < grid.grid_size.y:
+					# For non-armoured units, only allow orthogonal and diagonal moves
+					if unit_type != "armoured" and abs(x) + abs(y) > 1:
+						continue
+					
+					# For armoured units, ensure movement is in straight lines
+					if unit_type == "armoured" and x != 0 and y != 0 and abs(x) != abs(y):
+						continue
+						
+					possible_moves.append(test_pos)
 		
-		for dir in directions:
-			var check_pos = current_pos + dir
-			# Check if position is within grid bounds
-			if check_pos.x >= 0 and check_pos.x < grid.grid_size.x and \
-			   check_pos.y >= 0 and check_pos.y < grid.grid_size.y:
-				adjacent_tiles.append(check_pos)
-		
-		# Check only adjacent tiles for attack opportunities
-		for check_pos in adjacent_tiles:
-			if check_pos in unit_manager.units_in_cells:
-				for check_unit in unit_manager.units_in_cells[check_pos]:
-					if !check_unit.is_enemy:
-						var attack_score = evaluate_attack_position(check_pos, unit)
-						attack_opportunities.append({
-							"position": check_pos,
-							"score": attack_score
-						})
-						print("Found adjacent attack opportunity at ", check_pos, " with score ", attack_score)
-						break
-		
-		# If we have attack opportunities, execute the best one
-		if !attack_opportunities.is_empty():
-			attack_opportunities.sort_custom(func(a, b): return a.score > b.score)
-			var best_attack = attack_opportunities[0]
-			print("Executing attack at ", best_attack.position, " with score ", best_attack.score)
-			
-			unit_manager.selected_unit = unit
-			unit_manager.unit_start_pos = current_pos
-			var combat_manager = grid.get_node("CombatManager")
-			if combat_manager:
-				combat_manager.initiate_combat(current_pos, best_attack.position)
-				continue  # Skip movement phase for this unit
-	
-	# Second pass: Move units that didn't attack
-	for unit_data in armoured_units + infantry_units:
-		var unit = unit_data["unit"]
-		var current_pos = unit_data["position"]
-		
-		if !unit.can_move() or unit.in_combat_this_turn:
-			continue
-			
-		var unit_type = "armoured" if unit.scene_file_path.ends_with("armoured.tscn") else "infantry"
-		var valid_moves = get_valid_moves(current_pos, unit_type)
-		
-		if valid_moves.is_empty():
-			continue
-		
-		# Score moves based on proximity to player units and territory
+		# Score each possible move
 		var scored_moves = []
-		for move in valid_moves:
+		for move in possible_moves:
 			var score = 0
 			
-			# Check for adjacent player units after potential move
-			var has_adjacent_enemies = false
-			for check_pos in get_valid_moves(move, unit_type, 1):
-				if check_pos in unit_manager.units_in_cells:
+			# Check for player units to attack
+			var has_attackable_unit = false
+			if move in unit_manager.units_in_cells:
+				for target_unit in unit_manager.units_in_cells[move]:
+					if !target_unit.is_enemy:
+						has_attackable_unit = true
+						score += 1000  # High priority for attack moves
+						
+						# Bonus for attacking damaged units
+						var health_ratio = (target_unit.soft_health + target_unit.hard_health) / \
+										 float(target_unit.max_soft_health + target_unit.max_hard_health)
+						if health_ratio < 0.5:
+							score += 500
+						break
+			
+			# If no immediate attack, score based on position
+			if !has_attackable_unit:
+				# Prioritize moving towards player territory
+				score += (grid.grid_size.x - move.x) * 100
+				
+				# Check if the move gets us closer to any player unit
+				var min_distance_to_player = 999
+				for check_pos in unit_manager.units_in_cells:
 					for check_unit in unit_manager.units_in_cells[check_pos]:
 						if !check_unit.is_enemy:
-							has_adjacent_enemies = true
-							score += 150  # High priority for positions adjacent to enemies
-							break
-			
-			# If no immediate attacks, prefer moving towards player territory
-			if !has_adjacent_enemies:
-				# Prefer moving left (towards player territory)
-				score += (grid.grid_size.x - move.x) * 5
+							var distance = abs(move.x - check_pos.x) + abs(move.y - check_pos.y)
+							min_distance_to_player = min(min_distance_to_player, distance)
 				
-				# Extra points for moving into player or neutral territory
+				# Higher score for positions closer to player units
+				if min_distance_to_player != 999:
+					score += (20 - min_distance_to_player) * 50
+				
+				# Extra points for moving into player territory
 				var territory_owner = territory_manager.get_territory_owner(move)
 				if territory_owner == "player":
-					score += 50
-				elif territory_owner == "neutral":
-					score += 25
+					score += 300
 			
-			scored_moves.append({"position": move, "score": score})
+			# Check if we can actually move there
+			if !unit_manager.units_in_cells.has(move) or \
+			   unit_manager.units_in_cells[move].size() < unit_manager.MAX_UNITS_PER_CELL or \
+			   has_attackable_unit:
+				scored_moves.append({"position": move, "score": score})
 		
-		# Sort moves by score and execute best move
+		# Execute the highest-scored move
 		if !scored_moves.is_empty():
 			scored_moves.sort_custom(func(a, b): return a.score > b.score)
 			var best_move = scored_moves[0].position
 			
 			if best_move != current_pos:
+				print("Moving unit from ", current_pos, " to ", best_move)
 				unit_manager.selected_unit = unit
 				unit_manager.unit_start_pos = current_pos
-				unit_manager.execute_move(best_move)
+				
+				# If this is an attack move, initiate combat
+				if best_move in unit_manager.units_in_cells and \
+				   unit_manager.units_in_cells[best_move].any(func(u): return !u.is_enemy):
+					var combat_manager = grid.get_node("CombatManager")
+					if combat_manager:
+						combat_manager.initiate_combat(current_pos, best_move)
+				else:
+					# Regular movement
+					unit_manager.execute_move(best_move)
 
 # New function to evaluate attack positions
 func evaluate_attack_position(pos: Vector2, attacker) -> int:
