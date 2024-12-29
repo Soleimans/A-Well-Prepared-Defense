@@ -7,8 +7,8 @@ extends Button
 @onready var turn_count_label = get_node("../TurnCount")
 
 var value = 1000  # Starting value
-var points_per_civilian_factory = 2160
-var points_per_military_factory = 1000
+var points_per_civilian_factory = 2000
+var points_per_military_factory = 500
 
 func _ready():
 	pressed.connect(_on_button_pressed)

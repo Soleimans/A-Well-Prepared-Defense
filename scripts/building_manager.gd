@@ -7,10 +7,10 @@ var fort_fast_construction: bool = false
 var all_unlocked_columns = []  # Track all columns unlocked by either side
 var war_mode = false  # Set to true when war starts
 
-# Building properties
+# Building costs
 var building_costs = {
-	"civilian_factory": 10800,
-	"military_factory": 7200,
+	"civilian_factory": 12000,
+	"military_factory": 8000,
 	"fort": 500
 }
 

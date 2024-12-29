@@ -7,8 +7,8 @@ signal menu_closed
 
 # Building costs
 const BUILDING_COSTS = {
-	"civilian_factory": 10800,
-	"military_factory": 7200,
+	"civilian_factory": 12000,
+	"military_factory": 8000,
 	"fort": 500
 }
 
