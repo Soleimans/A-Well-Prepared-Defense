@@ -64,10 +64,11 @@ func hire_minister(minister: Minister) -> bool:
 			
 		# Apply building effects if any
 		for building_type in minister.building_effect:
-			if minister.building_effect[building_type] == "speed" and building_type == "fort":
+			var effect = minister.building_effect[building_type]
+			if typeof(effect) == TYPE_STRING and effect == "speed" and building_type == "fort":
 				building_manager.set_fort_fast_construction(true)
 			else:
-				building_manager.apply_construction_modifier(building_type, minister.building_effect[building_type])
+				building_manager.apply_construction_modifier(building_type, effect)
 		
 		active_ministers.append(minister)
 		available_ministers.erase(minister)
@@ -83,13 +84,15 @@ func dismiss_minister(minister: Minister):
 		
 	# Remove building effects if any
 	for building_type in minister.building_effect:
-		if minister.building_effect[building_type] == "speed" and building_type == "fort":
+		var effect = minister.building_effect[building_type]
+		if typeof(effect) == TYPE_STRING and effect == "speed" and building_type == "fort":
 			building_manager.set_fort_fast_construction(false)
 		else:
-			building_manager.remove_construction_modifier(building_type, minister.building_effect[building_type])
+			building_manager.remove_construction_modifier(building_type, effect)
 	
 	active_ministers.erase(minister)
 	available_ministers.append(minister)
+
 
 func get_minister_by_label_path(path: String) -> Minister:
 	# Check available ministers
