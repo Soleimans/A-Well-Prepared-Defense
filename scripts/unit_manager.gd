@@ -231,9 +231,15 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 			new_unit.get_node("Sprite2D").modulate = Color.RED
 	
 	var world_pos = grid.grid_to_world(grid_pos)
-	var unit_offset = Vector2(0, -20 * units_in_cells[grid_pos].size())
+	
+	# Calculate the vertical offset based on existing units in the cell
+	var stack_height = units_in_cells[grid_pos].size()
+	var unit_offset = Vector2(0, -20 * stack_height)  # -20 pixels for each unit in stack
+	
+	# Apply the offset to the unit's position
 	new_unit.position = world_pos + unit_offset
 	
+	# Add the unit to the cell
 	units_in_cells[grid_pos].append(new_unit)
 	
 	if placing_enemy:
@@ -505,15 +511,27 @@ func execute_move(to_pos: Vector2) -> bool:
 	
 	selected_unit.movement_points -= movement_cost
 	
+	# Remove unit from starting position
 	units_in_cells[unit_start_pos].remove_at(unit_index)
 	
+	# Add unit to new position
 	if to_pos not in units_in_cells:
 		units_in_cells[to_pos] = []
 	units_in_cells[to_pos].append(selected_unit)
 	
+	# Reposition ALL units in the destination stack with proper offsets
 	var world_pos = grid.grid_to_world(to_pos)
-	var unit_offset = Vector2(0, -20 * (units_in_cells[to_pos].size() - 1))
-	selected_unit.position = world_pos + unit_offset
+	for i in range(units_in_cells[to_pos].size()):
+		var unit = units_in_cells[to_pos][i]
+		var offset = Vector2(0, -20 * i)  # -20 pixels offset for each unit in stack
+		unit.position = world_pos + offset
+	
+	# Also reposition units in the starting position if any remain
+	world_pos = grid.grid_to_world(unit_start_pos)
+	for i in range(units_in_cells[unit_start_pos].size()):
+		var unit = units_in_cells[unit_start_pos][i]
+		var offset = Vector2(0, -20 * i)
+		unit.position = world_pos + offset
 	
 	if selected_unit.movement_points <= 0:
 		selected_unit.has_moved = true
