@@ -227,8 +227,6 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	
 	if placing_enemy:
 		new_unit.is_enemy = true
-		if new_unit.has_node("Sprite2D"):
-			new_unit.get_node("Sprite2D").modulate = Color.RED
 	
 	var world_pos = grid.grid_to_world(grid_pos)
 	

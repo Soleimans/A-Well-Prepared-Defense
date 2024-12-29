@@ -1,4 +1,3 @@
-# infantry.gd
 extends Node2D
 
 var movement_points = 1
@@ -20,8 +19,6 @@ var in_combat_this_turn = false
 
 func _ready():
 	$Label.text = "Infantry"
-	if is_enemy and sprite:
-		sprite.modulate = Color.RED
 	setup_progress_bars()
 
 func setup_progress_bars():
@@ -111,10 +108,7 @@ func can_move():
 
 func set_highlighted(value: bool):
 	if sprite:
-		if value:
-			sprite.modulate = Color(1.5, 1.5, 0.5) if !is_enemy else Color(1.5, 0.5, 0.5)
-		else:
-			sprite.modulate = Color.WHITE if !is_enemy else Color.RED
+		sprite.modulate = Color(1.5, 1.5, 0.5) if value else Color.WHITE
 
 func _process(_delta):
 	update_bars()

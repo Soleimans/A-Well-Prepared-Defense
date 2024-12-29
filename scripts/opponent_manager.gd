@@ -280,10 +280,10 @@ func count_adjacent_buildings(pos: Vector2) -> int:
 		   check_pos.y >= 0 and check_pos.y < grid.grid_size.y:
 			# Check if there's a building at this position
 			if building_manager.grid_cells.has(check_pos) and building_manager.grid_cells[check_pos] != null:
-				# Verify it's an enemy building
-				var building = building_manager.grid_cells[check_pos]
-				if building.has_node("Sprite2D") and building.get_node("Sprite2D").self_modulate == Color.RED:
+				# Verify it's an enemy building by checking territory
+				if territory_manager.get_territory_owner(check_pos) == "enemy":
 					# Count factories and positions with forts
+					var building = building_manager.grid_cells[check_pos]
 					if building.scene_file_path.ends_with("civilian_factory.tscn") or \
 					   building.scene_file_path.ends_with("military_factory.tscn") or \
 					   building.scene_file_path.ends_with("fort.tscn") or \

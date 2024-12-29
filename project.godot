@@ -13,7 +13,7 @@ config_version=5
 config/name="A Well Prepared Defense"
 run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
-config/icon="res://images/icon.svg"
+config/icon="res://images/icon.png"
 
 [display]
 
