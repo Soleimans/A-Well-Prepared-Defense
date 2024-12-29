@@ -246,15 +246,18 @@ func move_garrison_units():
 		# Score each move based on position
 		var scored_moves = []
 		for move in valid_moves:
+			# Skip the last column entirely
+			if move.x == grid.grid_size.x - 1:
+				continue
+				
 			var score = 0
 			
-			# Prefer last column
-			if move.x == grid.grid_size.x - 1:
-				score += 100
+			# Prioritize positions further to the right (except last column)
+			score += move.x * 100  # Higher score for rightmost positions
 			
-			# Prefer leftmost enemy territory
-			if territory_manager.get_territory_owner(move) == "enemy":
-				score += (grid.grid_size.x - move.x) * 10
+			# Extra incentive to move out of the last column if we're in it
+			if current_pos.x == grid.grid_size.x - 1:
+				score += 1000  # High priority to move out of last column
 			
 			# Check for enemy units in range
 			var has_enemies = false
@@ -265,7 +268,7 @@ func move_garrison_units():
 							has_enemies = true
 							break
 			
-			# Only attack empty tiles
+			# Only move to empty tiles
 			if !has_enemies:
 				scored_moves.append({"position": move, "score": score})
 		
