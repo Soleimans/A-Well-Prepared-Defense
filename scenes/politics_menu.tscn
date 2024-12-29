@@ -199,7 +199,7 @@ text = "150"
 
 [node name="Button" type="Button" parent="."]
 layout_mode = 0
-offset_left = 204.0
-offset_right = 268.0
+offset_left = 177.0
+offset_right = 241.0
 offset_bottom = 32.0
 text = "Close"

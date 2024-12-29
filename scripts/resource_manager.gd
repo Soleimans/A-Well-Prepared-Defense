@@ -2,8 +2,8 @@ extends Node
 
 # Player resources
 var points = 0
-var military_points = 10000
-var political_power = 1000
+var military_points = 0
+var political_power = 100
 var manpower = 1000000  # Add player manpower
 var political_power_gain = 10
 var political_power_modifiers = []
@@ -11,7 +11,7 @@ var political_power_modifiers = []
 # Enemy resources
 var enemy_points = 0
 var enemy_military_points = 0
-var enemy_political_power = 1000
+var enemy_political_power = 100
 var enemy_manpower = 1000000  # Base manpower that doesn't change with factories
 var enemy_political_power_gain = 10
 var enemy_political_power_modifiers = []
