@@ -5,6 +5,7 @@ extends Button
 @onready var military_points_label = get_node("../ColorRect/HBoxContainer/Label2")
 @onready var grid_node = get_node("/root/Main/Grid")
 @onready var turn_count_label = get_node("../TurnCount")
+@onready var territory_manager = grid_node.get_node("TerritoryManager") if grid_node else null
 
 var value = 1000  # Starting value
 var points_per_civilian_factory = 2000
@@ -18,6 +19,7 @@ func _ready():
 	print("Points label found: ", points_label != null)
 	print("Military points label found: ", military_points_label != null)
 	print("Grid node found: ", grid_node != null)
+	print("Territory manager found: ", territory_manager != null)
 
 func _on_button_pressed():
 	print("\n=== TURN BUTTON PRESSED ===")
@@ -192,7 +194,7 @@ func get_factory_counts() -> Dictionary:
 		for pos in building_manager.grid_cells:
 			var cell = building_manager.grid_cells[pos]
 			if cell and not pos in construction_positions:
-				var is_enemy = cell.has_node("Sprite2D") and cell.get_node("Sprite2D").self_modulate == Color.RED
+				var is_enemy = territory_manager and territory_manager.get_territory_owner(pos) == "enemy"
 					
 				# Check if this is a factory by its scene path
 				if cell.scene_file_path == "res://scenes/civilian_factory.tscn":
@@ -214,16 +216,15 @@ func get_factory_counts() -> Dictionary:
 				for child in cell.get_children():
 					if not child.scene_file_path:
 						continue
-					var child_is_enemy = child.has_node("Sprite2D") and child.get_node("Sprite2D").self_modulate == Color.RED
 					if child.scene_file_path == "res://scenes/civilian_factory.tscn":
-						if child_is_enemy:
+						if is_enemy:
 							counts["enemy_civilian"] += 1
 							print("Found a completed enemy civilian factory")
 						else:
 							counts["civilian"] += 1
 							print("Found a completed civilian factory")
 					elif child.scene_file_path == "res://scenes/military_factory.tscn":
-						if child_is_enemy:
+						if is_enemy:
 							counts["enemy_military"] += 1
 							print("Found a completed enemy military factory")
 						else:

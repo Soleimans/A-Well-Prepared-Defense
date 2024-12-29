@@ -73,10 +73,6 @@ func initialize(size: Vector2):
 	grid.add_child(enemy_factory)
 	grid_cells[Vector2(14, 4)] = enemy_factory
 	enemy_factory.position = grid.grid_to_world(Vector2(14, 4))
-	
-	# Set enemy factory color
-	if enemy_factory.has_node("Sprite2D"):
-		enemy_factory.get_node("Sprite2D").self_modulate = Color.RED
 		
 	print("BuildingManager initialized with starting factories")
 
@@ -329,11 +325,6 @@ func process_construction():
 				"civilian_factory":
 					var building = civilian_factory_scene.instantiate()
 					if building:
-						# Set enemy color only on the sprite texture, not the whole node
-						if construction.is_enemy and building.has_node("Sprite2D"):
-							var sprite = building.get_node("Sprite2D")
-							sprite.self_modulate = Color.RED
-
 						# Save existing fort if there is one
 						var existing_fort = null
 						if grid_cells[grid_pos] and grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
@@ -357,10 +348,6 @@ func process_construction():
 				"military_factory":
 					var building = military_factory_scene.instantiate()
 					if building:
-						if construction.is_enemy and building.has_node("Sprite2D"):
-							var sprite = building.get_node("Sprite2D")
-							sprite.self_modulate = Color.RED
-
 						# Save existing fort if there is one
 						var existing_fort = null
 						if grid_cells[grid_pos] and grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
@@ -404,10 +391,6 @@ func process_construction():
 						if building.has_method("set_level"):
 							building.set_level(fort_levels[grid_pos])
 						
-						if construction.is_enemy and building.has_node("Sprite2D"):
-							var sprite = building.get_node("Sprite2D")
-							sprite.self_modulate = Color.RED
-
 						if grid_cells[grid_pos]:
 							grid_cells[grid_pos].add_child(building)
 							building.position = Vector2.ZERO

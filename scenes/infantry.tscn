@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://yvq3k48ienvs"]
 
 [ext_resource type="Script" path="res://scripts/infantry.gd" id="1_2o26r"]
-[ext_resource type="Texture2D" uid="uid://bbto8cxlpgbgv" path="res://images/stahlhelm.png" id="2_if6jn"]
+[ext_resource type="Texture2D" uid="uid://cvqe6rdt6tsqu" path="res://images/stahlhelm (2).png" id="2_2gg0p"]
 
 [node name="Infantry" type="Node2D"]
 script = ExtResource("1_2o26r")
@@ -9,7 +9,7 @@ script = ExtResource("1_2o26r")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(-33, -0.499999)
 scale = Vector2(0.25, 0.228346)
-texture = ExtResource("2_if6jn")
+texture = ExtResource("2_2gg0p")
 
 [node name="Label" type="Label" parent="."]
 offset_left = -14.0

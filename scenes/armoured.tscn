@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://d3lhehqjkm8ge"]
 
 [ext_resource type="Script" path="res://scripts/armoured.gd" id="1_mhv64"]
-[ext_resource type="Texture2D" uid="uid://dy7ju832a641d" path="res://images/battle-tank.png" id="2_7888n"]
+[ext_resource type="Texture2D" uid="uid://dysrtcolg7cjh" path="res://images/battle-tank (2).png" id="2_3tqq7"]
 
 [node name="armoured" type="Node2D"]
 script = ExtResource("1_mhv64")
@@ -9,7 +9,7 @@ script = ExtResource("1_mhv64")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(-34, -0.500001)
 scale = Vector2(0.25, 0.228346)
-texture = ExtResource("2_7888n")
+texture = ExtResource("2_3tqq7")
 
 [node name="Label" type="Label" parent="."]
 offset_left = -18.0

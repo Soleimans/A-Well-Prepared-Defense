@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://boldsy0qd5pny"]
 
 [ext_resource type="Script" path="res://scripts/garrison.gd" id="1_hwkae"]
-[ext_resource type="Texture2D" uid="uid://caksgi1co1gfe" path="res://images/chess-pawn.png" id="2_rm6id"]
+[ext_resource type="Texture2D" uid="uid://kxnr4epuw25q" path="res://images/chess-pawn (2).png" id="2_63y53"]
 
 [node name="Garrison" type="Node2D"]
 position = Vector2(12, 0)
@@ -10,7 +10,7 @@ script = ExtResource("1_hwkae")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(-34, -2.5625)
 scale = Vector2(0.25, 0.180118)
-texture = ExtResource("2_rm6id")
+texture = ExtResource("2_63y53")
 
 [node name="Label" type="Label" parent="."]
 offset_left = -18.0

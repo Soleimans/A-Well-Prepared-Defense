@@ -81,7 +81,8 @@ func count_enemy_buildings():
 	for pos in building_manager.grid_cells:
 		var cell = building_manager.grid_cells[pos]
 		if cell:
-			var is_enemy = cell.has_node("Sprite2D") and cell.get_node("Sprite2D").self_modulate == Color.RED
+			# Check territory ownership instead of sprite color
+			var is_enemy = territory_manager.get_territory_owner(pos) == "enemy"
 			if is_enemy:
 				if cell.scene_file_path == "res://scenes/civilian_factory.tscn":
 					enemy_civilian_factory_count += 1
@@ -223,6 +224,10 @@ func can_build_fort(pos: Vector2) -> bool:
 	return false
 
 func attempt_build_at_position(position: Vector2, building_type: String) -> bool:
+	print("\nAttempting to deploy ", building_type, " at ", position)
+	print("Costs - Military: ", BUILDING_COSTS[building_type])
+	
+	# Check costs
 	var cost = BUILDING_COSTS[building_type]
 	
 	# Special case for fort - calculate actual cost based on existing level
@@ -253,6 +258,7 @@ func attempt_build_at_position(position: Vector2, building_type: String) -> bool
 	building_manager.selected_building_type = ""
 	building_manager.placing_enemy = false
 	return false
+
 
 func count_adjacent_buildings(pos: Vector2) -> int:
 	var count = 0
