@@ -532,7 +532,7 @@ func highlight_valid_moves(from_pos: Vector2):
 				
 				for dir in directions:
 					var test_pos = from_pos + dir
-					if is_valid_movement_position(test_pos):
+					if is_valid_movement_position(test_pos) and !position_has_enemy(test_pos):
 						valid_move_tiles.append(test_pos)
 						
 			"infantry":
@@ -542,7 +542,7 @@ func highlight_valid_moves(from_pos: Vector2):
 						if x == 0 and y == 0:
 							continue
 						var test_pos = from_pos + Vector2(x, y)
-						if is_valid_movement_position(test_pos):
+						if is_valid_movement_position(test_pos) and !position_has_enemy(test_pos):
 							valid_move_tiles.append(test_pos)
 							
 			"armoured":
@@ -559,16 +559,23 @@ func highlight_valid_moves(from_pos: Vector2):
 				]
 				
 				for dir in directions:
-					# Can move 1 or 2 spaces in each direction
+					# Check each step along the direction
 					for distance in range(1, 3):
 						var test_pos = from_pos + (dir * distance)
-						if is_valid_movement_position(test_pos):
-							valid_move_tiles.append(test_pos)
-	
-	# Add combat tiles - units can attack even if they can't move
-	if !selected_unit.in_combat_this_turn:
-		var combat_range = 2 if unit_type == "armoured" else 1
-		add_combat_tiles(from_pos, combat_range)
+						# Stop checking this direction if we hit an enemy or invalid position
+						if !is_valid_movement_position(test_pos) or position_has_enemy(test_pos):
+							break
+						valid_move_tiles.append(test_pos)
+
+func position_has_enemy(pos: Vector2) -> bool:
+	if !selected_unit:
+		return false
+		
+	if pos in units_in_cells:
+		for unit in units_in_cells[pos]:
+			if unit.is_enemy != selected_unit.is_enemy:
+				return true
+	return false
 
 func is_valid_movement_position(pos: Vector2) -> bool:
 	# Check if position is within grid bounds
@@ -586,17 +593,17 @@ func is_valid_movement_position(pos: Vector2) -> bool:
 	
 	# Check if position has space for movement
 	if pos in units_in_cells:
-		# Allow moving to position with enemy units for combat
-		var has_only_enemy_units = true
-		for unit in units_in_cells[pos]:
-			if unit.is_enemy == selected_unit.is_enemy:
-				if units_in_cells[pos].size() >= MAX_UNITS_PER_CELL:
-					return false
-				has_only_enemy_units = false
-		
-		if has_only_enemy_units:
-			return true
-			
+		if units_in_cells[pos].size() >= MAX_UNITS_PER_CELL:
+			# Check if all units at position are enemies
+			var all_enemies = true
+			for unit in units_in_cells[pos]:
+				if unit.is_enemy == selected_unit.is_enemy:
+					all_enemies = false
+					break
+			# If not all enemies, position is invalid due to being full
+			if !all_enemies:
+				return false
+	
 	return true
 
 func add_combat_tiles(from_pos: Vector2, combat_range: int):
