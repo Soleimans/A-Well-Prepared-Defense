@@ -101,7 +101,16 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	if units_in_cells[grid_pos].size() >= MAX_UNITS_PER_CELL:
 		print("UnitManager: Cannot place unit - cell is full")
 		return false
-		
+	
+	if territory_manager:
+		var territory_owner = territory_manager.get_territory_owner(grid_pos)
+		if placing_enemy and territory_owner != "enemy":
+			print("UnitManager: Cannot place unit - not enemy territory")
+			return false
+		elif !placing_enemy and territory_owner != "player":
+			print("UnitManager: Cannot place unit - not player territory")
+			return false
+
 	# Check military points and manpower costs
 	var military_cost = UNIT_COSTS[selected_unit_type]
 	var manpower_cost = MANPOWER_COSTS[selected_unit_type]
@@ -119,6 +128,9 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 			return false
 		if resource_manager.manpower < manpower_cost:
 			print("UnitManager: Cannot place unit - insufficient manpower")
+			return false
+		if grid_pos.x != 0:
+			print("UnitManager: Cannot place unit - must be in first column for player units")
 			return false
 	
 	var new_unit = unit_scenes[selected_unit_type].instantiate()
