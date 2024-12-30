@@ -16,6 +16,23 @@ func get_unit_position(unit: Node2D) -> Vector2:
 			return pos
 	return Vector2.ZERO
 
+# Check if a unit can attack a specific position
+func can_attack_position(from_pos: Vector2, to_pos: Vector2, unit: Node2D) -> bool:
+	if !unit:
+		return false
+		
+	var dx = abs(to_pos.x - from_pos.x)
+	var dy = abs(to_pos.y - from_pos.y)
+	
+	# For garrison units, only allow orthogonal attacks (no diagonals)
+	if unit.scene_file_path.contains("garrison"):
+		# This ensures garrison can only attack up, down, left, right
+		return (dx == 1 and dy == 0) or (dx == 0 and dy == 1)
+	
+	# For infantry and armoured units, allow adjacent attacks including diagonals
+	# This means they can attack in 8 directions: up, down, left, right, and diagonals
+	return dx <= 1 and dy <= 1 and !(dx == 0 and dy == 0)
+
 # Get enemy units at a specific position
 func get_enemy_units_at(pos: Vector2) -> Array:
 	var enemy_units = []
@@ -37,53 +54,30 @@ func is_adjacent(pos1: Vector2, pos2: Vector2) -> bool:
 
 # Check if unit has adjacent enemies
 func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
-	var is_armoured = unit.scene_file_path.contains("armoured")
-	var is_garrison = unit.scene_file_path.contains("garrison")
-	var max_range = 2 if is_armoured else 1
-	
-	# Check all positions within attack range
-	for x in range(max(0, pos.x - max_range), min(unit_manager.grid.grid_size.x, pos.x + max_range + 1)):
-		for y in range(max(0, pos.y - max_range), min(unit_manager.grid.grid_size.y, pos.y + max_range + 1)):
-			var check_pos = Vector2(x, y)
-			if check_pos == pos:
+	if !unit:
+		return false
+
+	# Check all adjacent positions
+	for dx in [-1, 0, 1]:
+		for dy in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+				
+			# For garrison units, only check orthogonal positions (no diagonals)
+			if unit.scene_file_path.contains("garrison") and abs(dx) + abs(dy) > 1:
+				continue
+				
+			var check_pos = pos + Vector2(dx, dy)
+			if check_pos.x < 0 or check_pos.x >= unit_manager.grid.grid_size.x or \
+			   check_pos.y < 0 or check_pos.y >= unit_manager.grid.grid_size.y:
 				continue
 			
-			# Special handling for garrison units - can only attack orthogonally
-			if is_garrison:
-				# For garrison units, only check orthogonal positions (no diagonals)
-				if abs(check_pos.x - pos.x) + abs(check_pos.y - pos.y) != 1:
-					continue
-			# For non-garrison units, check based on their normal rules
-			elif !is_armoured and max(abs(check_pos.x - pos.x), abs(check_pos.y - pos.y)) > 1:
-				continue
-			
-			# Check for enemy units
 			if check_pos in unit_manager.units_in_cells:
 				for other_unit in unit_manager.units_in_cells[check_pos]:
 					if other_unit.is_enemy != unit.is_enemy:
 						return true
 	return false
 
-# Check if a unit can attack a specific position
-func can_attack_position(from_pos: Vector2, to_pos: Vector2, unit: Node2D) -> bool:
-	# For garrison units, only allow orthogonal attacks
-	if unit.scene_file_path.contains("garrison"):
-		var dx = abs(to_pos.x - from_pos.x)
-		var dy = abs(to_pos.y - from_pos.y)
-		return (dx == 1 and dy == 0) or (dx == 0 and dy == 1)  # Only orthogonal
-	
-	# For armoured units
-	if unit.scene_file_path.contains("armoured"):
-		var dx = abs(to_pos.x - from_pos.x)
-		var dy = abs(to_pos.y - from_pos.y)
-		return dx <= 2 and dy <= 2
-	
-	# For infantry (and any other units)
-	var dx = abs(to_pos.x - from_pos.x)
-	var dy = abs(to_pos.y - from_pos.y)
-	return dx <= 1 and dy <= 1
-
-# Find best position to attack from
 # Find best position to attack from
 func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
 	# If we're already adjacent, use current position
@@ -123,8 +117,7 @@ func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
 	# From each position we can move to, check if we can attack the target
 	var attack_positions = []
 	for move_pos in moveable_positions:
-		var distance_to_target = max(abs(target_pos.x - move_pos.x), abs(target_pos.y - move_pos.y))
-		if (!is_armoured and distance_to_target == 1) or (is_armoured and distance_to_target <= 2):
+		if can_attack_position(move_pos, target_pos, unit_manager.selected_unit):
 			attack_positions.append({
 				"position": move_pos,
 				"distance": max(abs(move_pos.x - from_pos.x), abs(move_pos.y - from_pos.y)),
@@ -306,7 +299,7 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 	print("To defender - Soft: ", base_damage_to_defender_soft, " Hard: ", base_damage_to_defender_hard)
 	print("To attacker - Soft: ", base_damage_to_attacker_soft, " Hard: ", base_damage_to_attacker_hard)
 	
-	# Calculate defense bonuses
+# Calculate defense bonuses
 	var base_defense_reduction = 0.2  # 20% base defense
 	var fort_reduction = 0.0
 	

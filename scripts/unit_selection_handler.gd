@@ -129,26 +129,37 @@ func highlight_valid_moves(from_pos: Vector2):
 	# Get possible moves from movement handler
 	if movement_handler:
 		unit_manager.valid_move_tiles = movement_handler.get_valid_moves(from_pos, unit_manager.selected_unit)
-
-	# Add possible attack tiles
+		
+	# Add adjacent positions with enemies that can be attacked
 	if !unit_manager.selected_unit.in_combat_this_turn:
 		var combat_manager = grid.get_node("CombatManager")
 		if combat_manager:
-			for y in range(grid.grid_size.y):
-				for x in range(grid.grid_size.x):
-					var test_pos = Vector2(x, y)
-					# Skip our own position
-					if test_pos == from_pos:
+			# Check adjacent positions for enemies
+			for dx in [-1, 0, 1]:
+				for dy in [-1, 0, 1]:
+					if dx == 0 and dy == 0:
 						continue
 					
-					# Check if we can attack this position
-					if combat_manager.can_attack_position(from_pos, test_pos, unit_manager.selected_unit):
-						# Check if there are enemies at this position
-						if test_pos in unit_manager.units_in_cells:
-							for unit in unit_manager.units_in_cells[test_pos]:
-								if unit.is_enemy != unit_manager.selected_unit.is_enemy:
-									unit_manager.valid_move_tiles.append(test_pos)
-									break
+					# For garrison units, only check orthogonal positions
+					if unit_manager.selected_unit.scene_file_path.contains("garrison") and abs(dx) + abs(dy) > 1:
+						continue
+						
+					var attack_pos = from_pos + Vector2(dx, dy)
+					
+					# Check if position is within grid bounds
+					if attack_pos.x < 0 or attack_pos.x >= grid.grid_size.x or \
+					   attack_pos.y < 0 or attack_pos.y >= grid.grid_size.y:
+						continue
+					
+					# Check if there are enemy units at this position
+					if attack_pos in unit_manager.units_in_cells:
+						for unit in unit_manager.units_in_cells[attack_pos]:
+							if unit.is_enemy != unit_manager.selected_unit.is_enemy:
+								if !attack_pos in unit_manager.valid_move_tiles:
+									unit_manager.valid_move_tiles.append(attack_pos)
+								break
+	
+	print("Valid move tiles: ", unit_manager.valid_move_tiles)
 
 func update_unit_highlights():
 	# Check each unit for available actions
