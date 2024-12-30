@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=29 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://images/image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://scripts/button.gd" id="1_d0gsr"]
@@ -20,6 +20,8 @@
 [ext_resource type="PackedScene" uid="uid://g5wu0q7kkb3c" path="res://scenes/debug.tscn" id="14_4peq5"]
 [ext_resource type="Script" path="res://scripts/debug.gd" id="15_m3oiu"]
 [ext_resource type="Script" path="res://scripts/minister_manager.gd" id="17_tcga5"]
+[ext_resource type="Script" path="res://scripts/unit_movement_handler.gd" id="18_7m63j"]
+[ext_resource type="Script" path="res://scripts/unit_selection_handler.gd" id="19_qm1k7"]
 [ext_resource type="Script" path="res://scripts/territory_manager.gd" id="19_sl3ds"]
 [ext_resource type="Script" path="res://scripts/combat_manager.gd" id="20_v3hpl"]
 [ext_resource type="Script" path="res://scripts/opponent_manager.gd" id="21_mh2jy"]
@@ -152,6 +154,12 @@ script = ExtResource("10_tbqb7")
 
 [node name="UnitManager" type="Node2D" parent="Grid"]
 script = ExtResource("11_f7f17")
+
+[node name="UnitMovementHandler" type="Node2D" parent="Grid/UnitManager"]
+script = ExtResource("18_7m63j")
+
+[node name="UnitSelectionHandler" type="Node2D" parent="Grid/UnitManager"]
+script = ExtResource("19_qm1k7")
 
 [node name="ResourceManager" type="Node2D" parent="Grid"]
 script = ExtResource("12_4rgbg")

@@ -16,14 +16,255 @@ func get_unit_position(unit: Node2D) -> Vector2:
 			return pos
 	return Vector2.ZERO
 
-# Process combat between two units
-# In combat_manager.gd
+# Get enemy units at a specific position
+func get_enemy_units_at(pos: Vector2) -> Array:
+	var enemy_units = []
+	if !unit_manager.selected_unit:
+		return enemy_units
+		
+	if pos in unit_manager.units_in_cells:
+		for unit in unit_manager.units_in_cells[pos]:
+			if unit.is_enemy != unit_manager.selected_unit.is_enemy:
+				enemy_units.append(unit)
+	return enemy_units
 
+# Check if two positions are adjacent
+func is_adjacent(pos1: Vector2, pos2: Vector2) -> bool:
+	var dx = abs(pos1.x - pos2.x)
+	var dy = abs(pos1.y - pos2.y)
+	print("Checking adjacency - dx: ", dx, " dy: ", dy)
+	return dx <= 1 and dy <= 1 and pos1 != pos2
+
+# Check if unit has adjacent enemies
+func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
+	var is_armoured = unit.scene_file_path.contains("armoured")
+	var is_garrison = unit.scene_file_path.contains("garrison")
+	var max_range = 2 if is_armoured else 1
+	
+	# Check all positions within attack range
+	for x in range(max(0, pos.x - max_range), min(unit_manager.grid.grid_size.x, pos.x + max_range + 1)):
+		for y in range(max(0, pos.y - max_range), min(unit_manager.grid.grid_size.y, pos.y + max_range + 1)):
+			var check_pos = Vector2(x, y)
+			if check_pos == pos:
+				continue
+			
+			# Special handling for garrison units - can only attack orthogonally
+			if is_garrison:
+				# For garrison units, only check orthogonal positions (no diagonals)
+				if abs(check_pos.x - pos.x) + abs(check_pos.y - pos.y) != 1:
+					continue
+			# For non-garrison units, check based on their normal rules
+			elif !is_armoured and max(abs(check_pos.x - pos.x), abs(check_pos.y - pos.y)) > 1:
+				continue
+			
+			# Check for enemy units
+			if check_pos in unit_manager.units_in_cells:
+				for other_unit in unit_manager.units_in_cells[check_pos]:
+					if other_unit.is_enemy != unit.is_enemy:
+						return true
+	return false
+
+# Check if a unit can attack a specific position
+func can_attack_position(from_pos: Vector2, to_pos: Vector2, unit: Node2D) -> bool:
+	# For garrison units, only allow orthogonal attacks
+	if unit.scene_file_path.contains("garrison"):
+		var dx = abs(to_pos.x - from_pos.x)
+		var dy = abs(to_pos.y - from_pos.y)
+		return (dx == 1 and dy == 0) or (dx == 0 and dy == 1)  # Only orthogonal
+	
+	# For armoured units
+	if unit.scene_file_path.contains("armoured"):
+		var dx = abs(to_pos.x - from_pos.x)
+		var dy = abs(to_pos.y - from_pos.y)
+		return dx <= 2 and dy <= 2
+	
+	# For infantry (and any other units)
+	var dx = abs(to_pos.x - from_pos.x)
+	var dy = abs(to_pos.y - from_pos.y)
+	return dx <= 1 and dy <= 1
+
+# Find best position to attack from
+func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
+	# If we're already adjacent, use current position
+	if is_adjacent(from_pos, target_pos):
+		return from_pos
+	
+	# Get the movement range
+	var is_armoured = unit_manager.selected_unit.scene_file_path.contains("armoured")
+	var max_range = 2 if is_armoured else 1
+	
+	# First find positions we can move to
+	var moveable_positions = []
+	if unit_manager.selected_unit.movement_points > 0:
+		for x in range(max(0, from_pos.x - max_range), min(unit_manager.grid.grid_size.x, from_pos.x + max_range + 1)):
+			for y in range(max(0, from_pos.y - max_range), min(unit_manager.grid.grid_size.y, from_pos.y + max_range + 1)):
+				var pos = Vector2(x, y)
+				if pos == from_pos:
+					continue
+					
+				var distance = max(abs(pos.x - from_pos.x), abs(pos.y - from_pos.y))
+				if !is_armoured and distance > 1:
+					continue
+					
+				if distance > unit_manager.selected_unit.movement_points:
+					continue
+					
+				if !unit_manager.movement_handler.is_position_in_territory(pos, unit_manager.selected_unit.is_enemy):
+					continue
+					
+				if !unit_manager.movement_handler.is_path_blocked(from_pos, pos, unit_manager.selected_unit):
+					if !unit_manager.units_in_cells.has(pos) or unit_manager.units_in_cells[pos].size() < unit_manager.MAX_UNITS_PER_CELL:
+						moveable_positions.append(pos)
+	else:
+		# If we can't move, we can only attack from our current position
+		moveable_positions = [from_pos]
+	
+	# From each position we can move to, check if we can attack the target
+	var attack_positions = []
+	for move_pos in moveable_positions:
+		var distance_to_target = max(abs(target_pos.x - move_pos.x), abs(target_pos.y - move_pos.y))
+		if (!is_armoured and distance_to_target == 1) or (is_armoured and distance_to_target <= 2):
+			attack_positions.append({
+				"position": move_pos,
+				"distance": max(abs(move_pos.x - from_pos.x), abs(move_pos.y - from_pos.y)),
+				"surrounding_enemies": count_surrounding_enemies(move_pos)
+			})
+	
+	# Sort positions by multiple criteria
+	attack_positions.sort_custom(func(a, b):
+		# First prioritize minimizing movement points used
+		if a.distance != b.distance:
+			return a.distance < b.distance
+		
+		# Then prefer positions with fewer surrounding enemies
+		if a.surrounding_enemies != b.surrounding_enemies:
+			return a.surrounding_enemies < b.surrounding_enemies
+		
+		# Finally, prefer positions closer to our starting position
+		var a_dist_to_start = abs(a.position.x - from_pos.x) + abs(a.position.y - from_pos.y)
+		var b_dist_to_start = abs(b.position.x - from_pos.x) + abs(b.position.y - from_pos.y)
+		return a_dist_to_start < b_dist_to_start
+	)
+	
+	# Return the best position or invalid position if none found
+	return attack_positions[0].position if attack_positions.size() > 0 else Vector2(-1, -1)
+
+# Count enemies surrounding a position
+func count_surrounding_enemies(pos: Vector2) -> int:
+	var count = 0
+	for dx in [-1, 0, 1]:
+		for dy in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+				
+			var check_pos = pos + Vector2(dx, dy)
+			if check_pos.x < 0 or check_pos.x >= unit_manager.grid.grid_size.x or \
+			   check_pos.y < 0 or check_pos.y >= unit_manager.grid.grid_size.y:
+				continue
+			
+			if check_pos in unit_manager.units_in_cells:
+				for unit in unit_manager.units_in_cells[check_pos]:
+					if unit.is_enemy != unit_manager.selected_unit.is_enemy:
+						count += 1
+						break
+	return count
+
+# Initiate combat between two positions
+func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
+	print("\nDEBUG: INITIATING COMBAT:")
+	print("Attacker position: ", attacker_pos)
+	print("Defender position: ", defender_pos)
+	
+	# Validate positions are within grid bounds
+	if attacker_pos.x < 0 or attacker_pos.x >= unit_manager.grid.grid_size.x or \
+	   attacker_pos.y < 0 or attacker_pos.y >= unit_manager.grid.grid_size.y or \
+	   defender_pos.x < 0 or defender_pos.x >= unit_manager.grid.grid_size.x or \
+	   defender_pos.y < 0 or defender_pos.y >= unit_manager.grid.grid_size.y:
+		print("Combat cancelled - positions out of bounds")
+		return
+	
+	var attacking_units = unit_manager.units_in_cells[attacker_pos]
+	var defending_units = unit_manager.units_in_cells[defender_pos]
+	
+	# Debug print the units at both positions
+	print("\nUnits at attacker position:")
+	if attacker_pos in unit_manager.units_in_cells:
+		for unit in unit_manager.units_in_cells[attacker_pos]:
+			print("- ", unit.scene_file_path, " (enemy: ", unit.is_enemy, ")")
+	
+	print("\nUnits at defender position:")
+	if defender_pos in unit_manager.units_in_cells:
+		for unit in unit_manager.units_in_cells[defender_pos]:
+			print("- ", unit.scene_file_path, " (enemy: ", unit.is_enemy, ")")
+	
+	if attacking_units.size() > 0 and defending_units.size() > 0:
+		# Find the first valid attacking unit
+		var attacker = null
+		if unit_manager.selected_unit and unit_manager.selected_unit in attacking_units:
+			attacker = unit_manager.selected_unit
+			print("Using selected unit as attacker: ", attacker.scene_file_path)
+		else:
+			for unit in attacking_units:
+				if !unit.in_combat_this_turn:
+					attacker = unit
+					print("Found valid attacking unit: ", attacker.scene_file_path)
+					break
+		
+		# Find the first valid defending unit
+		var defender = null
+		for unit in defending_units:
+			if !unit.in_combat_this_turn:
+				defender = unit
+				print("Found valid defending unit: ", defender.scene_file_path)
+				break
+		
+		if !attacker or !defender:
+			print("Combat cancelled - no valid units found")
+			return
+			
+		if !is_instance_valid(attacker) or !is_instance_valid(defender):
+			print("Combat cancelled - invalid units")
+			return
+			
+		# Check if attack is valid based on unit type
+		if !can_attack_position(attacker_pos, defender_pos, attacker):
+			print("Combat cancelled - invalid attack position for unit type")
+			return
+		
+		print("Combat Starting!")
+		print("Attacker type: ", attacker.scene_file_path)
+		print("Defender type: ", defender.scene_file_path)
+		print("Attacker position in world: ", attacker.position)
+		print("Defender position in world: ", defender.position)
+		print("Attacker health - Soft: ", attacker.soft_health, " Hard: ", attacker.hard_health)
+		print("Defender health - Soft: ", defender.soft_health, " Hard: ", defender.hard_health)
+		
+		# Add flash effect
+		if attacker.has_node("Sprite2D"):
+			attacker.get_node("Sprite2D").modulate = Color(1, 0, 0)
+		if defender.has_node("Sprite2D"):
+			defender.get_node("Sprite2D").modulate = Color(1, 0, 0)
+		
+		# Resolve combat with grid positions
+		resolve_combat(attacker, defender, attacker_pos, defender_pos)
+		
+		# Wait a moment
+		await get_tree().create_timer(0.2).timeout
+		
+		# Reset colors if units still exist
+		if is_instance_valid(attacker) and !attacker.is_queued_for_deletion() and attacker.has_node("Sprite2D"):
+			attacker.get_node("Sprite2D").modulate = Color.WHITE if !attacker.is_enemy else Color.RED
+		if is_instance_valid(defender) and !defender.is_queued_for_deletion() and defender.has_node("Sprite2D"):
+			defender.get_node("Sprite2D").modulate = Color.WHITE if !defender.is_enemy else Color.RED
+	else:
+		print("Combat failed - missing units!")
+
+# Resolve combat between two units
 func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, defender_pos: Vector2):
 	if !is_instance_valid(attacker) or !is_instance_valid(defender):
 		print("Combat cancelled - invalid units")
 		return
-		
+	
 	print("\nDEBUG: COMBAT RESOLUTION:")
 	print("Attacker scene path: ", attacker.scene_file_path)
 	print("Defender scene path: ", defender.scene_file_path)
@@ -143,113 +384,6 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 			if pos in unit_manager.units_in_cells:
 				unit_manager.units_in_cells[pos].erase(unit)
 			unit.queue_free()
-
-func can_attack_position(attacker_pos: Vector2, defender_pos: Vector2, attacker: Node2D) -> bool:
-	# For garrison units, only allow orthogonal attacks
-	if attacker.scene_file_path.contains("garrison"):
-		var dx = abs(defender_pos.x - attacker_pos.x)
-		var dy = abs(defender_pos.y - attacker_pos.y)
-		return (dx == 1 and dy == 0) or (dx == 0 and dy == 1)  # Only orthogonal
-	
-	# For armoured units
-	if attacker.scene_file_path.contains("armoured"):
-		var dx = abs(defender_pos.x - attacker_pos.x)
-		var dy = abs(defender_pos.y - attacker_pos.y)
-		return dx <= 2 and dy <= 2
-	
-	# For infantry (and any other units)
-	var dx = abs(defender_pos.x - attacker_pos.x)
-	var dy = abs(defender_pos.y - attacker_pos.y)
-	return dx <= 1 and dy <= 1
-
-func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
-	print("\nDEBUG: INITIATING COMBAT:")
-	print("Attacker position: ", attacker_pos)
-	print("Defender position: ", defender_pos)
-	
-	# Validate positions are within grid bounds
-	if attacker_pos.x < 0 or attacker_pos.x >= unit_manager.grid.grid_size.x or \
-	   attacker_pos.y < 0 or attacker_pos.y >= unit_manager.grid.grid_size.y or \
-	   defender_pos.x < 0 or defender_pos.x >= unit_manager.grid.grid_size.x or \
-	   defender_pos.y < 0 or defender_pos.y >= unit_manager.grid.grid_size.y:
-		print("Combat cancelled - positions out of bounds")
-		return
-	
-	var attacking_units = unit_manager.units_in_cells[attacker_pos]
-	var defending_units = unit_manager.units_in_cells[defender_pos]
-	
-	# Debug print the units at both positions
-	print("\nUnits at attacker position:")
-	if attacker_pos in unit_manager.units_in_cells:
-		for unit in unit_manager.units_in_cells[attacker_pos]:
-			print("- ", unit.scene_file_path, " (enemy: ", unit.is_enemy, ")")
-	
-	print("\nUnits at defender position:")
-	if defender_pos in unit_manager.units_in_cells:
-		for unit in unit_manager.units_in_cells[defender_pos]:
-			print("- ", unit.scene_file_path, " (enemy: ", unit.is_enemy, ")")
-	
-	if attacking_units.size() > 0 and defending_units.size() > 0:
-		# Find the first valid attacking unit
-		var attacker = null
-		if unit_manager.selected_unit and unit_manager.selected_unit in attacking_units:
-			attacker = unit_manager.selected_unit
-			print("Using selected unit as attacker: ", attacker.scene_file_path)
-		else:
-			for unit in attacking_units:
-				if !unit.in_combat_this_turn:
-					attacker = unit
-					print("Found valid attacking unit: ", attacker.scene_file_path)
-					break
-		
-		# Find the first valid defending unit
-		var defender = null
-		for unit in defending_units:
-			if !unit.in_combat_this_turn:
-				defender = unit
-				print("Found valid defending unit: ", defender.scene_file_path)
-				break
-		
-		if !attacker or !defender:
-			print("Combat cancelled - no valid units found")
-			return
-			
-		if !is_instance_valid(attacker) or !is_instance_valid(defender):
-			print("Combat cancelled - invalid units")
-			return
-			
-		# Check if attack is valid based on unit type
-		if !can_attack_position(attacker_pos, defender_pos, attacker):
-			print("Combat cancelled - invalid attack position for unit type")
-			return
-		
-		print("Combat Starting!")
-		print("Attacker type: ", attacker.scene_file_path)
-		print("Defender type: ", defender.scene_file_path)
-		print("Attacker position in world: ", attacker.position)
-		print("Defender position in world: ", defender.position)
-		print("Attacker health - Soft: ", attacker.soft_health, " Hard: ", attacker.hard_health)
-		print("Defender health - Soft: ", defender.soft_health, " Hard: ", defender.hard_health)
-		
-		# Add flash effect
-		if attacker.has_node("Sprite2D"):
-			attacker.get_node("Sprite2D").modulate = Color(1, 0, 0)
-		if defender.has_node("Sprite2D"):
-			defender.get_node("Sprite2D").modulate = Color(1, 0, 0)
-		
-		# Resolve combat with grid positions
-		resolve_combat(attacker, defender, attacker_pos, defender_pos)
-		
-		# Wait a moment
-		await get_tree().create_timer(0.2).timeout
-		
-		# Reset colors if units still exist
-		if is_instance_valid(attacker) and !attacker.is_queued_for_deletion() and attacker.has_node("Sprite2D"):
-			attacker.get_node("Sprite2D").modulate = Color.WHITE if !attacker.is_enemy else Color.RED
-		if is_instance_valid(defender) and !defender.is_queued_for_deletion() and defender.has_node("Sprite2D"):
-			defender.get_node("Sprite2D").modulate = Color.WHITE if !defender.is_enemy else Color.RED
-	else:
-		print("Combat failed - missing units!")
 
 func process_turn():
 	units_in_combat.clear()

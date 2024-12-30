@@ -1,0 +1,199 @@
+extends Node2D
+
+@onready var unit_manager = get_parent()
+@onready var grid = unit_manager.get_parent()
+@onready var movement_handler = get_parent().get_node("UnitMovementHandler")
+
+var current_unit_index: int = -1
+var last_clicked_pos: Vector2 = Vector2(-1, -1)
+var currently_highlighted_unit = null
+
+func get_movable_units_at_position(grid_pos: Vector2) -> Array:
+	var selectable_units = []
+	print("\nChecking movable units at position: ", grid_pos)
+	
+	if grid_pos in unit_manager.units_in_cells:
+		for unit in unit_manager.units_in_cells[grid_pos]:
+			if unit and is_instance_valid(unit):
+				# Check if unit hasn't been in combat this turn
+				if !unit.in_combat_this_turn:
+					# If it can move OR there are adjacent enemies it can attack
+					var combat_manager = grid.get_node("CombatManager")
+					if unit.can_move() or (combat_manager and combat_manager.has_adjacent_enemies(grid_pos, unit)):
+						print("Found selectable unit: ", unit.scene_file_path)
+						selectable_units.append(unit)
+	
+	print("Total selectable units found: ", selectable_units.size())
+	return selectable_units
+
+func try_select_unit(grid_pos: Vector2):
+	print("\nAttempting to select unit at position: ", grid_pos)
+	
+	# Check for combat initiation first
+	if unit_manager.selected_unit:
+		var combat_manager = grid.get_node("CombatManager")
+		if combat_manager:
+			var enemy_units = combat_manager.get_enemy_units_at(grid_pos)
+			if enemy_units.size() > 0 and !unit_manager.selected_unit.in_combat_this_turn:
+				if combat_manager.can_attack_position(unit_manager.unit_start_pos, grid_pos, unit_manager.selected_unit):
+					combat_manager.initiate_combat(unit_manager.unit_start_pos, grid_pos)
+					deselect_current_unit()
+					return
+
+	# If we've already attacked this turn, can't do anything else with this unit
+	if unit_manager.selected_unit and unit_manager.selected_unit.in_combat_this_turn:
+		deselect_current_unit()
+		return
+	
+	# Check if clicking outside valid moves
+	if unit_manager.selected_unit and !unit_manager.is_valid_move(grid_pos) and grid_pos != last_clicked_pos:
+		deselect_current_unit()
+		return
+	
+	# Only allow selecting units that haven't attacked this turn
+	var movable_units = get_movable_units_at_position(grid_pos)
+	
+	# Handle unit cycling
+	if grid_pos == last_clicked_pos and movable_units.size() > 0:
+		print("Same tile clicked - attempting to cycle units")
+		if current_unit_index >= movable_units.size():
+			current_unit_index = -1
+		cycle_through_units(grid_pos)
+	else:
+		print("New tile clicked - resetting cycle")
+		last_clicked_pos = grid_pos
+		current_unit_index = -1
+		if movable_units.size() > 0:
+			cycle_through_units(grid_pos)
+		else:
+			deselect_current_unit()
+
+func cycle_through_units(grid_pos: Vector2) -> bool:
+	var movable_units = get_movable_units_at_position(grid_pos)
+	print("\nCycling through units")
+	print("Total movable units: ", movable_units.size())
+	print("Current unit index: ", current_unit_index)
+	
+	if movable_units.size() == 0:
+		print("No movable units found")
+		current_unit_index = -1
+		return false
+		
+	# Clear previous highlighting
+	if currently_highlighted_unit:
+		set_unit_highlight(currently_highlighted_unit, false)
+		
+	# Update current_unit_index
+	if current_unit_index == -1 or !unit_manager.selected_unit:
+		current_unit_index = 0
+	else:
+		current_unit_index = (current_unit_index + 1) % movable_units.size()
+	
+	print("New unit index: ", current_unit_index)
+	
+	# Select the next unit
+	unit_manager.selected_unit = movable_units[current_unit_index]
+	currently_highlighted_unit = unit_manager.selected_unit
+	set_unit_highlight(unit_manager.selected_unit, true)
+	unit_manager.unit_start_pos = grid_pos
+	highlight_valid_moves(grid_pos)
+	
+	return true
+
+func set_unit_highlight(unit: Node2D, highlight: bool):
+	if unit and unit.has_method("set_highlighted"):
+		unit.set_highlighted(highlight)
+
+func deselect_current_unit():
+	if currently_highlighted_unit:
+		set_unit_highlight(currently_highlighted_unit, false)
+		currently_highlighted_unit = null
+	
+	unit_manager.selected_unit = null
+	unit_manager.valid_move_tiles.clear()
+	current_unit_index = -1
+	last_clicked_pos = Vector2(-1, -1)
+
+func highlight_valid_moves(from_pos: Vector2):
+	print("Highlighting valid moves from position: ", from_pos)
+	unit_manager.valid_move_tiles.clear()
+	
+	if !unit_manager.selected_unit:
+		return
+	
+	# Get possible moves from movement handler
+	if movement_handler:
+		unit_manager.valid_move_tiles = movement_handler.get_valid_moves(from_pos, unit_manager.selected_unit)
+
+	# Add possible attack tiles
+	if !unit_manager.selected_unit.in_combat_this_turn:
+		var combat_manager = grid.get_node("CombatManager")
+		if combat_manager:
+			for y in range(grid.grid_size.y):
+				for x in range(grid.grid_size.x):
+					var test_pos = Vector2(x, y)
+					# Skip our own position
+					if test_pos == from_pos:
+						continue
+					
+					# Check if we can attack this position
+					if combat_manager.can_attack_position(from_pos, test_pos, unit_manager.selected_unit):
+						# Check if there are enemies at this position
+						if test_pos in unit_manager.units_in_cells:
+							for unit in unit_manager.units_in_cells[test_pos]:
+								if unit.is_enemy != unit_manager.selected_unit.is_enemy:
+									unit_manager.valid_move_tiles.append(test_pos)
+									break
+
+func update_unit_highlights():
+	# Check each unit for available actions
+	for pos in unit_manager.units_in_cells:
+		for unit in unit_manager.units_in_cells[pos]:
+			var has_available_action = false
+			
+			# Only check non-enemy units
+			if !unit.is_enemy:
+				# Check if unit can move
+				if unit.can_move():
+					# Get valid moves for this unit
+					var valid_moves = []
+					if movement_handler:
+						valid_moves = movement_handler.get_valid_moves(pos, unit)
+					
+					# If there are valid moves available, highlight the unit
+					if !valid_moves.is_empty():
+						has_available_action = true
+				
+				# Check if unit can attack (even if it can't move)
+				if !unit.in_combat_this_turn:
+					var combat_manager = grid.get_node("CombatManager")
+					if combat_manager:
+						var can_attack = combat_manager.has_adjacent_enemies(pos, unit)
+						if can_attack:
+							has_available_action = true
+				
+				# Set label color based on available actions
+				if unit.has_node("Label"):
+					var label = unit.get_node("Label")
+					if unit == unit_manager.selected_unit:
+						# Keep base color for selected unit but add asterisk
+						var unit_name = get_unit_name(unit)
+						label.text = "* " + unit_name
+						label.modulate = Color(1, 1, 1)
+					else:
+						# Set color based on action availability, no asterisk
+						label.modulate = Color(1, 1, 0) if has_available_action else Color(1, 1, 1)
+						var unit_name = get_unit_name(unit)
+						label.text = unit_name
+
+func get_unit_name(unit: Node2D) -> String:
+	if unit.scene_file_path.contains("infantry"):
+		return "Infantry"
+	elif unit.scene_file_path.contains("armoured"):
+		return "Armoured"
+	elif unit.scene_file_path.contains("garrison"):
+		return "Garrison"
+	return "Unknown"
+
+func _process(_delta):
+	update_unit_highlights()

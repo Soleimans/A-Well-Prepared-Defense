@@ -48,7 +48,6 @@ func _on_turn_changed(current_turn: int):
 	if current_turn >= 10 and !war_active:  # War starts at turn 10
 		war_active = true
 		# Also set war mode in building manager
-		var building_manager = get_parent().get_node("BuildingManager")
 		if building_manager:
 			building_manager.war_mode = true
 		print("TerritoryManager: War has begun!")
@@ -73,6 +72,35 @@ func capture_territory(pos: Vector2, new_owner: String):
 	
 	# Check victory conditions after territory capture
 	check_victory_conditions()
+
+# New function to handle territory capture during unit movement
+func check_territory_capture(from_pos: Vector2, to_pos: Vector2, unit: Node2D = null):
+	if !unit:
+		return
+		
+	# Determine the capturing side
+	var capturing_player = "enemy" if unit.is_enemy else "player"
+	
+	# For armoured units, process the entire path
+	if unit.scene_file_path.contains("armoured"):
+		var path_points = unit_manager.movement_handler.get_line_points(from_pos, to_pos)
+		
+		# Process every point in the path (including start and end)
+		for point in path_points:
+			# Verify the position is within grid bounds
+			if point.x >= 0 and point.x < grid.grid_size.x and \
+			   point.y >= 0 and point.y < grid.grid_size.y:
+				# Get current territory owner
+				var current_owner = get_territory_owner(point)
+				
+				# Capture if it's not our territory
+				if current_owner != capturing_player:
+					capture_territory(point, capturing_player)
+	else:
+		# For infantry and garrison, only capture the destination tile
+		var current_owner = get_territory_owner(to_pos)
+		if current_owner != capturing_player:
+			capture_territory(to_pos, capturing_player)
 
 func check_victory_conditions():
 	var player_territory = 0

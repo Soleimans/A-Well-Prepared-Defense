@@ -84,14 +84,14 @@ func _input(event):
 				unit_manager.try_select_unit(grid_pos)
 			# Check if we have a selected unit and we're clicking on an enemy
 			elif unit_manager.selected_unit != null:
-				var enemy_units = unit_manager.get_enemy_units_at(grid_pos)
+				var combat_manager = get_node("CombatManager")
+				var enemy_units = combat_manager.get_enemy_units_at(grid_pos)
 				
 				if enemy_units.size() > 0:
 					print("Enemy units found at click position")
 					# Check if the position is adjacent and unit hasn't attacked this turn
 					if unit_manager.is_adjacent(unit_manager.unit_start_pos, grid_pos) and !unit_manager.selected_unit.in_combat_this_turn:
 						print("Position is adjacent and unit hasn't attacked, initiating combat!")
-						var combat_manager = get_node("CombatManager")
 						combat_manager.initiate_combat(unit_manager.unit_start_pos, grid_pos)
 						unit_manager.deselect_current_unit()
 						return
