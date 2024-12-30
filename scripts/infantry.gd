@@ -108,11 +108,7 @@ func can_move():
 	return !has_moved && movement_points > 0
 
 func set_highlighted(value: bool):
-	if label:
-		# Make the label text yellow and bold when highlighted
-		label.modulate = Color(1, 1, 0) if value else Color(1, 1, 1)
-		# Add an asterisk prefix to show selection
-		label.text = ("* " if value else "") + "Infantry"
+	pass
 
 func _process(_delta):
 	update_bars()

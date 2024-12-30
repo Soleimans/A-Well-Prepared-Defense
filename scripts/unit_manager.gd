@@ -159,6 +159,13 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 		resource_manager.manpower -= MANPOWER_COSTS[selected_unit_type]
 	
 	print("UnitManager: Unit placed successfully")
+	
+	# Update unit highlights after placing new unit with a slight delay
+	if selection_handler:
+		get_tree().create_timer(0.1).timeout.connect(func():
+			selection_handler.update_unit_highlights()
+		)
+		
 	return true
 
 func execute_move(to_pos: Vector2) -> bool:

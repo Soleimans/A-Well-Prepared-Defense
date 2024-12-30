@@ -119,16 +119,20 @@ func _on_button_pressed():
 		print("Generated enemy political power: ", enemy_political_power_gain)
 		
 		# Reset unit movements
+		print("\n=== RESETTING UNIT MOVEMENTS ===")
 		for pos in unit_manager.units_in_cells:
 			for unit in unit_manager.units_in_cells[pos]:
 				if unit.has_method("reset_movement"):
 					unit.reset_movement()
-					print("Reset movement for unit at position: ", pos)
-				if unit.has_method("set_highlighted"):
-					# Highlight units with movement points or adjacent enemies
-					var should_highlight = unit.can_move() or unit.is_adjacent_to_enemy()
-					unit.set_highlighted(should_highlight)
-					print("Updated highlight for unit at position: ", pos)
+					print("Reset movement for unit at position ", pos, " - Can move: ", unit.can_move())
+					
+		# Update unit highlighting using selection handler
+		if unit_manager.selection_handler:
+			print("Calling selection handler update_unit_highlights")
+			unit_manager.selection_handler.update_unit_highlights()
+		else:
+			print("WARNING: Selection handler not found!")
+		print("=== MOVEMENT RESET COMPLETE ===\n")
 		
 		# Process construction progress
 		building_manager.process_construction()
@@ -153,6 +157,11 @@ func _on_button_pressed():
 		# Clear any selected unit and valid move tiles
 		unit_manager.selected_unit = null
 		unit_manager.valid_move_tiles.clear()
+		
+		# Update unit highlights at end of turn
+		if unit_manager.selection_handler:
+			unit_manager.selection_handler.update_unit_highlights()
+			print("Updated unit highlights after turn end")
 	else:
 		print("ERROR: Grid node not found!")
 	

@@ -45,7 +45,7 @@ func initialize_territory():
 	print("TerritoryManager: Territory initialized with clean slate")
 
 func _on_turn_changed(current_turn: int):
-	if current_turn >= 10 and !war_active:  # War starts at turn 10
+	if current_turn >= 30 and !war_active:  # War starts at turn 30
 		war_active = true
 		# Also set war mode in building manager
 		if building_manager:
@@ -53,6 +53,16 @@ func _on_turn_changed(current_turn: int):
 		print("TerritoryManager: War has begun!")
 		print("War mode active in building manager: ", building_manager.war_mode if building_manager else "BuildingManager not found")
 		debug_print_territory()
+		
+		# Update unit highlights when war begins
+		if grid:
+			var unit_manager = grid.get_node("UnitManager")
+			if unit_manager and unit_manager.selection_handler:
+				# Force update highlights for all units
+				unit_manager.selection_handler.update_unit_highlights()
+				# Clear any current selection to ensure clean state
+				unit_manager.selection_handler.deselect_current_unit()
+				print("Updated unit highlights and reset selection for war start")
 
 func get_territory_owner(pos: Vector2) -> String:
 	return territory_ownership.get(pos, "neutral")

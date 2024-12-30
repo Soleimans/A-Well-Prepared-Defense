@@ -162,6 +162,7 @@ func highlight_valid_moves(from_pos: Vector2):
 	print("Valid move tiles: ", unit_manager.valid_move_tiles)
 
 func update_unit_highlights():
+	print("\n=== UPDATING UNIT HIGHLIGHTS ===")
 	# Check each unit for available actions
 	for pos in unit_manager.units_in_cells:
 		for unit in unit_manager.units_in_cells[pos]:
@@ -169,8 +170,10 @@ func update_unit_highlights():
 			
 			# Only check non-enemy units
 			if !unit.is_enemy:
+				print("Checking unit at position ", pos)
 				# Check if unit can move
 				if unit.can_move():
+					print("- Unit can move")
 					# Get valid moves for this unit
 					var valid_moves = []
 					if movement_handler:
@@ -179,6 +182,7 @@ func update_unit_highlights():
 					# If there are valid moves available, highlight the unit
 					if !valid_moves.is_empty():
 						has_available_action = true
+						print("- Has valid moves")
 				
 				# Check if unit can attack (even if it can't move)
 				if !unit.in_combat_this_turn:
@@ -187,20 +191,26 @@ func update_unit_highlights():
 						var can_attack = combat_manager.has_adjacent_enemies(pos, unit)
 						if can_attack:
 							has_available_action = true
+							print("- Can attack enemies")
 				
-				# Set label color based on available actions
+				# Set label color and text based on unit state
 				if unit.has_node("Label"):
 					var label = unit.get_node("Label")
+					var unit_name = get_unit_name(unit)
+					
 					if unit == unit_manager.selected_unit:
-						# Keep base color for selected unit but add asterisk
-						var unit_name = get_unit_name(unit)
+						# Selected unit gets white color and asterisk
 						label.text = "* " + unit_name
 						label.modulate = Color(1, 1, 1)
+						print("- Unit is selected, setting white color and asterisk")
 					else:
-						# Set color based on action availability, no asterisk
-						label.modulate = Color(1, 1, 0) if has_available_action else Color(1, 1, 1)
-						var unit_name = get_unit_name(unit)
+						# No asterisk for non-selected units
 						label.text = unit_name
+						# Orange color for units with available actions, white for others
+						label.modulate = Color(1, 0.5, 0) if has_available_action else Color(1, 1, 1)
+						print("- Unit has available action: ", has_available_action, ", setting color to ", "orange" if has_available_action else "white")
+	
+	print("=== HIGHLIGHT UPDATE COMPLETE ===\n")
 
 func get_unit_name(unit: Node2D) -> String:
 	if unit.scene_file_path.contains("infantry"):

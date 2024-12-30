@@ -1,0 +1,186 @@
+[gd_scene load_steps=29 format=3 uid="uid://brvwkj40l6c42"]
+
+[ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://images/image-cache.jpeg" id="1_4m1r6"]
+[ext_resource type="Script" path="res://scripts/button.gd" id="1_d0gsr"]
+[ext_resource type="Script" path="res://scripts/grid.gd" id="1_d6757"]
+[ext_resource type="PackedScene" uid="uid://23oobmg40yue" path="res://scenes/build_menu.tscn" id="2_760as"]
+[ext_resource type="Script" path="res://scripts/button_2.gd" id="2_e41tu"]
+[ext_resource type="Texture2D" uid="uid://c3axlpmewg4x6" path="res://images/Grass.png" id="2_enqgi"]
+[ext_resource type="PackedScene" uid="uid://dec3l5yegbipi" path="res://scenes/army_menu.tscn" id="3_abfub"]
+[ext_resource type="Script" path="res://scripts/politics_button.gd" id="3_tckk6"]
+[ext_resource type="Script" path="res://scripts/camera_control.gd" id="4_gq3ax"]
+[ext_resource type="Script" path="res://scripts/turn_count.gd" id="5_r0qd4"]
+[ext_resource type="PackedScene" uid="uid://cn161ob8umr6q" path="res://scenes/politics_menu.tscn" id="5_rydge"]
+[ext_resource type="Script" path="res://scripts/turn_button.gd" id="6_rwev8"]
+[ext_resource type="PackedScene" uid="uid://cy45gxjdg2qsn" path="res://scenes/end_menu.tscn" id="7_36q0d"]
+[ext_resource type="Script" path="res://scripts/war_count.gd" id="7_m2aps"]
+[ext_resource type="Script" path="res://scripts/building_manager.gd" id="10_tbqb7"]
+[ext_resource type="Script" path="res://scripts/unit_manager.gd" id="11_f7f17"]
+[ext_resource type="Script" path="res://scripts/resource_manager.gd" id="12_4rgbg"]
+[ext_resource type="PackedScene" uid="uid://g5wu0q7kkb3c" path="res://scenes/debug.tscn" id="14_4peq5"]
+[ext_resource type="Script" path="res://scripts/debug.gd" id="15_m3oiu"]
+[ext_resource type="Script" path="res://scripts/minister_manager.gd" id="17_tcga5"]
+[ext_resource type="Script" path="res://scripts/unit_movement_handler.gd" id="18_7m63j"]
+[ext_resource type="Script" path="res://scripts/unit_selection_handler.gd" id="19_qm1k7"]
+[ext_resource type="Script" path="res://scripts/territory_manager.gd" id="19_sl3ds"]
+[ext_resource type="Script" path="res://scripts/combat_manager.gd" id="20_v3hpl"]
+[ext_resource type="Script" path="res://scripts/opponent_manager.gd" id="21_mh2jy"]
+[ext_resource type="Script" path="res://scripts/combatant_manager.gd" id="23_yrmve"]
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hhyts"]
+texture = ExtResource("2_enqgi")
+texture_region_size = Vector2i(128, 128)
+0:0/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_kb2ph"]
+tile_size = Vector2i(128, 128)
+sources/4 = SubResource("TileSetAtlasSource_hhyts")
+
+[node name="Main" type="Node2D"]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="ColorRect" type="ColorRect" parent="UILayer"]
+custom_minimum_size = Vector2(0, 32)
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+color = Color(0.13421, 0.133114, 0, 1)
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UILayer/ColorRect"]
+layout_mode = 0
+offset_right = 53.0
+offset_bottom = 32.0
+
+[node name="Button" type="Button" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "Industry"
+script = ExtResource("1_d0gsr")
+
+[node name="Label" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "50000"
+
+[node name="Button2" type="Button" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+text = "Military"
+script = ExtResource("2_e41tu")
+
+[node name="Label2" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+text = "0"
+
+[node name="Politics_Button" type="Button" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+text = "Politics"
+script = ExtResource("3_tckk6")
+
+[node name="Politics_Label" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+text = "0"
+
+[node name="Manpower_Label" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+text = "Manpower"
+
+[node name="Manpower_Count" type="Label" parent="UILayer/ColorRect/HBoxContainer"]
+layout_mode = 2
+text = "0"
+
+[node name="build_menu" parent="UILayer/ColorRect" instance=ExtResource("2_760as")]
+layout_mode = 1
+
+[node name="army_menu" parent="UILayer/ColorRect" instance=ExtResource("3_abfub")]
+layout_mode = 1
+
+[node name="politics_menu" parent="UILayer/ColorRect" instance=ExtResource("5_rydge")]
+layout_mode = 1
+
+[node name="WarCount" type="Label" parent="UILayer"]
+offset_left = 1781.0
+offset_top = 567.0
+offset_right = 1885.0
+offset_bottom = 590.0
+text = "War starts in:"
+script = ExtResource("7_m2aps")
+
+[node name="TurnCount" type="Label" parent="UILayer"]
+offset_left = 1781.0
+offset_top = 586.0
+offset_right = 1866.0
+offset_bottom = 609.0
+text = "Turn: 0"
+script = ExtResource("5_r0qd4")
+
+[node name="TurnButton" type="Button" parent="UILayer"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -139.0
+offset_top = -31.0
+offset_right = -53.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Next Turn"
+script = ExtResource("6_rwev8")
+
+[node name="Debug" parent="UILayer" instance=ExtResource("14_4peq5")]
+script = ExtResource("15_m3oiu")
+
+[node name="end_menu" parent="UILayer" instance=ExtResource("7_36q0d")]
+
+[node name="Background" type="Node2D" parent="."]
+
+[node name="Sprite2D" type="Sprite2D" parent="Background"]
+position = Vector2(977, 339)
+scale = Vector2(5.70215, 4.95182)
+texture = ExtResource("1_4m1r6")
+
+[node name="TileMap" type="TileMap" parent="."]
+tile_set = SubResource("TileSet_kb2ph")
+format = 2
+layer_0/tile_data = PackedInt32Array(0, 4, 0, 1, 4, 0, 2, 4, 0, 3, 4, 0, 4, 4, 0, 5, 4, 0, 6, 4, 0, 7, 4, 0, 8, 4, 0, 9, 4, 0, 10, 4, 0, 11, 4, 0, 12, 4, 0, 13, 4, 0, 14, 4, 0, 65550, 4, 0, 262148, 4, 0, 262145, 4, 0, 262144, 4, 0, 262146, 4, 0, 262147, 4, 0, 196608, 4, 0, 131072, 4, 0, 65536, 4, 0, 65537, 4, 0, 131073, 4, 0, 196609, 4, 0, 196610, 4, 0, 196614, 4, 0, 65549, 4, 0, 196621, 4, 0, 196620, 4, 0, 131074, 4, 0, 131080, 4, 0, 262149, 4, 0, 262150, 4, 0, 262151, 4, 0, 262152, 4, 0, 262153, 4, 0, 262154, 4, 0, 262155, 4, 0, 262156, 4, 0, 262157, 4, 0, 262158, 4, 0, 196622, 4, 0, 131086, 4, 0, 131085, 4, 0, 131084, 4, 0, 131083, 4, 0, 131082, 4, 0, 131081, 4, 0, 131079, 4, 0, 131078, 4, 0, 131077, 4, 0, 131076, 4, 0, 131075, 4, 0, 65539, 4, 0, 65538, 4, 0, 65540, 4, 0, 65541, 4, 0, 65542, 4, 0, 65543, 4, 0, 65544, 4, 0, 65545, 4, 0, 65546, 4, 0, 65547, 4, 0, 196618, 4, 0, 196617, 4, 0, 196616, 4, 0, 196615, 4, 0, 196613, 4, 0, 196612, 4, 0, 196611, 4, 0, 196619, 4, 0, 65548, 4, 0)
+
+[node name="Grid" type="Node2D" parent="."]
+script = ExtResource("1_d6757")
+
+[node name="BuildingManager" type="Node2D" parent="Grid"]
+script = ExtResource("10_tbqb7")
+
+[node name="UnitManager" type="Node2D" parent="Grid"]
+script = ExtResource("11_f7f17")
+
+[node name="UnitMovementHandler" type="Node2D" parent="Grid/UnitManager"]
+script = ExtResource("18_7m63j")
+
+[node name="UnitSelectionHandler" type="Node2D" parent="Grid/UnitManager"]
+script = ExtResource("19_qm1k7")
+
+[node name="ResourceManager" type="Node2D" parent="Grid"]
+script = ExtResource("12_4rgbg")
+
+[node name="MinisterManager" type="Node2D" parent="Grid"]
+script = ExtResource("17_tcga5")
+
+[node name="TerritoryManager" type="Node2D" parent="Grid"]
+script = ExtResource("19_sl3ds")
+
+[node name="CombatManager" type="Node2D" parent="Grid"]
+script = ExtResource("20_v3hpl")
+
+[node name="OpponentManager" type="Node2D" parent="Grid"]
+script = ExtResource("21_mh2jy")
+
+[node name="CombatantManager" type="Node2D" parent="Grid"]
+script = ExtResource("23_yrmve")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(960, 320)
+drag_horizontal_enabled = true
+drag_vertical_enabled = true
+script = ExtResource("4_gq3ax")
