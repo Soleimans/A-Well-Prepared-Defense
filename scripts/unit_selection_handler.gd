@@ -97,6 +97,7 @@ func cycle_through_units(grid_pos: Vector2) -> bool:
 	set_unit_highlight(unit_manager.selected_unit, true)
 	unit_manager.unit_start_pos = grid_pos
 	highlight_valid_moves(grid_pos)
+	update_unit_highlights()
 	
 	return true
 
@@ -113,6 +114,7 @@ func deselect_current_unit():
 	unit_manager.valid_move_tiles.clear()
 	current_unit_index = -1
 	last_clicked_pos = Vector2(-1, -1)
+	update_unit_highlights()
 
 func is_valid_movement_position(pos: Vector2, unit: Node2D) -> bool:
 	return movement_handler.is_valid_movement_position(pos, unit)
@@ -199,4 +201,4 @@ func get_unit_name(unit: Node2D) -> String:
 	return "Unknown"
 
 func _process(_delta):
-	update_unit_highlights()
+	pass

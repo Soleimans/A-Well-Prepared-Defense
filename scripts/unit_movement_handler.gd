@@ -1,8 +1,19 @@
 extends Node2D
 
-@onready var unit_manager = get_parent()
-@onready var grid = unit_manager.get_parent()
-@onready var territory_manager = grid.get_node("TerritoryManager")
+var unit_manager: Node  # Reference to parent UnitManager
+var grid: Node2D       # Reference to Grid
+var territory_manager: Node  # Reference to TerritoryManager
+
+func _ready():
+	unit_manager = get_parent()
+	if unit_manager:
+		grid = unit_manager.get_parent()
+		if grid:
+			territory_manager = grid.get_node("TerritoryManager")
+			print("MovementHandler: References initialized")
+			print("- Unit Manager: ", unit_manager != null)
+			print("- Grid: ", grid != null)
+			print("- Territory Manager: ", territory_manager != null)
 
 func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 	var valid_moves = []
@@ -21,6 +32,8 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 		unit_type = "infantry"
 	elif unit.scene_file_path.contains("garrison"):
 		unit_type = "garrison"
+	
+	print("Getting valid moves for ", unit_type, " at ", from_pos)
 	
 	match unit_type:
 		"garrison":
@@ -68,22 +81,28 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 					else:
 						break  # Stop checking in this direction if we hit an invalid position
 	
+	print("Found ", valid_moves.size(), " valid moves")
 	return valid_moves
 
 func is_valid_movement_position(pos: Vector2, unit: Node2D) -> bool:
+	print("Checking position ", pos, " for unit ", unit.scene_file_path)
+	
 	# Check if position is within grid bounds
 	if pos.x < 0 or pos.x >= grid.grid_size.x or \
 	   pos.y < 0 or pos.y >= grid.grid_size.y:
+		print("Position out of bounds")
 		return false
 	
 	# Check territory restrictions before war
 	if !is_position_in_territory(pos, unit.is_enemy):
+		print("Position in wrong territory")
 		return false
 	
 	# Only check path blocking if we have a starting position
 	if unit_manager.unit_start_pos != null:
 		# Check if path is blocked by enemy units
 		if is_path_blocked(unit_manager.unit_start_pos, pos, unit):
+			print("Path is blocked")
 			return false
 	
 	# Check if position has space for movement
@@ -97,8 +116,10 @@ func is_valid_movement_position(pos: Vector2, unit: Node2D) -> bool:
 					break
 			# If not all enemies, position is invalid due to being full
 			if !all_enemies:
+				print("Position is full")
 				return false
 	
+	print("Position is valid")
 	return true
 
 func is_position_in_territory(grid_pos: Vector2, is_enemy: bool) -> bool:
@@ -168,9 +189,19 @@ func get_line_points(start: Vector2, end: Vector2) -> Array:
 	return points
 
 func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
+	print("\nMovementHandler: Executing move")
+	print("From position: ", from_pos)
+	print("To position: ", to_pos)
+	print("Unit type: ", unit.scene_file_path if unit else "null")
+	
 	if !unit:
+		print("Move failed: No unit provided")
 		return false
 		
+	if !is_valid_movement_position(to_pos, unit):
+		print("Move failed: Invalid destination position")
+		return false
+	
 	# Calculate movement cost based on actual distance moved
 	var movement_cost = 1
 	if unit.scene_file_path.contains("armoured"):
@@ -178,23 +209,33 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 		var dy = abs(to_pos.y - from_pos.y)
 		movement_cost = max(dx, dy)
 	
+	print("Movement cost: ", movement_cost)
+	print("Current movement points: ", unit.movement_points)
+	
+	if unit.movement_points < movement_cost:
+		print("Move failed: Insufficient movement points")
+		return false
+	
 	# Check territory capture before moving
-	var territory_manager = grid.get_node("TerritoryManager")
 	if territory_manager:
 		territory_manager.check_territory_capture(from_pos, to_pos)
 	
 	# Only deduct movement points if we're actually moving
 	unit.movement_points -= movement_cost
+	print("Remaining movement points: ", unit.movement_points)
 	
 	# Remove unit from starting position
-	var unit_index = unit_manager.units_in_cells[from_pos].find(unit)
-	if unit_index != -1:
-		unit_manager.units_in_cells[from_pos].remove_at(unit_index)
+	if from_pos in unit_manager.units_in_cells:
+		var unit_index = unit_manager.units_in_cells[from_pos].find(unit)
+		if unit_index != -1:
+			unit_manager.units_in_cells[from_pos].remove_at(unit_index)
+			print("Removed unit from starting position")
 	
 	# Add unit to new position
 	if to_pos not in unit_manager.units_in_cells:
 		unit_manager.units_in_cells[to_pos] = []
 	unit_manager.units_in_cells[to_pos].append(unit)
+	print("Added unit to new position")
 	
 	# Reposition ALL units in the destination stack with proper offsets
 	var world_pos = grid.grid_to_world(to_pos)
@@ -205,14 +246,17 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 	
 	# Also reposition units in the starting position if any remain
 	world_pos = grid.grid_to_world(from_pos)
-	for i in range(unit_manager.units_in_cells[from_pos].size()):
-		var stacked_unit = unit_manager.units_in_cells[from_pos][i]
-		var offset = Vector2(0, -20 * i)
-		stacked_unit.position = world_pos + offset
+	if from_pos in unit_manager.units_in_cells:
+		for i in range(unit_manager.units_in_cells[from_pos].size()):
+			var stacked_unit = unit_manager.units_in_cells[from_pos][i]
+			var offset = Vector2(0, -20 * i)
+			stacked_unit.position = world_pos + offset
 	
 	if unit.movement_points <= 0:
 		unit.has_moved = true
+		print("Unit has no more movement points - marking as moved")
 	
+	print("Move completed successfully")
 	return true
 
 func manhattan_distance(from: Vector2, to: Vector2) -> int:

@@ -39,11 +39,17 @@ var placing_enemy: bool = false
 # In unit_manager.gd, update _ready:
 func _ready():
 	print("UnitManager: Initializing...")
-	# Ensure handlers are initialized first
-	movement_handler = $UnitMovementHandler
-	selection_handler = $UnitSelectionHandler
+	# Explicitly get references to handlers
+	movement_handler = get_node_or_null("UnitMovementHandler")
+	selection_handler = get_node_or_null("UnitSelectionHandler")
+	
 	if !movement_handler or !selection_handler:
 		push_error("UnitManager: Failed to find required handlers!")
+		return
+		
+	# Also make sure handlers have their references
+	movement_handler.unit_manager = self
+	movement_handler.grid = grid
 
 func initialize(size: Vector2):
 	for x in range(size.x):
@@ -144,14 +150,36 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	return true
 
 func execute_move(to_pos: Vector2) -> bool:
-	if movement_handler and selected_unit and unit_start_pos:
-		if movement_handler.execute_move(to_pos, selected_unit, unit_start_pos):
-			selected_unit = null
-			valid_move_tiles.clear()
-			selection_handler.current_unit_index = -1
-			selection_handler.last_clicked_pos = Vector2(-1, -1)
-			return true
-	return false
+	print("\nUnitManager: Executing move")
+	print("Movement handler reference: ", movement_handler)
+	print("To position: ", to_pos)
+	print("Selected unit: ", selected_unit.scene_file_path if selected_unit else "null")
+	print("Start position: ", unit_start_pos)
+	
+	# Changed the validation logic to properly check Vector2
+	if unit_start_pos == null or unit_start_pos == Vector2(-1, -1):
+		print("ERROR: No start position!")
+		return false
+		
+	if !movement_handler:
+		print("ERROR: No movement handler found!")
+		return false
+		
+	if !selected_unit:
+		print("ERROR: No unit selected!")
+		return false
+	
+	print("Calling movement handler execute_move")
+	var success = movement_handler.execute_move(to_pos, selected_unit, unit_start_pos)
+	if success:
+		print("Move successful, clearing selection")
+		selected_unit = null
+		valid_move_tiles.clear()
+		selection_handler.current_unit_index = -1
+		selection_handler.last_clicked_pos = Vector2(-1, -1)
+	else:
+		print("Movement handler returned false")
+	return success
 
 func draw(grid_node: Node2D):
 	for pos in valid_move_tiles:
