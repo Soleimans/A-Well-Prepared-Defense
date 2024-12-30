@@ -218,7 +218,7 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 	
 	# Check territory capture before moving
 	if territory_manager:
-		territory_manager.check_territory_capture(from_pos, to_pos)
+		territory_manager.check_territory_capture(from_pos, to_pos, unit)
 	
 	# Only deduct movement points if we're actually moving
 	unit.movement_points -= movement_cost
