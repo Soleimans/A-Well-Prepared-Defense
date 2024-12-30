@@ -124,6 +124,11 @@ func _on_button_pressed():
 				if unit.has_method("reset_movement"):
 					unit.reset_movement()
 					print("Reset movement for unit at position: ", pos)
+				if unit.has_method("set_highlighted"):
+					# Highlight units with movement points or adjacent enemies
+					var should_highlight = unit.can_move() or unit.is_adjacent_to_enemy()
+					unit.set_highlighted(should_highlight)
+					print("Updated highlight for unit at position: ", pos)
 		
 		# Process construction progress
 		building_manager.process_construction()
