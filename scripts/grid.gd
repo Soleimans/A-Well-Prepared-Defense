@@ -77,21 +77,20 @@ func _input(event):
 			print("Attempting to place unit")
 			unit_manager.try_place_unit(grid_pos)
 			
-		else:
-			# Check if we're clicking on the same tile as a selected unit
-			if unit_manager.selected_unit != null and grid_pos == unit_manager.unit_start_pos:
-				print("Clicking on selected unit's tile")
-				unit_manager.try_select_unit(grid_pos)
-			# Check if we have a selected unit and we're clicking on an enemy
-			elif unit_manager.selected_unit != null:
-				var combat_manager = get_node("CombatManager")
+		elif unit_manager.selected_unit != null and grid_pos == unit_manager.unit_start_pos:
+			print("Clicking on selected unit's tile")
+			unit_manager.try_select_unit(grid_pos)
+		
+		elif unit_manager.selected_unit != null:
+			var combat_manager = get_node("CombatManager")
+			if combat_manager:
 				var enemy_units = combat_manager.get_enemy_units_at(grid_pos)
 				
 				if enemy_units.size() > 0:
 					print("Enemy units found at click position")
-					# Check if the position is adjacent and unit hasn't attacked this turn
-					if unit_manager.is_adjacent(unit_manager.unit_start_pos, grid_pos) and !unit_manager.selected_unit.in_combat_this_turn:
-						print("Position is adjacent and unit hasn't attacked, initiating combat!")
+					# Check if we can attack this position
+					if combat_manager.can_attack_position(unit_manager.unit_start_pos, grid_pos, unit_manager.selected_unit) and !unit_manager.selected_unit.in_combat_this_turn:
+						print("Valid attack position and unit hasn't attacked, initiating combat!")
 						combat_manager.initiate_combat(unit_manager.unit_start_pos, grid_pos)
 						unit_manager.deselect_current_unit()
 						return
@@ -99,7 +98,7 @@ func _input(event):
 						print("Unit has already attacked this turn")
 						return
 					else:
-						print("Enemy found but not in adjacent tile")
+						print("Enemy found but cannot attack from this position")
 				
 				# If no combat was initiated and the move is valid, execute the move
 				elif unit_manager.is_valid_move(grid_pos):
@@ -108,10 +107,10 @@ func _input(event):
 				else:
 					print("Invalid move location - checking for unit selection")
 					unit_manager.try_select_unit(grid_pos)
-			else:
-				# No unit selected, try to select one
-				print("Attempting to select/cycle units")
-				unit_manager.try_select_unit(grid_pos)
+		else:
+			# No unit selected, try to select one
+			print("Attempting to select/cycle units")
+			unit_manager.try_select_unit(grid_pos)
 
 func _process(_delta):
 	queue_redraw()

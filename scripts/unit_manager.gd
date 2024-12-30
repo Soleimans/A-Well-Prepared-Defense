@@ -36,8 +36,14 @@ var valid_move_tiles: Array = []
 var unit_start_pos = null
 var placing_enemy: bool = false
 
+# In unit_manager.gd, update _ready:
 func _ready():
 	print("UnitManager: Initializing...")
+	# Ensure handlers are initialized first
+	movement_handler = $UnitMovementHandler
+	selection_handler = $UnitSelectionHandler
+	if !movement_handler or !selection_handler:
+		push_error("UnitManager: Failed to find required handlers!")
 
 func initialize(size: Vector2):
 	for x in range(size.x):

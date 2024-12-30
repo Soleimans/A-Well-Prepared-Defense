@@ -114,6 +114,9 @@ func deselect_current_unit():
 	current_unit_index = -1
 	last_clicked_pos = Vector2(-1, -1)
 
+func is_valid_movement_position(pos: Vector2, unit: Node2D) -> bool:
+	return movement_handler.is_valid_movement_position(pos, unit)
+
 func highlight_valid_moves(from_pos: Vector2):
 	print("Highlighting valid moves from position: ", from_pos)
 	unit_manager.valid_move_tiles.clear()

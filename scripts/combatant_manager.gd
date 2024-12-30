@@ -321,7 +321,7 @@ func move_garrison_units():
 				print("Moving garrison from ", current_pos, " to ", best_move)
 				unit_manager.selected_unit = unit
 				unit_manager.unit_start_pos = current_pos
-				unit_manager.execute_move(best_move)
+				unit_manager.movement_handler.execute_move(best_move, unit, current_pos)
 
 func move_combat_units():
 	print("\nMoving combat units...")
@@ -429,7 +429,7 @@ func move_combat_units():
 						combat_manager.initiate_combat(current_pos, best_move)
 				else:
 					# Regular movement
-					unit_manager.execute_move(best_move)
+					unit_manager.movement_handler.execute_move(best_move, unit, current_pos)
 
 # New function to evaluate attack positions
 func evaluate_attack_position(pos: Vector2, attacker) -> int:

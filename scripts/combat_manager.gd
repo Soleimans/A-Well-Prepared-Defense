@@ -84,6 +84,7 @@ func can_attack_position(from_pos: Vector2, to_pos: Vector2, unit: Node2D) -> bo
 	return dx <= 1 and dy <= 1
 
 # Find best position to attack from
+# Find best position to attack from
 func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
 	# If we're already adjacent, use current position
 	if is_adjacent(from_pos, target_pos):
