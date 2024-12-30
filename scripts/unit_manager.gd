@@ -159,6 +159,7 @@ func get_movable_units_at_position(grid_pos: Vector2) -> Array:
 
 func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
 	var is_armoured = unit.scene_file_path.contains("armoured")
+	var is_garrison = unit.scene_file_path.contains("garrison")
 	var max_range = 2 if is_armoured else 1
 	
 	# Check all positions within attack range
@@ -167,9 +168,14 @@ func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
 			var check_pos = Vector2(x, y)
 			if check_pos == pos:
 				continue
-				
-			# Check distance for non-armoured units
-			if !is_armoured and max(abs(check_pos.x - pos.x), abs(check_pos.y - pos.y)) > 1:
+			
+			# Special handling for garrison units - can only attack orthogonally
+			if is_garrison:
+				# For garrison units, only check orthogonal positions (no diagonals)
+				if abs(check_pos.x - pos.x) + abs(check_pos.y - pos.y) != 1:
+					continue
+			# For non-garrison units, check based on their normal rules
+			elif !is_armoured and max(abs(check_pos.x - pos.x), abs(check_pos.y - pos.y)) > 1:
 				continue
 			
 			# Check for enemy units
@@ -178,6 +184,24 @@ func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
 					if other_unit.is_enemy != unit.is_enemy:
 						return true
 	return false
+
+func can_attack_position(from_pos: Vector2, to_pos: Vector2, unit: Node2D) -> bool:
+	# For garrison units, only allow orthogonal attacks
+	if unit.scene_file_path.contains("garrison"):
+		var dx = abs(to_pos.x - from_pos.x)
+		var dy = abs(to_pos.y - from_pos.y)
+		return (dx == 1 and dy == 0) or (dx == 0 and dy == 1)  # Only orthogonal
+	
+	# For armoured units
+	if unit.scene_file_path.contains("armoured"):
+		var dx = abs(to_pos.x - from_pos.x)
+		var dy = abs(to_pos.y - from_pos.y)
+		return dx <= 2 and dy <= 2
+	
+	# For infantry (and any other units)
+	var dx = abs(to_pos.x - from_pos.x)
+	var dy = abs(to_pos.y - from_pos.y)
+	return dx <= 1 and dy <= 1
 
 func cycle_through_units(grid_pos: Vector2) -> bool:
 	var movable_units = get_movable_units_at_position(grid_pos)
@@ -566,6 +590,25 @@ func highlight_valid_moves(from_pos: Vector2):
 						if !is_valid_movement_position(test_pos) or position_has_enemy(test_pos):
 							break
 						valid_move_tiles.append(test_pos)
+
+	# Add possible attack tiles
+	if !selected_unit.in_combat_this_turn:
+		# Get all possible attack positions
+		for y in range(grid.grid_size.y):
+			for x in range(grid.grid_size.x):
+				var test_pos = Vector2(x, y)
+				# Skip our own position
+				if test_pos == from_pos:
+					continue
+				
+				# Check if we can attack this position
+				if can_attack_position(from_pos, test_pos, selected_unit):
+					# Check if there are enemies at this position
+					if test_pos in units_in_cells:
+						for unit in units_in_cells[test_pos]:
+							if unit.is_enemy != selected_unit.is_enemy:
+								valid_move_tiles.append(test_pos)
+								break
 
 func position_has_enemy(pos: Vector2) -> bool:
 	if !selected_unit:

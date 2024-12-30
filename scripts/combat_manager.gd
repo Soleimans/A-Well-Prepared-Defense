@@ -144,6 +144,24 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 				unit_manager.units_in_cells[pos].erase(unit)
 			unit.queue_free()
 
+func can_attack_position(attacker_pos: Vector2, defender_pos: Vector2, attacker: Node2D) -> bool:
+	# For garrison units, only allow orthogonal attacks
+	if attacker.scene_file_path.contains("garrison"):
+		var dx = abs(defender_pos.x - attacker_pos.x)
+		var dy = abs(defender_pos.y - attacker_pos.y)
+		return (dx == 1 and dy == 0) or (dx == 0 and dy == 1)  # Only orthogonal
+	
+	# For armoured units
+	if attacker.scene_file_path.contains("armoured"):
+		var dx = abs(defender_pos.x - attacker_pos.x)
+		var dy = abs(defender_pos.y - attacker_pos.y)
+		return dx <= 2 and dy <= 2
+	
+	# For infantry (and any other units)
+	var dx = abs(defender_pos.x - attacker_pos.x)
+	var dy = abs(defender_pos.y - attacker_pos.y)
+	return dx <= 1 and dy <= 1
+
 func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 	print("\nDEBUG: INITIATING COMBAT:")
 	print("Attacker position: ", attacker_pos)
@@ -198,6 +216,11 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 			
 		if !is_instance_valid(attacker) or !is_instance_valid(defender):
 			print("Combat cancelled - invalid units")
+			return
+			
+		# Check if attack is valid based on unit type
+		if !can_attack_position(attacker_pos, defender_pos, attacker):
+			print("Combat cancelled - invalid attack position for unit type")
 			return
 		
 		print("Combat Starting!")
