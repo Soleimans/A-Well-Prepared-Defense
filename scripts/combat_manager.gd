@@ -192,7 +192,7 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 			print("- ", unit.scene_file_path, " (enemy: ", unit.is_enemy, ")")
 	
 	if attacking_units.size() > 0 and defending_units.size() > 0:
-		# Find the first valid attacking unit
+		# Find the attacking unit (use selected unit if available, otherwise first valid unit)
 		var attacker = null
 		if unit_manager.selected_unit and unit_manager.selected_unit in attacking_units:
 			attacker = unit_manager.selected_unit
@@ -204,13 +204,9 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 					print("Found valid attacking unit: ", attacker.scene_file_path)
 					break
 		
-		# Find the first valid defending unit
-		var defender = null
-		for unit in defending_units:
-			if !unit.in_combat_this_turn:
-				defender = unit
-				print("Found valid defending unit: ", defender.scene_file_path)
-				break
+		# Get the defender (always use the bottom unit in the stack)
+		var defender = defending_units[0] # Index 0 is the bottom unit in the stack
+		print("Using bottom unit as defender: ", defender.scene_file_path)
 		
 		if !attacker or !defender:
 			print("Combat cancelled - no valid units found")
