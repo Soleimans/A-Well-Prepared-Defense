@@ -203,6 +203,8 @@ func can_attack_position(from_pos: Vector2, to_pos: Vector2, unit: Node2D) -> bo
 	var dy = abs(to_pos.y - from_pos.y)
 	return dx <= 1 and dy <= 1
 
+
+
 func cycle_through_units(grid_pos: Vector2) -> bool:
 	var movable_units = get_movable_units_at_position(grid_pos)
 	print("\nCycling through units")
@@ -233,6 +235,179 @@ func cycle_through_units(grid_pos: Vector2) -> bool:
 	set_unit_highlight(selected_unit, true)
 	unit_start_pos = grid_pos
 	highlight_valid_moves(grid_pos)
+	
+	return true
+
+func _process(_delta):
+	update_unit_highlights()
+
+func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
+	var valid_moves = []
+	
+	# Get unit type from scene path
+	var unit_type = ""
+	var max_distance = 1
+	
+	if unit.scene_file_path.contains("armoured"):
+		unit_type = "armoured"
+		max_distance = 2
+	elif unit.scene_file_path.contains("infantry"):
+		unit_type = "infantry"
+	elif unit.scene_file_path.contains("garrison"):
+		unit_type = "garrison"
+	
+	match unit_type:
+		"garrison":
+			# Garrison moves only up, down, left, right (no diagonals)
+			var directions = [
+				Vector2(1, 0),   # right
+				Vector2(-1, 0),  # left
+				Vector2(0, 1),   # down
+				Vector2(0, -1)   # up
+			]
+			
+			for dir in directions:
+				var test_pos = from_pos + dir
+				if is_valid_preview_position(test_pos, unit):
+					valid_moves.append(test_pos)
+					
+		"infantry":
+			# Infantry can move in any direction within 1 tile radius
+			for x in range(-1, 2):
+				for y in range(-1, 2):
+					if x == 0 and y == 0:
+						continue
+					var test_pos = from_pos + Vector2(x, y)
+					if is_valid_preview_position(test_pos, unit):
+						valid_moves.append(test_pos)
+						
+		"armoured":
+			# Armoured moves like a queen in chess with range of 2
+			var directions = [
+				Vector2(1, 0),    # right
+				Vector2(-1, 0),   # left
+				Vector2(0, 1),    # down
+				Vector2(0, -1),   # up
+				Vector2(1, 1),    # diagonal down-right
+				Vector2(-1, 1),   # diagonal down-left
+				Vector2(1, -1),   # diagonal up-right
+				Vector2(-1, -1)   # diagonal up-left
+			]
+			
+			for dir in directions:
+				for distance in range(1, max_distance + 1):
+					var test_pos = from_pos + (dir * distance)
+					if is_valid_preview_position(test_pos, unit):
+						valid_moves.append(test_pos)
+					else:
+						break  # Stop checking in this direction if we hit an invalid position
+	
+	return valid_moves
+
+func update_unit_highlights():
+	# Check each unit for available actions
+	for pos in units_in_cells:
+		for unit in units_in_cells[pos]:
+			var has_available_action = false
+			
+			# Only check non-enemy units
+			if !unit.is_enemy:
+				# Check if unit can move
+				if unit.can_move():
+					# Get valid moves for this unit
+					var valid_moves = []
+					if unit.scene_file_path.contains("armoured"):
+						valid_moves = get_valid_moves(pos, unit)
+					elif unit.scene_file_path.contains("infantry"):
+						valid_moves = get_valid_moves(pos, unit)
+					elif unit.scene_file_path.contains("garrison"):
+						valid_moves = get_valid_moves(pos, unit)
+						
+					# If there are valid moves available, highlight the unit
+					if !valid_moves.is_empty():
+						has_available_action = true
+				
+				# Check if unit can attack (even if it can't move)
+				if !unit.in_combat_this_turn:
+					var can_attack = has_adjacent_enemies(pos, unit)
+					if can_attack:
+						has_available_action = true
+				
+				# Set label color based on available actions
+				if unit.has_node("Label"):
+					var label = unit.get_node("Label")
+					if unit == selected_unit:
+						# Keep base color for selected unit but add asterisk
+						var unit_name = get_unit_name(unit)
+						label.text = "* " + unit_name
+						label.modulate = Color(1, 1, 1)
+					else:
+						# Set color based on action availability, no asterisk
+						label.modulate = Color(1, 1, 0) if has_available_action else Color(1, 1, 1)
+						var unit_name = get_unit_name(unit)
+						label.text = unit_name
+
+func get_unit_name(unit: Node2D) -> String:
+	if unit.scene_file_path.contains("infantry"):
+		return "Infantry"
+	elif unit.scene_file_path.contains("armoured"):
+		return "Armoured"
+	elif unit.scene_file_path.contains("garrison"):
+		return "Garrison"
+	return "Unknown"
+
+func highlight_unit_for_actions(unit: Node2D, pos: Vector2):
+	var has_available_action = false
+	
+	# Check if unit can move
+	if unit.can_move():
+		# Get valid moves for this unit
+		var valid_moves = get_valid_moves(pos, unit)
+			
+		# If there are valid moves available, highlight the unit
+		if !valid_moves.is_empty():
+			has_available_action = true
+	
+	# Check if unit can attack (even if it can't move)
+	if !unit.in_combat_this_turn:
+		var can_attack = has_adjacent_enemies(pos, unit)
+		if can_attack:
+			has_available_action = true
+	
+	# Update unit highlight color only (no asterisk)
+	if unit.has_node("Label"):
+		unit.get_node("Label").modulate = Color(1, 1, 0) if has_available_action else Color(1, 1, 1)
+
+func is_valid_preview_position(pos: Vector2, unit: Node2D) -> bool:
+	# Check if position is within grid bounds
+	if pos.x < 0 or pos.x >= grid.grid_size.x or \
+	   pos.y < 0 or pos.y >= grid.grid_size.y:
+		return false
+	
+	# Check territory restrictions before war
+	if !territory_manager.war_active:
+		var territory_owner = territory_manager.get_territory_owner(pos)
+		if unit.is_enemy and territory_owner != "enemy":
+			return false
+		elif !unit.is_enemy and territory_owner != "player":
+			return false
+	
+	# Check if path is blocked by enemy units
+	if is_path_blocked(unit_start_pos if unit_start_pos else pos, pos, unit):
+		return false
+	
+	# Check if position has space for movement
+	if pos in units_in_cells:
+		if units_in_cells[pos].size() >= MAX_UNITS_PER_CELL:
+			# Check if all units at position are enemies
+			var all_enemies = true
+			for other_unit in units_in_cells[pos]:
+				if other_unit.is_enemy == unit.is_enemy:
+					all_enemies = false
+					break
+			# If not all enemies, position is invalid due to being full
+			if !all_enemies:
+				return false
 	
 	return true
 
@@ -510,7 +685,10 @@ func get_line_points(start: Vector2, end: Vector2) -> Array:
 	points.append(Vector2(x1, y1))
 	return points
 
-func is_path_blocked(from_pos: Vector2, to_pos: Vector2) -> bool:
+func is_path_blocked(from_pos: Vector2, to_pos: Vector2, check_unit: Node2D = null) -> bool:
+	if !check_unit:
+		return false
+		
 	# Get all points along the path except the starting position
 	var path_points = get_line_points(from_pos, to_pos)
 	path_points.pop_front()  # Remove starting position
@@ -519,8 +697,7 @@ func is_path_blocked(from_pos: Vector2, to_pos: Vector2) -> bool:
 	for point in path_points:
 		if point in units_in_cells:
 			for unit in units_in_cells[point]:
-				if unit.is_enemy != selected_unit.is_enemy:
-					print("Path blocked by enemy unit at ", point)
+				if unit.is_enemy != check_unit.is_enemy:
 					return true
 	
 	return false
