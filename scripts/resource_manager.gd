@@ -1,8 +1,8 @@
 extends Node
 
 # Player resources
-var points = 100000
-var military_points = 100000
+var points = 0
+var military_points = 0
 var political_power = 100
 var manpower = 1000000  # Add player manpower
 var political_power_gain = 10

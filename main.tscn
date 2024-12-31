@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://brvwkj40l6c42"]
+[gd_scene load_steps=30 format=3 uid="uid://brvwkj40l6c42"]
 
 [ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://images/image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://scripts/button.gd" id="1_d0gsr"]
@@ -17,6 +17,7 @@
 [ext_resource type="Script" path="res://scripts/building_manager.gd" id="10_tbqb7"]
 [ext_resource type="Script" path="res://scripts/unit_manager.gd" id="11_f7f17"]
 [ext_resource type="Script" path="res://scripts/resource_manager.gd" id="12_4rgbg"]
+[ext_resource type="PackedScene" uid="uid://cdqbe5v6cq68v" path="res://scenes/credits.tscn" id="13_1ixd5"]
 [ext_resource type="PackedScene" uid="uid://g5wu0q7kkb3c" path="res://scenes/debug.tscn" id="14_4peq5"]
 [ext_resource type="Script" path="res://scripts/debug.gd" id="15_m3oiu"]
 [ext_resource type="Script" path="res://scripts/minister_manager.gd" id="17_tcga5"]
@@ -133,6 +134,9 @@ script = ExtResource("6_rwev8")
 script = ExtResource("15_m3oiu")
 
 [node name="end_menu" parent="UILayer" instance=ExtResource("7_36q0d")]
+
+[node name="Credits" parent="UILayer" instance=ExtResource("13_1ixd5")]
+anchors_preset = -1
 
 [node name="Background" type="Node2D" parent="."]
 
