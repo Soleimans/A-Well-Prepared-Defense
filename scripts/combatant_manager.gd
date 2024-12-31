@@ -341,7 +341,44 @@ func move_combat_units():
 		var unit_type = "armoured" if unit.scene_file_path.ends_with("armoured.tscn") else "infantry"
 		var movement_range = 2 if unit_type == "armoured" else 1
 		
-		# Get all possible positions within range
+		# First, check for immediately attackable units
+		var attack_opportunities = []
+		for dx in [-1, 0, 1]:
+			for dy in [-1, 0, 1]:
+				if dx == 0 and dy == 0:
+					continue
+					
+				# For garrison units, only check orthogonal positions
+				if unit_type == "garrison" and abs(dx) + abs(dy) > 1:
+					continue
+					
+				var attack_pos = current_pos + Vector2(dx, dy)
+				if attack_pos.x >= 0 and attack_pos.x < grid.grid_size.x and \
+				   attack_pos.y >= 0 and attack_pos.y < grid.grid_size.y:
+					if attack_pos in unit_manager.units_in_cells:
+						for target_unit in unit_manager.units_in_cells[attack_pos]:
+							if !target_unit.is_enemy:
+								attack_opportunities.append({
+									"position": attack_pos,
+									"target": target_unit,
+									"score": evaluate_attack_position(attack_pos, unit)
+								})
+		
+		# If there are attack opportunities, take the best one
+		if !attack_opportunities.is_empty():
+			attack_opportunities.sort_custom(func(a, b): return a.score > b.score)
+			var best_attack = attack_opportunities[0]
+			
+			print("Initiating combat from ", current_pos, " to ", best_attack.position)
+			unit_manager.selected_unit = unit
+			unit_manager.unit_start_pos = current_pos
+			
+			var combat_manager = grid.get_node("CombatManager")
+			if combat_manager:
+				combat_manager.initiate_combat(current_pos, best_attack.position)
+			continue
+		
+		# If no immediate attacks, look for moves that get us into attack position
 		var possible_moves = []
 		for x in range(-movement_range, movement_range + 1):
 			for y in range(-movement_range, movement_range + 1):
@@ -368,23 +405,31 @@ func move_combat_units():
 		for move in possible_moves:
 			var score = 0
 			
-			# Check for player units to attack
-			var has_attackable_unit = false
-			if move in unit_manager.units_in_cells:
-				for target_unit in unit_manager.units_in_cells[move]:
-					if !target_unit.is_enemy:
-						has_attackable_unit = true
-						score += 1000  # High priority for attack moves
+			# Check if this move puts us adjacent to any player units
+			var would_be_adjacent_to_enemy = false
+			for dx in [-1, 0, 1]:
+				for dy in [-1, 0, 1]:
+					if dx == 0 and dy == 0:
+						continue
 						
-						# Bonus for attacking damaged units
-						var health_ratio = (target_unit.soft_health + target_unit.hard_health) / \
-										 float(target_unit.max_soft_health + target_unit.max_hard_health)
-						if health_ratio < 0.5:
-							score += 500
-						break
+					var adjacent_pos = move + Vector2(dx, dy)
+					if adjacent_pos.x >= 0 and adjacent_pos.x < grid.grid_size.x and \
+					   adjacent_pos.y >= 0 and adjacent_pos.y < grid.grid_size.y:
+						if adjacent_pos in unit_manager.units_in_cells:
+							for check_unit in unit_manager.units_in_cells[adjacent_pos]:
+								if !check_unit.is_enemy:
+									would_be_adjacent_to_enemy = true
+									# Huge bonus for moves that put us next to enemy units
+									score += 2000
+									
+									# Extra bonus for vulnerable targets
+									var health_ratio = (check_unit.soft_health + check_unit.hard_health) / \
+													 float(check_unit.max_soft_health + check_unit.max_hard_health)
+									if health_ratio < 0.5:
+										score += 500
 			
-			# If no immediate attack, score based on position
-			if !has_attackable_unit:
+			# If we're not moving adjacent to enemies, score based on position
+			if !would_be_adjacent_to_enemy:
 				# Prioritize moving towards player territory
 				score += (grid.grid_size.x - move.x) * 100
 				
@@ -407,8 +452,7 @@ func move_combat_units():
 			
 			# Check if we can actually move there
 			if !unit_manager.units_in_cells.has(move) or \
-			   unit_manager.units_in_cells[move].size() < unit_manager.MAX_UNITS_PER_CELL or \
-			   has_attackable_unit:
+			   unit_manager.units_in_cells[move].size() < unit_manager.MAX_UNITS_PER_CELL:
 				scored_moves.append({"position": move, "score": score})
 		
 		# Execute the highest-scored move
@@ -420,16 +464,7 @@ func move_combat_units():
 				print("Moving unit from ", current_pos, " to ", best_move)
 				unit_manager.selected_unit = unit
 				unit_manager.unit_start_pos = current_pos
-				
-				# If this is an attack move, initiate combat
-				if best_move in unit_manager.units_in_cells and \
-				   unit_manager.units_in_cells[best_move].any(func(u): return !u.is_enemy):
-					var combat_manager = grid.get_node("CombatManager")
-					if combat_manager:
-						combat_manager.initiate_combat(current_pos, best_move)
-				else:
-					# Regular movement
-					unit_manager.movement_handler.execute_move(best_move, unit, current_pos)
+				unit_manager.movement_handler.execute_move(best_move, unit, current_pos)
 
 # New function to evaluate attack positions
 func evaluate_attack_position(pos: Vector2, attacker) -> int:
