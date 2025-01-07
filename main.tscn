@@ -1,6 +1,5 @@
 [gd_scene load_steps=30 format=3 uid="uid://brvwkj40l6c42"]
 
-[ext_resource type="Texture2D" uid="uid://blb03qvc6fa6h" path="res://images/image-cache.jpeg" id="1_4m1r6"]
 [ext_resource type="Script" path="res://scripts/button.gd" id="1_d0gsr"]
 [ext_resource type="Script" path="res://scripts/grid.gd" id="1_d6757"]
 [ext_resource type="PackedScene" uid="uid://23oobmg40yue" path="res://scenes/build_menu.tscn" id="2_760as"]
@@ -19,6 +18,7 @@
 [ext_resource type="Script" path="res://scripts/resource_manager.gd" id="12_4rgbg"]
 [ext_resource type="PackedScene" uid="uid://cdqbe5v6cq68v" path="res://scenes/credits.tscn" id="13_1ixd5"]
 [ext_resource type="PackedScene" uid="uid://g5wu0q7kkb3c" path="res://scenes/debug.tscn" id="14_4peq5"]
+[ext_resource type="Texture2D" uid="uid://llkvx8c8qoog" path="res://images/New Project.jpg" id="14_tgxqa"]
 [ext_resource type="Script" path="res://scripts/debug.gd" id="15_m3oiu"]
 [ext_resource type="Script" path="res://scripts/minister_manager.gd" id="17_tcga5"]
 [ext_resource type="Script" path="res://scripts/unit_movement_handler.gd" id="18_7m63j"]
@@ -136,14 +136,13 @@ script = ExtResource("15_m3oiu")
 [node name="end_menu" parent="UILayer" instance=ExtResource("7_36q0d")]
 
 [node name="Credits" parent="UILayer" instance=ExtResource("13_1ixd5")]
-anchors_preset = -1
 
 [node name="Background" type="Node2D" parent="."]
 
 [node name="Sprite2D" type="Sprite2D" parent="Background"]
 position = Vector2(977, 339)
 scale = Vector2(5.70215, 4.95182)
-texture = ExtResource("1_4m1r6")
+texture = ExtResource("14_tgxqa")
 
 [node name="TileMap" type="TileMap" parent="."]
 tile_set = SubResource("TileSet_kb2ph")

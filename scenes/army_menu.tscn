@@ -82,7 +82,7 @@ text = "3000"
 
 [node name="Button" type="Button" parent="."]
 layout_mode = 0
-offset_left = 136.0
-offset_right = 204.0
+offset_left = 91.0
+offset_right = 159.0
 offset_bottom = 32.0
 text = "Close"

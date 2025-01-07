@@ -31,8 +31,8 @@ func _ready():
 	$CloseButton.pressed.connect(_on_close_button_pressed)
 	
 	# Set up cost labels
-	$Panel/GridContainer/VBoxContainer/HBoxContainer/Label2.text = "10800"
-	$Panel/GridContainer/VBoxContainer/HBoxContainer2/Label2.text = "7200"
+	$Panel/GridContainer/VBoxContainer/HBoxContainer/Label2.text = "12000"
+	$Panel/GridContainer/VBoxContainer/HBoxContainer2/Label2.text = "8000"
 	$Panel/GridContainer/VBoxContainer/HBoxContainer3/Label2.text = "500/level"
 	
 	# Connect to war count signal

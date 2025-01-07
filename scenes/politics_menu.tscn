@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/politics_menu.gd" id="1_exhai"]
 [ext_resource type="Texture2D" uid="uid://idsri6evkoom" path="res://images/public-speaker.png" id="1_who3y"]
-[ext_resource type="Script" path="res://scripts/panel.gd" id="2_ytffu"]
+[ext_resource type="Script" path="res://scripts/politics_panel.gd" id="2_vxrj5"]
 
 [node name="politics_menu" type="Control"]
 layout_mode = 3
@@ -17,7 +17,7 @@ script = ExtResource("1_exhai")
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
-script = ExtResource("2_ytffu")
+script = ExtResource("2_vxrj5")
 
 [node name="GridContainer" type="GridContainer" parent="Panel"]
 layout_mode = 0
@@ -95,111 +95,9 @@ text = "Politics"
 layout_mode = 2
 text = "150"
 
-[node name="HBoxContainer5" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer5"]
-layout_mode = 2
-texture = ExtResource("1_who3y")
-
-[node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer5"]
-layout_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 2
-text = "Politics"
-
-[node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer5"]
-layout_mode = 2
-text = "150"
-
-[node name="HBoxContainer6" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer6"]
-layout_mode = 2
-texture = ExtResource("1_who3y")
-
-[node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer6"]
-layout_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 2
-text = "Politics"
-
-[node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer6"]
-layout_mode = 2
-text = "150"
-
-[node name="HBoxContainer7" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer7"]
-layout_mode = 2
-texture = ExtResource("1_who3y")
-
-[node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer7"]
-layout_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 2
-text = "Politics"
-
-[node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer7"]
-layout_mode = 2
-text = "150"
-
-[node name="HBoxContainer8" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer8"]
-layout_mode = 2
-texture = ExtResource("1_who3y")
-
-[node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer8"]
-layout_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 2
-text = "Politics"
-
-[node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer8"]
-layout_mode = 2
-text = "150"
-
-[node name="HBoxContainer9" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer9"]
-layout_mode = 2
-texture = ExtResource("1_who3y")
-
-[node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer9"]
-layout_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 2
-text = "Politics"
-
-[node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer9"]
-layout_mode = 2
-text = "150"
-
-[node name="HBoxContainer10" type="HBoxContainer" parent="Panel/GridContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="TextureRect" type="TextureRect" parent="Panel/GridContainer/VBoxContainer/HBoxContainer10"]
-layout_mode = 2
-texture = ExtResource("1_who3y")
-
-[node name="Label" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer10"]
-layout_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 2
-text = "Politics"
-
-[node name="Label2" type="Label" parent="Panel/GridContainer/VBoxContainer/HBoxContainer10"]
-layout_mode = 2
-text = "150"
-
 [node name="Button" type="Button" parent="."]
 layout_mode = 0
-offset_left = 267.0
-offset_right = 331.0
+offset_left = 177.0
+offset_right = 241.0
 offset_bottom = 32.0
 text = "Close"

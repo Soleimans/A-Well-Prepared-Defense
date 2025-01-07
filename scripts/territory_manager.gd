@@ -83,7 +83,7 @@ func capture_territory(pos: Vector2, new_owner: String):
 	# Check victory conditions after territory capture
 	check_victory_conditions()
 
-# New function to handle territory capture during unit movement
+# Function to handle territory capture during unit movement
 func check_territory_capture(from_pos: Vector2, to_pos: Vector2, unit: Node2D = null):
 	if !unit:
 		return

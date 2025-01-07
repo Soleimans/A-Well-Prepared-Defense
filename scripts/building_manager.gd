@@ -55,20 +55,17 @@ var fort_scene = preload("res://scenes/fort.tscn")
 @onready var unit_manager = get_parent().get_node("UnitManager")
 
 func initialize(size: Vector2):
-	# Initialize grid cells and fort levels
 	for x in range(size.x):
 		for y in range(size.y):
 			grid_cells[Vector2(x, y)] = null
 			fort_levels[Vector2(x, y)] = 0
 	
 	# Add starting civilian factories
-	# Player factory in top left (0,0)
 	var player_factory = civilian_factory_scene.instantiate()
 	grid.add_child(player_factory)
 	grid_cells[Vector2(0, 0)] = player_factory
 	player_factory.position = grid.grid_to_world(Vector2(0, 0))
 	
-	# Enemy factory in bottom right (14,4)
 	var enemy_factory = civilian_factory_scene.instantiate()
 	grid.add_child(enemy_factory)
 	grid_cells[Vector2(14, 4)] = enemy_factory
@@ -138,19 +135,16 @@ func unlock_next_column() -> bool:
 	var cost = get_next_column_cost()
 	var next_column = buildable_columns.size()
 	
-	# Check if column is already unlocked by enemy
 	if next_column in enemy_buildable_columns or next_column in all_unlocked_columns:
 		print("Column already claimed by enemy!")
 		return false
 		
 	resource_manager.points -= cost
 	buildable_columns.append(next_column)
-	all_unlocked_columns.append(next_column)  # Track this column as claimed
+	all_unlocked_columns.append(next_column)  
 	
-	# Get reference to territory manager and update territory ownership
 	var territory_manager = get_parent().get_node("TerritoryManager")
 	if territory_manager:
-		# Update territory ownership for all cells in the new column
 		for y in range(get_parent().grid_size.y):
 			var pos = Vector2(next_column, y)
 			territory_manager.capture_territory(pos, "player")
