@@ -27,13 +27,16 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 	
 	if unit.scene_file_path.contains("armoured"):
 		unit_type = "armoured"
-		max_distance = 2
+		# Important: Set max_distance based on remaining movement points
+		max_distance = unit.movement_points
 	elif unit.scene_file_path.contains("infantry"):
 		unit_type = "infantry"
 	elif unit.scene_file_path.contains("garrison"):
 		unit_type = "garrison"
 	
 	print("Getting valid moves for ", unit_type, " at ", from_pos)
+	print("Unit movement points: ", unit.movement_points)
+	print("Max distance: ", max_distance)
 	
 	match unit_type:
 		"garrison":
@@ -61,7 +64,7 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 						valid_moves.append(test_pos)
 						
 		"armoured":
-			# Armoured moves like a queen in chess with range of 2
+			# Armoured moves like a queen in chess with range based on movement points
 			var directions = [
 				Vector2(1, 0),    # right
 				Vector2(-1, 0),   # left
@@ -76,7 +79,8 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 			for dir in directions:
 				for distance in range(1, max_distance + 1):
 					var test_pos = from_pos + (dir * distance)
-					if is_valid_movement_position(test_pos, unit):
+					# Only add position if it's valid AND within current movement points
+					if is_valid_movement_position(test_pos, unit) and distance <= unit.movement_points:
 						valid_moves.append(test_pos)
 					else:
 						break  # Stop checking in this direction if we hit an invalid position
@@ -193,6 +197,7 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 	print("From position: ", from_pos)
 	print("To position: ", to_pos)
 	print("Unit type: ", unit.scene_file_path if unit else "null")
+	print("Current movement points: ", unit.movement_points if unit else "null")
 	
 	if !unit:
 		print("Move failed: No unit provided")
@@ -208,9 +213,9 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 		var dx = abs(to_pos.x - from_pos.x)
 		var dy = abs(to_pos.y - from_pos.y)
 		movement_cost = max(dx, dy)
-	
-	print("Movement cost: ", movement_cost)
-	print("Current movement points: ", unit.movement_points)
+		print("Armoured unit movement cost calculation:")
+		print("dx: ", dx, " dy: ", dy)
+		print("Movement cost: ", movement_cost)
 	
 	if unit.movement_points < movement_cost:
 		print("Move failed: Insufficient movement points")
@@ -220,9 +225,14 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 	if territory_manager:
 		territory_manager.check_territory_capture(from_pos, to_pos, unit)
 	
-	# Only deduct movement points if we're actually moving
+	# Deduct movement points
 	unit.movement_points -= movement_cost
-	print("Remaining movement points: ", unit.movement_points)
+	print("Movement points after move: ", unit.movement_points)
+	
+	# If no movement points left, mark as moved
+	if unit.movement_points <= 0:
+		unit.has_moved = true
+		print("Unit has no more movement points - marking as moved")
 	
 	# Remove unit from starting position
 	if from_pos in unit_manager.units_in_cells:
@@ -251,10 +261,6 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 			var stacked_unit = unit_manager.units_in_cells[from_pos][i]
 			var offset = Vector2(0, -20 * i)
 			stacked_unit.position = world_pos + offset
-	
-	if unit.movement_points <= 0:
-		unit.has_moved = true
-		print("Unit has no more movement points - marking as moved")
 	
 	print("Move completed successfully")
 	return true
