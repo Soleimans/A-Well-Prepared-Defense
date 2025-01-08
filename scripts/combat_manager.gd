@@ -302,7 +302,7 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 		  " Equipment: ", final_damage_to_attacker_equipment)
 	
 	attacker.in_combat_this_turn = true
-	defender.in_combat_this_turn = true
+	defender.in_combat_this_turn = false
 	
 	var units_to_destroy = []
 	
