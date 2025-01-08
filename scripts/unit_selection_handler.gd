@@ -15,6 +15,10 @@ func get_movable_units_at_position(grid_pos: Vector2) -> Array:
 	if grid_pos in unit_manager.units_in_cells:
 		for unit in unit_manager.units_in_cells[grid_pos]:
 			if unit and is_instance_valid(unit):
+				# Add check to prevent enemy unit selection
+				if unit.is_enemy:
+					continue
+					
 				# Check if unit can move OR has valid attacks
 				if unit.can_move() or has_valid_attacks(grid_pos, unit):
 					print("Found selectable unit: ", unit.scene_file_path)
@@ -24,6 +28,10 @@ func get_movable_units_at_position(grid_pos: Vector2) -> Array:
 	return selectable_units
 
 func has_valid_attacks(pos: Vector2, unit: Node2D) -> bool:
+	# Prevent enemy units from being considered for attacks
+	if unit.is_enemy:
+		return false
+		
 	var combat_manager = grid.get_node("CombatManager")
 	if combat_manager and !unit.in_combat_this_turn:
 		return combat_manager.has_adjacent_enemies(pos, unit)
@@ -31,6 +39,11 @@ func has_valid_attacks(pos: Vector2, unit: Node2D) -> bool:
 
 func try_select_unit(grid_pos: Vector2):
 	print("\nAttempting to select unit at position: ", grid_pos)
+	
+	# If there's currently a selected unit and it's an enemy, deselect it
+	if unit_manager.selected_unit and unit_manager.selected_unit.is_enemy:
+		deselect_current_unit()
+		return
 	
 	# Check for combat initiation first
 	if unit_manager.selected_unit:
