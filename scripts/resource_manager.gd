@@ -1,28 +1,27 @@
 extends Node
 
-# Player resources
+
 var points = 0
 var military_points = 0
 var political_power = 100
-var manpower = 1000000  # Add player manpower
+var manpower = 1000000  
 var political_power_gain = 10
 var political_power_modifiers = []
 
-# Enemy resources
 var enemy_points = 0
 var enemy_military_points = 0
 var enemy_political_power = 100
-var enemy_manpower = 1000000  # Base manpower that doesn't change with factories
+var enemy_manpower = 1000000  
 var enemy_political_power_gain = 10
 var enemy_political_power_modifiers = []
 
-# Node references
+
 @onready var points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label")
 @onready var military_points_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Label2")
 @onready var political_power_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Politics_Label")
 @onready var manpower_label = get_node("/root/Main/UILayer/ColorRect/HBoxContainer/Manpower_Count")
 
-# Enemy resource labels
+
 @onready var enemy_points_label = get_node("/root/Main/UILayer/Debug/Panel/GridContainer/VBoxContainer/EnemyIndustrialPoints")
 @onready var enemy_military_points_label = get_node("/root/Main/UILayer/Debug/Panel/GridContainer/VBoxContainer/EnemyMilitaryPoints")
 @onready var enemy_political_points_label = get_node("/root/Main/UILayer/Debug/Panel/GridContainer/VBoxContainer/EnemyPoliticalPoints")
@@ -33,7 +32,6 @@ func initialize():
 	print("ResourceManager initialized")
 
 func update_labels():
-	# Update player labels
 	if points_label:
 		points_label.text = str(points)
 	if military_points_label:
@@ -43,7 +41,6 @@ func update_labels():
 	if manpower_label:
 		manpower_label.text = str(manpower)
 		
-	# Update enemy labels
 	if enemy_points_label:
 		enemy_points_label.text = str(enemy_points)
 	if enemy_military_points_label:
@@ -51,7 +48,7 @@ func update_labels():
 	if enemy_political_points_label:
 		enemy_political_points_label.text = str(enemy_political_power)
 	if enemy_manpower_points_label:
-		enemy_manpower_points_label.text = str(enemy_manpower)  # Display static manpower value
+		enemy_manpower_points_label.text = str(enemy_manpower)  
 
 func calculate_political_power_gain(is_enemy: bool = false) -> int:
 	if is_enemy:

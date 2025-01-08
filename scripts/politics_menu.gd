@@ -7,10 +7,8 @@ extends Control
 @onready var fort_minister_label = get_node("Panel/GridContainer/VBoxContainer/HBoxContainer4/Label")
 
 func _ready():
-	# Connect close button
 	$Button.pressed.connect(_on_close_button_pressed)
 	
-	# Connect all minister labels
 	if first_minister_label:
 		first_minister_label.gui_input.connect(_on_minister_label_clicked.bind("Panel/GridContainer/VBoxContainer/HBoxContainer/Label"))
 		first_minister_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
@@ -51,6 +49,5 @@ func _on_close_button_pressed():
 
 func _process(_delta):
 	if visible:
-		# Update all minister labels
 		for minister in minister_manager.available_ministers + minister_manager.active_ministers:
 			update_minister_label(minister.label_path, minister.active)

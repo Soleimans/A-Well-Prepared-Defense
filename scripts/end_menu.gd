@@ -9,18 +9,15 @@ extends Control
 var game_ended = false
 
 func _ready():
-	# Hide menu initially
 	hide()
 	
-	# Connect button signals
 	restart_button.pressed.connect(_on_restart_pressed)
 	exit_button.pressed.connect(_on_exit_pressed)
 	
-	# Process input even when hidden
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 func _input(event):
-	if event.is_action_pressed("ui_cancel"):  # ESC key
+	if event.is_action_pressed("ui_cancel"):  
 		if visible:
 			hide()
 		else:
@@ -47,7 +44,6 @@ func check_game_state():
 				"enemy":
 					enemy_territory += 1
 	
-	# Update game state
 	if player_territory == total_tiles:
 		label.text = "You have WON!"
 		game_ended = true
@@ -59,14 +55,11 @@ func check_game_state():
 		game_ended = false
 
 func _on_restart_pressed():
-	# Reload the current scene
 	get_tree().reload_current_scene()
 
 func _on_exit_pressed():
-	# Quit the game
 	get_tree().quit()
 
-# Call this from other scripts to force end menu to show
 func force_show():
 	check_game_state()
 	show()

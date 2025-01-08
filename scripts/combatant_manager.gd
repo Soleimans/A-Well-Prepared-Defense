@@ -1,13 +1,11 @@
 extends Node2D
 
-# Node references
 var grid: Node2D
 var unit_manager: Node
 var resource_manager: Node
 var territory_manager: Node
 var turn_button: Node
 
-# Unit deployment costs and probabilities
 const UNIT_TYPES = ["infantry", "armoured", "garrison"]
 const UNIT_COSTS = {
 	"infantry": 1000,
@@ -20,20 +18,18 @@ const MANPOWER_COSTS = {
 	"garrison": 500
 }
 const UNIT_WEIGHTS = {
-	"infantry": 0.6,    # 60% chance
-	"armoured": 0.3,    # 30% chance
-	"garrison": 0.1     # 10% chance
+	"infantry": 0.6,   
+	"armoured": 0.3,    
+	"garrison": 0.1     
 }
 
 func _ready():
-	# Initialize node references
 	grid = get_parent()
 	if grid:
 		unit_manager = grid.get_node("UnitManager")
 		resource_manager = grid.get_node("ResourceManager")
 		territory_manager = grid.get_node("TerritoryManager")
 	
-	# Get and connect to turn button
 	turn_button = get_node_or_null("/root/Main/UILayer/TurnButton")
 	if turn_button:
 		if !turn_button.is_connected("pressed", _on_turn_button_pressed):
@@ -42,7 +38,6 @@ func _ready():
 	else:
 		push_error("CombatantManager: Failed to find turn button!")
 	
-	# Verify all required nodes are found
 	print("CombatantManager initialization:")
 	print("- Grid found: ", grid != null)
 	print("- UnitManager found: ", unit_manager != null)
@@ -116,7 +111,7 @@ func try_deploy_unit(position: Vector2, unit_type: String) -> bool:
 		# Attempt to place the unit
 		var success = unit_manager.try_place_unit(position)
 		
-		# Always reset the flags
+		# reset the flags
 		unit_manager.selected_unit_type = ""
 		unit_manager.placing_enemy = false
 		
@@ -175,13 +170,13 @@ func attempt_unit_deployment():
 			if current_units.size() >= 3:
 				available_positions.remove_at(random_index)
 		else:
-			# If deployment failed, remove this position and try another
+			# If deployment failed, remove this position and try a different one
 			available_positions.remove_at(random_index)
 	
 	print("Deployed ", deployments, " units this turn")
 	print("=== ENEMY UNIT DEPLOYMENT COMPLETE ===\n")
 	
-	# Always ensure placing_enemy is reset at the end
+	# placing_enemy reset at the end
 	unit_manager.placing_enemy = false
 	unit_manager.selected_unit_type = ""
 
@@ -199,10 +194,8 @@ func get_enemy_units_of_type(type: String) -> Array:
 func get_valid_moves(from_pos: Vector2, unit_type: String, max_distance: int = 1) -> Array:
 	var valid_moves = []
 	
-	# Different movement patterns for each unit type
 	match unit_type:
 		"garrison":
-			# Garrison moves only up, down, left, right (no diagonals)
 			var directions = [
 				Vector2(1, 0),   # right
 				Vector2(-1, 0),  # left
@@ -216,7 +209,6 @@ func get_valid_moves(from_pos: Vector2, unit_type: String, max_distance: int = 1
 					valid_moves.append(test_pos)
 					
 		"infantry":
-			# Infantry can move in any direction within 1 tile radius
 			for x in range(-1, 2):
 				for y in range(-1, 2):
 					if x == 0 and y == 0:
@@ -226,7 +218,6 @@ func get_valid_moves(from_pos: Vector2, unit_type: String, max_distance: int = 1
 						valid_moves.append(test_pos)
 						
 		"armoured":
-			# Armoured moves like a queen in chess with range of 2
 			var directions = [
 				Vector2(1, 0),    # right
 				Vector2(-1, 0),   # left
@@ -239,7 +230,6 @@ func get_valid_moves(from_pos: Vector2, unit_type: String, max_distance: int = 1
 			]
 			
 			for dir in directions:
-				# Can move 1 or 2 spaces in each direction
 				for distance in range(1, 3):
 					var test_pos = from_pos + (dir * distance)
 					if is_valid_position(test_pos):
@@ -285,7 +275,7 @@ func move_garrison_units():
 		
 		print("Checking garrison at ", current_pos)
 		
-		# Get possible orthogonal moves
+		# Get possible  moves
 		var possible_moves = []
 		var directions = [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
 		
@@ -300,7 +290,7 @@ func move_garrison_units():
 		for move in possible_moves:
 			var score = 0
 			
-			# During war, garrisons should move towards player territory
+			# During war, garrisons  move towards player territory
 			score += (grid.grid_size.x - move.x) * 50
 			
 			# Extra score for moving out of the starting column
@@ -328,7 +318,7 @@ func move_combat_units():
 	var infantry_units = get_enemy_units_of_type("infantry")
 	var armoured_units = get_enemy_units_of_type("armoured")
 	
-	# First pass: Check for immediate attack opportunities
+	# Check for immediate attack opportunities
 	for unit_data in armoured_units + infantry_units:
 		var unit = unit_data["unit"]
 		var current_pos = unit_data["position"]
@@ -341,14 +331,12 @@ func move_combat_units():
 		var unit_type = "armoured" if unit.scene_file_path.ends_with("armoured.tscn") else "infantry"
 		var movement_range = 2 if unit_type == "armoured" else 1
 		
-		# First, check for immediately attackable units
 		var attack_opportunities = []
 		for dx in [-1, 0, 1]:
 			for dy in [-1, 0, 1]:
 				if dx == 0 and dy == 0:
 					continue
 					
-				# For garrison units, only check orthogonal positions
 				if unit_type == "garrison" and abs(dx) + abs(dy) > 1:
 					continue
 					
@@ -378,7 +366,7 @@ func move_combat_units():
 				combat_manager.initiate_combat(current_pos, best_attack.position)
 			continue
 		
-		# If no immediate attacks, look for moves that get us into attack position
+		# If no immediate attacks look for moves that get unit into attack position
 		var possible_moves = []
 		for x in range(-movement_range, movement_range + 1):
 			for y in range(-movement_range, movement_range + 1):
@@ -394,7 +382,7 @@ func move_combat_units():
 					if unit_type != "armoured" and abs(x) + abs(y) > 1:
 						continue
 					
-					# For armoured units, ensure movement is in straight lines
+					# For armoured units, make sure movement is in straight lines
 					if unit_type == "armoured" and x != 0 and y != 0 and abs(x) != abs(y):
 						continue
 						
@@ -405,7 +393,7 @@ func move_combat_units():
 		for move in possible_moves:
 			var score = 0
 			
-			# Check if this move puts us adjacent to any player units
+			# Check if this move puts us next to any player units
 			var would_be_adjacent_to_enemy = false
 			for dx in [-1, 0, 1]:
 				for dy in [-1, 0, 1]:
@@ -419,16 +407,16 @@ func move_combat_units():
 							for check_unit in unit_manager.units_in_cells[adjacent_pos]:
 								if !check_unit.is_enemy:
 									would_be_adjacent_to_enemy = true
-									# Huge bonus for moves that put us next to enemy units
+									# Bonus for moves that put unit next to enemy units
 									score += 2000
 									
-									# Extra bonus for vulnerable targets
+									# Bonus for weak targets
 									var health_ratio = (check_unit.soft_health + check_unit.hard_health) / \
 													 float(check_unit.max_soft_health + check_unit.max_hard_health)
 									if health_ratio < 0.5:
 										score += 500
 			
-			# If we're not moving adjacent to enemies, score based on position
+			# If we're not moving next to enemies, score based on position
 			if !would_be_adjacent_to_enemy:
 				# Prioritize moving towards player territory
 				score += (grid.grid_size.x - move.x) * 100
@@ -455,7 +443,7 @@ func move_combat_units():
 			   unit_manager.units_in_cells[move].size() < unit_manager.MAX_UNITS_PER_CELL:
 				scored_moves.append({"position": move, "score": score})
 		
-		# Execute the highest-scored move
+		# Execute the highest scored move
 		if !scored_moves.is_empty():
 			scored_moves.sort_custom(func(a, b): return a.score > b.score)
 			var best_move = scored_moves[0].position
@@ -466,7 +454,6 @@ func move_combat_units():
 				unit_manager.unit_start_pos = current_pos
 				unit_manager.movement_handler.execute_move(best_move, unit, current_pos)
 
-# New function to evaluate attack positions
 func evaluate_attack_position(pos: Vector2, attacker) -> int:
 	var score = 0
 	
@@ -475,21 +462,20 @@ func evaluate_attack_position(pos: Vector2, attacker) -> int:
 		if !target_unit.is_enemy:
 			# Base score on potential damage based on unit types
 			if target_unit.scene_file_path.ends_with("armoured.tscn"):
-				score += attacker.hard_attack * 2  # Double score for attacking armored with appropriate units
+				score += attacker.hard_attack * 2  # Double score for attacking armored with good hard attack
 			else:
 				score += attacker.soft_attack  # Regular score for soft targets
 			
-			# Add bonus for low health targets
+			# Add bonus for weak targets
 			var health_percentage = (target_unit.soft_health + target_unit.hard_health) / (target_unit.max_soft_health + target_unit.max_hard_health)
 			if health_percentage < 0.5:
-				score += 100  # Significant bonus for attacking damaged units
+				score += 100  # bonus for attacking damaged units
 				
 			# Add bonus for low equipment
 			var equipment_percentage = target_unit.equipment / target_unit.max_equipment
 			if equipment_percentage < 0.5:
-				score += 100  # Significant bonus for attacking under-equipped units
+				score += 100  # bonus for attacking low equipment units
 			
-			# Add bonus for strategic positions
 			var territory_owner = territory_manager.get_territory_owner(pos)
 			if territory_owner == "player":
 				score += 50  # Bonus for attacking units in player territory
@@ -499,10 +485,8 @@ func evaluate_attack_position(pos: Vector2, attacker) -> int:
 func process_enemy_movements():
 	print("\n=== PROCESSING ENEMY UNIT MOVEMENTS ===")
 	
-	# Move garrison units first
 	move_garrison_units()
 	
-	# Then move combat units
 	move_combat_units()
 	
 	print("=== ENEMY UNIT MOVEMENTS COMPLETE ===\n")

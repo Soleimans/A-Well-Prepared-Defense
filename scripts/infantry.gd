@@ -24,7 +24,6 @@ func _ready():
 
 func setup_progress_bars():
 	if health_bar and equipment_bar:
-		# Set max values for total health and equipment
 		health_bar.max_value = max_soft_health + max_hard_health
 		health_bar.value = soft_health + hard_health
 		health_bar.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP
@@ -33,31 +32,27 @@ func setup_progress_bars():
 		equipment_bar.value = equipment
 		equipment_bar.fill_mode = ProgressBar.FILL_BOTTOM_TO_TOP
 		
-		# Set up the style for the bars
 		var style_box = StyleBoxFlat.new()
-		style_box.bg_color = Color(0.2, 0.2, 0.2, 1.0)  # Dark gray background
+		style_box.bg_color = Color(0.2, 0.2, 0.2, 1.0)  
 		style_box.set_corner_radius_all(2)
 		
 		var health_style = StyleBoxFlat.new()
-		health_style.bg_color = Color(0, 0.8, 0, 1.0)  # Green for health
+		health_style.bg_color = Color(0, 0.8, 0, 1.0)  
 		health_style.set_corner_radius_all(2)
 		
 		var equipment_style = StyleBoxFlat.new()
-		equipment_style.bg_color = Color(0.8, 0.8, 0, 1.0)  # Yellow for equipment
+		equipment_style.bg_color = Color(0.8, 0.8, 0, 1.0)  
 		equipment_style.set_corner_radius_all(2)
 		
-		# Apply the styles
 		health_bar.add_theme_stylebox_override("background", style_box.duplicate())
 		health_bar.add_theme_stylebox_override("fill", health_style)
 		
 		equipment_bar.add_theme_stylebox_override("background", style_box.duplicate())
 		equipment_bar.add_theme_stylebox_override("fill", equipment_style)
 		
-		# Set the size and layout
-		health_bar.custom_minimum_size = Vector2(4, 18)  # Thin and tall
-		equipment_bar.custom_minimum_size = Vector2(4, 18)  # Thin and tall
+		health_bar.custom_minimum_size = Vector2(4, 18)  
+		equipment_bar.custom_minimum_size = Vector2(4, 18)  
 		
-		# Set initial values
 		health_bar.value = health_bar.max_value
 		equipment_bar.value = equipment_bar.max_value
 
@@ -69,14 +64,14 @@ func try_replenish() -> Dictionary:
 	var soft_health_needed = max_soft_health - soft_health
 	var hard_health_needed = max_hard_health - hard_health
 	
-	# Calculate actual amounts to replenish (cap at maximum values)
+	# Calculate actual amounts to replenish 
 	var equipment_replenish = min(100, equipment_needed)
 	var soft_health_replenish = min(200, soft_health_needed)
 	var hard_health_replenish = min(100, hard_health_needed)
 	
 	# Calculate costs based on actual replenishment
-	var military_cost = ceil(equipment_replenish / 100.0 * 100)  # 100 points per 100 equipment
-	var manpower_cost = ceil((soft_health_replenish / 200.0 + hard_health_replenish / 100.0) * 300)  # 300 points for full health
+	var military_cost = ceil(equipment_replenish / 100.0 * 100)  
+	var manpower_cost = ceil((soft_health_replenish / 200.0 + hard_health_replenish / 100.0) * 300) 
 	
 	# Apply replenishment
 	equipment += equipment_replenish
@@ -91,11 +86,11 @@ func try_replenish() -> Dictionary:
 
 func update_bars():
 	if health_bar and equipment_bar:
-		# Calculate current values
+		# Calculate current 
 		var current_total_health = soft_health + hard_health
 		var current_equipment = equipment
 		
-		# Update the bar values
+		# Update values
 		health_bar.value = current_total_health
 		equipment_bar.value = current_equipment
 

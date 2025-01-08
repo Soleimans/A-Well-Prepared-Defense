@@ -1,12 +1,10 @@
 extends Node2D
 
-# Dictionary to track which units are currently in combat
 var units_in_combat = []
 
 @onready var unit_manager = get_parent().get_node("UnitManager")
 @onready var building_manager = get_parent().get_node("BuildingManager")
 
-# Utility function to safely get a unit's position
 func get_unit_position(unit: Node2D) -> Vector2:
 	if !is_instance_valid(unit):
 		return Vector2.ZERO
@@ -16,7 +14,6 @@ func get_unit_position(unit: Node2D) -> Vector2:
 			return pos
 	return Vector2.ZERO
 
-# Check if a unit can attack a specific position
 func can_attack_position(from_pos: Vector2, to_pos: Vector2, unit: Node2D) -> bool:
 	if !unit:
 		return false
@@ -24,16 +21,11 @@ func can_attack_position(from_pos: Vector2, to_pos: Vector2, unit: Node2D) -> bo
 	var dx = abs(to_pos.x - from_pos.x)
 	var dy = abs(to_pos.y - from_pos.y)
 	
-	# For garrison units, only allow orthogonal attacks (no diagonals)
 	if unit.scene_file_path.contains("garrison"):
-		# This ensures garrison can only attack up, down, left, right
 		return (dx == 1 and dy == 0) or (dx == 0 and dy == 1)
 	
-	# For infantry and armoured units, allow adjacent attacks including diagonals
-	# This means they can attack in 8 directions: up, down, left, right, and diagonals
 	return dx <= 1 and dy <= 1 and !(dx == 0 and dy == 0)
 
-# Get enemy units at a specific position
 func get_enemy_units_at(pos: Vector2) -> Array:
 	var enemy_units = []
 	if !unit_manager.selected_unit:
@@ -45,14 +37,12 @@ func get_enemy_units_at(pos: Vector2) -> Array:
 				enemy_units.append(unit)
 	return enemy_units
 
-# Check if two positions are adjacent
 func is_adjacent(pos1: Vector2, pos2: Vector2) -> bool:
 	var dx = abs(pos1.x - pos2.x)
 	var dy = abs(pos1.y - pos2.y)
 	print("Checking adjacency - dx: ", dx, " dy: ", dy)
 	return dx <= 1 and dy <= 1 and pos1 != pos2
 
-# Check if unit has adjacent enemies
 func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
 	if !unit:
 		return false
@@ -63,7 +53,6 @@ func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
 			if dx == 0 and dy == 0:
 				continue
 				
-			# For garrison units, only check orthogonal positions (no diagonals)
 			if unit.scene_file_path.contains("garrison") and abs(dx) + abs(dy) > 1:
 				continue
 				
@@ -78,17 +67,15 @@ func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
 						return true
 	return false
 
-# Find best position to attack from
 func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
-	# If we're already adjacent, use current position
+	# If we are adjacent, use current 
 	if is_adjacent(from_pos, target_pos):
 		return from_pos
 	
-	# Get the movement range
 	var is_armoured = unit_manager.selected_unit.scene_file_path.contains("armoured")
 	var max_range = 2 if is_armoured else 1
 	
-	# First find positions we can move to
+	# find positions we can move to
 	var moveable_positions = []
 	if unit_manager.selected_unit.movement_points > 0:
 		for x in range(max(0, from_pos.x - max_range), min(unit_manager.grid.grid_size.x, from_pos.x + max_range + 1)):
@@ -114,7 +101,7 @@ func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
 		# If we can't move, we can only attack from our current position
 		moveable_positions = [from_pos]
 	
-	# From each position we can move to, check if we can attack the target
+	# From each position we can move to, check if we can attack
 	var attack_positions = []
 	for move_pos in moveable_positions:
 		if can_attack_position(move_pos, target_pos, unit_manager.selected_unit):
@@ -124,17 +111,17 @@ func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
 				"surrounding_enemies": count_surrounding_enemies(move_pos)
 			})
 	
-	# Sort positions by multiple criteria
+	# Sort positions
 	attack_positions.sort_custom(func(a, b):
-		# First prioritize minimizing movement points used
+		# prioritize minimizing movement points used
 		if a.distance != b.distance:
 			return a.distance < b.distance
 		
-		# Then prefer positions with fewer surrounding enemies
+		#  prefer positions with fewer enemies around
 		if a.surrounding_enemies != b.surrounding_enemies:
 			return a.surrounding_enemies < b.surrounding_enemies
 		
-		# Finally, prefer positions closer to our starting position
+		# prefer positions closer to starting position
 		var a_dist_to_start = abs(a.position.x - from_pos.x) + abs(a.position.y - from_pos.y)
 		var b_dist_to_start = abs(b.position.x - from_pos.x) + abs(b.position.y - from_pos.y)
 		return a_dist_to_start < b_dist_to_start
@@ -143,7 +130,6 @@ func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
 	# Return the best position or invalid position if none found
 	return attack_positions[0].position if attack_positions.size() > 0 else Vector2(-1, -1)
 
-# Count enemies surrounding a position
 func count_surrounding_enemies(pos: Vector2) -> int:
 	var count = 0
 	for dx in [-1, 0, 1]:
@@ -163,13 +149,12 @@ func count_surrounding_enemies(pos: Vector2) -> int:
 						break
 	return count
 
-# Initiate combat between two positions
 func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 	print("\nDEBUG: INITIATING COMBAT:")
 	print("Attacker position: ", attacker_pos)
 	print("Defender position: ", defender_pos)
 	
-	# Validate positions are within grid bounds
+	# check if positions are within grid bounds
 	if attacker_pos.x < 0 or attacker_pos.x >= unit_manager.grid.grid_size.x or \
 	   attacker_pos.y < 0 or attacker_pos.y >= unit_manager.grid.grid_size.y or \
 	   defender_pos.x < 0 or defender_pos.x >= unit_manager.grid.grid_size.x or \
@@ -180,7 +165,6 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 	var attacking_units = unit_manager.units_in_cells[attacker_pos]
 	var defending_units = unit_manager.units_in_cells[defender_pos]
 	
-	# Debug print the units at both positions
 	print("\nUnits at attacker position:")
 	if attacker_pos in unit_manager.units_in_cells:
 		for unit in unit_manager.units_in_cells[attacker_pos]:
@@ -192,7 +176,7 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 			print("- ", unit.scene_file_path, " (enemy: ", unit.is_enemy, ")")
 	
 	if attacking_units.size() > 0 and defending_units.size() > 0:
-		# Find the attacking unit (use selected unit if available, otherwise first valid unit)
+		# Find the attacking unit (use selected unit if available, else first valid unit)
 		var attacker = null
 		if unit_manager.selected_unit and unit_manager.selected_unit in attacking_units:
 			attacker = unit_manager.selected_unit
@@ -204,8 +188,8 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 					print("Found valid attacking unit: ", attacker.scene_file_path)
 					break
 		
-		# Get the defender (always use the bottom unit in the stack)
-		var defender = defending_units[0] # Index 0 is the bottom unit in the stack
+		# Get the defender (bottom unit in stack)
+		var defender = defending_units[0] 
 		print("Using bottom unit as defender: ", defender.scene_file_path)
 		
 		if !attacker or !defender:
@@ -235,10 +219,8 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 		if defender.has_node("Sprite2D"):
 			defender.get_node("Sprite2D").modulate = Color(1, 0, 0)
 		
-		# Resolve combat with grid positions
 		resolve_combat(attacker, defender, attacker_pos, defender_pos)
 		
-		# Wait a moment
 		await get_tree().create_timer(0.2).timeout
 		
 		# Reset colors if units still exist
@@ -249,7 +231,6 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 	else:
 		print("Combat failed - missing units!")
 
-# Resolve combat between two units
 func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, defender_pos: Vector2):
 	if !is_instance_valid(attacker) or !is_instance_valid(defender):
 		print("Combat cancelled - invalid units")
@@ -265,7 +246,6 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 	print("Attacker position in world: ", attacker.position)
 	print("Defender position in world: ", defender.position)
 	
-	# Store initial stats
 	var initial_attacker_stats = {
 		"soft_health": attacker.soft_health,
 		"hard_health": attacker.hard_health,
@@ -285,7 +265,6 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 		  " Hard: ", initial_defender_stats.hard_health,
 		  " Equipment: ", initial_defender_stats.equipment)
 	
-	# Calculate all damage first
 	var base_damage_to_defender_soft = attacker.soft_attack
 	var base_damage_to_defender_hard = attacker.hard_attack
 	var base_damage_to_attacker_soft = defender.soft_attack
@@ -295,19 +274,17 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 	print("To defender - Soft: ", base_damage_to_defender_soft, " Hard: ", base_damage_to_defender_hard)
 	print("To attacker - Soft: ", base_damage_to_attacker_soft, " Hard: ", base_damage_to_attacker_hard)
 	
-# Calculate defense bonuses
-	var base_defense_reduction = 0.2  # 20% base defense
+	var base_defense_reduction = 0.2  
 	var fort_reduction = 0.0
 	
 	if building_manager.fort_levels.has(defender_pos):
-		fort_reduction = building_manager.fort_levels[defender_pos] * 0.02  # 2% per fort level
+		fort_reduction = building_manager.fort_levels[defender_pos] * 0.02  
 		print("Fort level at defender position: ", building_manager.fort_levels[defender_pos])
 	
 	var total_reduction = base_defense_reduction + fort_reduction
 	print("Total defense reduction: ", total_reduction)
 	var damage_multiplier = 1.0 - total_reduction
 	
-	# Calculate final damage values
 	var final_damage_to_defender_soft = base_damage_to_defender_soft * damage_multiplier
 	var final_damage_to_defender_hard = base_damage_to_defender_hard * damage_multiplier
 	var final_damage_to_defender_equipment = (base_damage_to_defender_soft + base_damage_to_defender_hard) * 0.5 * damage_multiplier
@@ -324,14 +301,11 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 		  " Hard: ", final_damage_to_attacker_hard,
 		  " Equipment: ", final_damage_to_attacker_equipment)
 	
-	# Mark combat participation
 	attacker.in_combat_this_turn = true
 	defender.in_combat_this_turn = true
 	
-	# Units to be destroyed
 	var units_to_destroy = []
 	
-	# Apply damage to defender
 	if is_instance_valid(defender):
 		print("\nApplying damage to defender:")
 		print("Before - Soft: ", defender.soft_health, " Hard: ", defender.hard_health, " Equipment: ", defender.equipment)
@@ -347,7 +321,6 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 		if (defender.soft_health <= 0 and defender.hard_health <= 0) or defender.equipment <= 0:
 			units_to_destroy.append({"unit": defender, "position": defender_pos})
 	
-	# Apply damage to attacker
 	if is_instance_valid(attacker):
 		print("\nApplying damage to attacker:")
 		print("Before - Soft: ", attacker.soft_health, " Hard: ", attacker.hard_health, " Equipment: ", attacker.equipment)
@@ -363,7 +336,6 @@ func resolve_combat(attacker: Node2D, defender: Node2D, attacker_pos: Vector2, d
 		if (attacker.soft_health <= 0 and attacker.hard_health <= 0) or attacker.equipment <= 0:
 			units_to_destroy.append({"unit": attacker, "position": attacker_pos})
 	
-	# Handle unit destruction
 	print("\nDestroying units:")
 	for unit_data in units_to_destroy:
 		var unit = unit_data["unit"]

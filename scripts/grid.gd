@@ -1,11 +1,9 @@
 extends Node2D
 
-# Core grid components
 @onready var building_manager = $BuildingManager
 @onready var unit_manager = $UnitManager
 @onready var resource_manager = $ResourceManager
 
-# Grid properties
 var grid_size = Vector2(15, 5)  
 var tile_size = Vector2(128, 128)  
 var playable_area = Vector2(15, 5)
@@ -100,7 +98,6 @@ func _input(event):
 					else:
 						print("Enemy found but cannot attack from this position")
 				
-				# If no combat was initiated and the move is valid, execute the move
 				elif unit_manager.is_valid_move(grid_pos):
 					print("Executing move")
 					unit_manager.execute_move(grid_pos)
@@ -108,7 +105,6 @@ func _input(event):
 					print("Invalid move location - checking for unit selection")
 					unit_manager.try_select_unit(grid_pos)
 		else:
-			# No unit selected, try to select one
 			print("Attempting to select/cycle units")
 			unit_manager.try_select_unit(grid_pos)
 
@@ -116,10 +112,8 @@ func _process(_delta):
 	queue_redraw()
 
 func _draw():
-	# Get reference to territory manager
 	var territory_manager = get_node("TerritoryManager")
 	
-	# Draw territories first instead of base color
 	for x in range(grid_size.x):
 		for y in range(grid_size.y):
 			var pos = Vector2(x, y)
@@ -135,19 +129,18 @@ func _draw():
 			if territory_manager:
 				territory_owner = territory_manager.get_territory_owner(pos)
 			else:
-				# Default territory assignment if territory manager not found
-				if x < 3 or x in building_manager.buildable_columns:  # Starting columns OR unlocked by player
+				if x < 3 or x in building_manager.buildable_columns:  
 					territory_owner = "player"
-				elif x >= grid_size.x - 3 or x in building_manager.enemy_buildable_columns:  # Starting columns OR unlocked by enemy
+				elif x >= grid_size.x - 3 or x in building_manager.enemy_buildable_columns:  
 					territory_owner = "enemy"
 			
 			# Set color based on territory owner
-			var color = Color(0.2, 0.2, 0.2, 1)  # Default gray for neutral
+			var color = Color(0.2, 0.2, 0.2, 1)  
 			match territory_owner:
 				"player":
-					color = Color(0, 0.5, 1, 1)  # Blue for player
+					color = Color(0, 0.5, 1, 1)  
 				"enemy":
-					color = Color(1, 0, 0, 1)    # Red for enemy
+					color = Color(1, 0, 0, 1)    
 			
 			draw_rect(rect, color)
 	
@@ -174,11 +167,9 @@ func _draw():
 		)
 		draw_rect(highlight_rect, Color(1, 1, 1, 0.2))
 	
-	# Draw manager content
 	building_manager.draw(self)
 	unit_manager.draw(self)
 	
-	# Draw combat tiles if combat manager exists
 	var combat_manager = get_node("CombatManager")
 	if combat_manager:
 		combat_manager.draw(self)

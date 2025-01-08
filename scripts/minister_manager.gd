@@ -21,34 +21,33 @@ class Minister:
 		label_path = path
 
 func _ready():
-	# Initialize all ministers
 	available_ministers = [
 		Minister.new(
 			"Political Advisor",
-			2,  # political power modifier (+2 per turn)
-			{},  # no building effects
-			150,  # cost
+			2,  
+			{},  
+			150,  
 			"Panel/GridContainer/VBoxContainer/HBoxContainer/Label"
 		),
 		Minister.new(
 			"Industry Minister",
-			0,  # no political power modifier
-			{"civilian_factory": -1},  # reduces civilian factory build time by 1
-			150,  # cost
+			0,  
+			{"civilian_factory": -1},  
+			150,  
 			"Panel/GridContainer/VBoxContainer/HBoxContainer2/Label"
 		),
 		Minister.new(
 			"Military Industry Minister",
-			0,  # no political power modifier
-			{"military_factory": -1},  # reduces military factory build time by 1
-			150,  # cost
+			0,  
+			{"military_factory": -1},  
+			150,  
 			"Panel/GridContainer/VBoxContainer/HBoxContainer3/Label"
 		),
 		Minister.new(
 			"Fort Construction Minister",
-			0,  # no political power modifier
-			{"fort": "speed"},  # special effect to make all fort levels build in 1 turn
-			150,  # cost
+			0,  
+			{"fort": "speed"},  
+			150,  
 			"Panel/GridContainer/VBoxContainer/HBoxContainer4/Label"
 		)
 	]
@@ -58,11 +57,11 @@ func hire_minister(minister: Minister) -> bool:
 		resource_manager.political_power -= minister.cost
 		minister.active = true
 		
-		# Apply political power modifier if any
+		# Apply political power modifier 
 		if minister.political_power_modifier != 0:
 			resource_manager.add_political_power_modifier(minister.political_power_modifier)
 			
-		# Apply building effects if any
+		# Apply building effects 
 		for building_type in minister.building_effect:
 			var effect = minister.building_effect[building_type]
 			if typeof(effect) == TYPE_STRING and effect == "speed" and building_type == "fort":
@@ -78,11 +77,11 @@ func hire_minister(minister: Minister) -> bool:
 func dismiss_minister(minister: Minister):
 	minister.active = false
 	
-	# Remove political power modifier if any
+	# Remove political power modifier 
 	if minister.political_power_modifier != 0:
 		resource_manager.remove_political_power_modifier(minister.political_power_modifier)
 		
-	# Remove building effects if any
+	# Remove building effects 
 	for building_type in minister.building_effect:
 		var effect = minister.building_effect[building_type]
 		if typeof(effect) == TYPE_STRING and effect == "speed" and building_type == "fort":

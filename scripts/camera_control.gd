@@ -1,19 +1,15 @@
 extends Camera2D
 
-# UI Constants
-const UI_MARGIN_TOP = 64  # Space for UI at top
+const UI_MARGIN_TOP = 64  
 
-# Zoom limits
-var min_zoom = 0.5  # Maximum zoom out (smaller number = further out)
-var max_zoom = 2.0  # Maximum zoom in
+var min_zoom = 0.5  
+var max_zoom = 2.0  
 var zoom_speed = 0.1
 var current_zoom = 0.7
 
-# Camera movement
 var camera_speed = 1000
 
 func _ready():
-	# Set initial zoom level
 	zoom = Vector2(current_zoom, current_zoom)
 	
 	var grid_node = get_parent().get_node("Grid")
@@ -22,22 +18,19 @@ func _ready():
 		var grid_width = grid_node.total_grid_size.x * grid_node.tile_size.x
 		var grid_height = grid_node.total_grid_size.y * grid_node.tile_size.y
 		
-		# Set camera position, adding the UI margin to push everything down
 		position = Vector2(
 			grid_width / 2,
 			(grid_height / 2) + UI_MARGIN_TOP
 		)
 		
-		# Set camera limits with margins
 		limit_left = -grid_width/2
-		limit_top = -grid_height/2 + UI_MARGIN_TOP  # Add UI margin to top limit
+		limit_top = -grid_height/2 + UI_MARGIN_TOP  
 		limit_right = grid_width * 1.5
-		limit_bottom = grid_height * 1.5 + UI_MARGIN_TOP  # Add UI margin to bottom limit
+		limit_bottom = grid_height * 1.5 + UI_MARGIN_TOP  
 	else:
 		print("Grid node not found!")
 
 func _input(event):
-	# Handle zoom only in _input
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			current_zoom = clamp(current_zoom + zoom_speed, min_zoom, max_zoom)
@@ -49,7 +42,6 @@ func _input(event):
 func _process(delta):
 	var input_dir = Vector2.ZERO
 	
-	# Check for held keys
 	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
 		input_dir.x += 1
 	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
@@ -63,6 +55,5 @@ func _process(delta):
 		input_dir = input_dir.normalized()
 		position += input_dir * camera_speed * (1.0 / current_zoom) * delta
 	
-	# Clamp position to limits
 	position.x = clamp(position.x, limit_left, limit_right)
 	position.y = clamp(position.y, limit_top, limit_bottom)

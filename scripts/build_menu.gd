@@ -1,11 +1,8 @@
 extends Control
 
-# Signal to notify when a building is selected
 signal building_selected(building_type)
-# Signal for when menu is closed
 signal menu_closed
 
-# Building costs
 const BUILDING_COSTS = {
 	"civilian_factory": 12000,
 	"military_factory": 8000,
@@ -13,7 +10,6 @@ const BUILDING_COSTS = {
 }
 
 func _ready():
-	# Connect building containers based on your actual node structure
 	$Panel/GridContainer/VBoxContainer/HBoxContainer/Label.gui_input.connect(
 		_on_civilian_factory_input
 	)
@@ -27,31 +23,26 @@ func _ready():
 		_on_unlock_column_input
 	)
 	
-	# Connect close button
 	$CloseButton.pressed.connect(_on_close_button_pressed)
 	
-	# Set up cost labels
 	$Panel/GridContainer/VBoxContainer/HBoxContainer/Label2.text = "12000"
 	$Panel/GridContainer/VBoxContainer/HBoxContainer2/Label2.text = "8000"
 	$Panel/GridContainer/VBoxContainer/HBoxContainer3/Label2.text = "500/level"
 	
-	# Connect to war count signal
 	var war_count = get_node("/root/Main/UILayer/WarCount")
 	if war_count:
 		war_count.connect("turn_changed", _on_war_state_changed)
 	
-	# Connect to turn count for early updates
 	var turn_count = get_node("/root/Main/UILayer/TurnCount")
 	if turn_count:
 		turn_count.connect("turn_changed", _on_turn_changed)
 	
-	# Initialize unlock label
 	update_unlock_label()
 
 func _on_close_button_pressed():
-	if visible:  # Only emit signals if the menu was actually visible
+	if visible:  
 		hide()
-		building_selected.emit("")  # Clear building selection
+		building_selected.emit("") 
 		menu_closed.emit()
 
 func _on_civilian_factory_input(event):
@@ -95,7 +86,7 @@ func update_unlock_label():
 		print("ERROR: BuildingManager not found!")
 		return
 	
-	# Check if we're at turn 30 or later
+	# Check if gaem is at turn 30 or later
 	if turn_count and turn_count.current_turn >= 30:
 		cost_label.text = "All Unlocked"
 		return
@@ -116,7 +107,6 @@ func update_unlock_label():
 			var cost = building_manager.get_next_column_cost()
 			cost_label.text = str(cost)
 
-# Function to refresh the UI when the menu is shown
 func _on_visibility_changed():
 	if visible:
 		update_unlock_label()

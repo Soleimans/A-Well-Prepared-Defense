@@ -1,27 +1,23 @@
 extends Node
 
-# Building zones
-var buildable_columns = [0, 1, 2]  # First 3 columns are buildable
-var enemy_buildable_columns = [12, 13, 14]  # Enemy columns start from right side
+var buildable_columns = [0, 1, 2]  
+var enemy_buildable_columns = [12, 13, 14]  
 var fort_fast_construction: bool = false
-var all_unlocked_columns = []  # Track all columns unlocked by either side
-var war_mode = false  # Set to true when war starts
+var all_unlocked_columns = []  
+var war_mode = false  
 
-# Building costs
 var building_costs = {
 	"civilian_factory": 12000,
 	"military_factory": 8000,
 	"fort": 500
 }
 
-# Construction times
 var construction_times = {
 	"civilian_factory": 6,
 	"military_factory": 4,
-	"fort": 1  # Base time for first 5 levels, will be 2 for levels 6-10
+	"fort": 1  
 }
 
-# Construction modifiers
 var construction_modifiers = {
 	"civilian_factory": 0,
 	"military_factory": 0,
@@ -29,9 +25,9 @@ var construction_modifiers = {
 }
 
 # Column unlocking properties
-var max_unlockable_column = 11  # Up to column 12 (0-11)
-var base_column_cost = 5000  # Starting cost
-var column_cost_multiplier = 1.5  # Each new column costs 1.5x more
+var max_unlockable_column = 11  
+var base_column_cost = 5000  
+var column_cost_multiplier = 1.5  
 
 # Dictionary to track buildings under construction
 # Format: Vector2(grid_pos) : {"type": string, "turns_left": int, "total_turns": int}
@@ -45,7 +41,6 @@ var fort_levels = {}
 var selected_building_type = ""
 var placing_enemy = false
 
-# Preload building scenes
 var civilian_factory_scene = preload("res://scenes/civilian_factory.tscn")
 var military_factory_scene = preload("res://scenes/military_factory.tscn")
 var fort_scene = preload("res://scenes/fort.tscn")
@@ -116,7 +111,7 @@ func get_next_column_cost() -> int:
 	return int(base_column_cost * pow(column_cost_multiplier, buildable_columns.size() - 3))
 
 func can_unlock_next_column() -> bool:
-	if war_mode:  # Added war mode check
+	if war_mode:  
 		return false
 		
 	if buildable_columns.size() >= max_unlockable_column + 1:
@@ -161,7 +156,7 @@ func unlock_next_enemy_column():
 		# Get reference to territory manager and update territory ownership
 		var territory_manager = get_parent().get_node("TerritoryManager")
 		if territory_manager:
-			# Update territory ownership for all cells in the new column
+			# Update territory ownership for all cells in new column
 			for y in range(get_parent().grid_size.y):
 				var pos = Vector2(next_column, y)
 				territory_manager.capture_territory(pos, "enemy")
@@ -179,15 +174,13 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 		print("Position out of bounds")
 		return false
 	
-	# Check if there's already a building under construction
+	# Check if theres already a building under construction
 	if grid_pos in buildings_under_construction:
 		print("Construction already in progress at this position")
 		return false
 	
-	# Get reference to territory manager
 	var territory_manager = get_parent().get_node("TerritoryManager")
 	
-	# Different rules for enemy buildings
 	if placing_enemy:
 		# Get territory owner of the position
 		var territory_owner = "neutral"
@@ -195,12 +188,10 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 			territory_owner = territory_manager.get_territory_owner(grid_pos)
 			
 		if war_mode:
-			# During war, can only build in enemy territory
 			if territory_owner != "enemy":
 				print("Position not in enemy territory")
 				return false
 		else:
-			# Before war, use column restrictions
 			if !enemy_buildable_columns.has(int(grid_pos.x)):
 				print("Position not in enemy buildable columns")
 				return false
@@ -217,12 +208,10 @@ func is_valid_build_position(grid_pos: Vector2, building_type: String) -> bool:
 			territory_owner = territory_manager.get_territory_owner(grid_pos)
 			
 		if war_mode:
-			# During war, can build in any owned or captured territory
 			if territory_owner != "player":
 				print("Position not in player territory")
 				return false
 		else:
-			# Before war, use column restrictions
 			if !buildable_columns.has(int(grid_pos.x)):
 				print("Position not in buildable columns")
 				return false
@@ -287,7 +276,7 @@ func place_building(grid_pos: Vector2, building_type: String):
 	else:
 		# Apply construction time modifiers
 		var modified_time = construction_times[building_type] + construction_modifiers[building_type]
-		modified_time = max(1, modified_time)  # Ensure minimum 1 turn
+		modified_time = max(1, modified_time)  
 		
 		buildings_under_construction[grid_pos] = {
 			"type": building_type,
@@ -296,7 +285,7 @@ func place_building(grid_pos: Vector2, building_type: String):
 			"is_enemy": territory_owner == "enemy"
 		}
 	
-	# Deduct cost from appropriate resource pool
+	# Remove building cost
 	if territory_owner == "enemy":
 		resource_manager.enemy_points -= cost
 	else:
@@ -329,7 +318,7 @@ func process_construction():
 						if grid_cells[grid_pos] and not grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
 							grid_cells[grid_pos].queue_free()
 
-						# Add the new factory
+						# Add new factory
 						grid.add_child(building)
 						grid_cells[grid_pos] = building
 						building.position = grid.grid_to_world(grid_pos)
@@ -352,7 +341,7 @@ func process_construction():
 						if grid_cells[grid_pos] and not grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
 							grid_cells[grid_pos].queue_free()
 
-						# Add the new factory
+						# Add new factory
 						grid.add_child(building)
 						grid_cells[grid_pos] = building
 						building.position = grid.grid_to_world(grid_pos)
@@ -364,7 +353,7 @@ func process_construction():
 
 				"fort":
 					fort_levels[grid_pos] = construction.target_level
-					# If there's already a fort, just update its level
+					# If there's already a fort update its level
 					var existing_fort = null
 					if grid_cells[grid_pos]:
 						if grid_cells[grid_pos].scene_file_path.ends_with("fort.tscn"):
@@ -400,7 +389,6 @@ func process_construction():
 		buildings_under_construction.erase(pos)
 
 func draw(grid_node: Node2D):
-	# Only draw buildable zones before war
 	if !war_mode:
 		# Draw buildable zones (blue tint for player, red tint for enemy)
 		for x in buildable_columns:
@@ -423,7 +411,7 @@ func draw(grid_node: Node2D):
 				)
 				grid_node.draw_rect(rect, Color(1, 0, 0, 0.2))
 	
-	# Always draw construction progress
+	# draw construction progress
 	for grid_pos in buildings_under_construction:
 		var construction = buildings_under_construction[grid_pos]
 		var progress = float(construction.total_turns - construction.turns_left) / construction.total_turns
@@ -434,7 +422,7 @@ func draw(grid_node: Node2D):
 			grid.tile_size.y
 		)
 		
-		# Draw construction indicator (checkerboard pattern)
+		# Draw construct indicator 
 		var construction_color = Color(0.7, 0.2, 0.2, 0.3) if construction.is_enemy else Color(0.7, 0.7, 0.2, 0.3)
 		grid_node.draw_rect(rect, construction_color)
 		
