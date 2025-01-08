@@ -22,7 +22,7 @@ func get_movable_units_at_position(grid_pos: Vector2) -> Array:
 				if unit.is_enemy:
 					continue
 					
-				# Unit can be selected if it can move OR can attack
+				# Unit can be selected if it can move or can attack
 				if unit.can_move() or has_valid_attacks(grid_pos, unit):
 					selectable_units.append(unit)
 	
@@ -157,7 +157,6 @@ func highlight_valid_moves(from_pos: Vector2):
 					if dx == 0 and dy == 0:
 						continue
 					
-					# For garrison units, only check orthogonal positions
 					if unit_manager.selected_unit.scene_file_path.contains("garrison") and abs(dx) + abs(dy) > 1:
 						continue
 						

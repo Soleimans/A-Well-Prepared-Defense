@@ -1,13 +1,13 @@
 extends Button
 
-@onready var label = %Label  # Path to Build label
+@onready var label = %Label  
 @onready var points_label = get_node("../ColorRect/HBoxContainer/Label")
 @onready var military_points_label = get_node("../ColorRect/HBoxContainer/Label2")
 @onready var grid_node = get_node("/root/Main/Grid")
 @onready var turn_count_label = get_node("../TurnCount")
 @onready var territory_manager = grid_node.get_node("TerritoryManager") if grid_node else null
 
-var value = 1000  # Starting value
+var value = 1000  
 var points_per_civilian_factory = 2000
 var points_per_military_factory = 500
 
@@ -35,11 +35,11 @@ func _on_button_pressed():
 		var resource_manager = grid_node.get_node("ResourceManager")
 		var combat_manager = grid_node.get_node("CombatManager")
 		var opponent_manager = grid_node.get_node("OpponentManager")
-		var combatant_manager = grid_node.get_node("CombatantManager")  # Add reference to CombatantManager
+		var combatant_manager = grid_node.get_node("CombatantManager")  
 		
 		print("Found building manager: ", building_manager != null)
 		print("Found opponent manager: ", opponent_manager != null)
-		print("Found combatant manager: ", combatant_manager != null)  # Debug output
+		print("Found combatant manager: ", combatant_manager != null)  
 		
 		# Process combat first
 		if combat_manager:
@@ -88,7 +88,7 @@ func _on_button_pressed():
 		print("Generated enemy points: ", enemy_points_generated)
 		print("Generated enemy military points: ", enemy_military_points_generated)
 		
-		# Deduct replenishment costs first
+		# Remove replenishment costs first
 		resource_manager.military_points -= player_military_cost
 		resource_manager.manpower -= player_manpower_cost
 		resource_manager.enemy_military_points -= enemy_military_cost
@@ -127,7 +127,7 @@ func _on_button_pressed():
 					print("Reset unit at position ", pos)
 					print("- Can move: ", unit.can_move())
 					print("- In combat this turn: ", unit.in_combat_this_turn)
-		# Update unit highlighting using selection handler
+		# Update unit highlighting 
 		if unit_manager.selection_handler:
 			print("Calling selection handler update_unit_highlights")
 			unit_manager.selection_handler.update_unit_highlights()
@@ -188,10 +188,10 @@ func _on_button_pressed():
 	print("=== TURN PROCESSING COMPLETE ===\n")
 
 func _unhandled_input(event):
-	if has_focus():  # Prevent processing if the button is focused
+	if has_focus():  
 		return
 	
-	if event.is_action_pressed("ui_accept"):  # Catch the spacebar press
+	if event.is_action_pressed("ui_accept"):  
 		_on_button_pressed()
 
 func get_factory_counts() -> Dictionary:
@@ -211,7 +211,6 @@ func get_factory_counts() -> Dictionary:
 			if cell and not pos in construction_positions:
 				var is_enemy = territory_manager and territory_manager.get_territory_owner(pos) == "enemy"
 					
-				# Check if this is a factory by its scene path
 				if cell.scene_file_path == "res://scenes/civilian_factory.tscn":
 					if is_enemy:
 						counts["enemy_civilian"] += 1
@@ -227,7 +226,6 @@ func get_factory_counts() -> Dictionary:
 						counts["military"] += 1
 						print("Found a completed military factory")
 				
-				# If there are multiple nodes at this position, check them too
 				for child in cell.get_children():
 					if not child.scene_file_path:
 						continue

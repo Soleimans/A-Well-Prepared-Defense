@@ -120,7 +120,7 @@ func try_deploy_unit(position: Vector2, unit_type: String) -> bool:
 			var units = unit_manager.units_in_cells[position]
 			for i in range(units.size()):
 				var world_pos = grid.grid_to_world(position)
-				var offset = Vector2(0, -20 * i)  # -20 pixels offset for each unit in stack
+				var offset = Vector2(0, -20 * i)  
 				units[i].position = world_pos + offset
 			
 			print("Successfully deployed ", unit_type, " at ", position)
@@ -197,10 +197,10 @@ func get_valid_moves(from_pos: Vector2, unit_type: String, max_distance: int = 1
 	match unit_type:
 		"garrison":
 			var directions = [
-				Vector2(1, 0),   # right
-				Vector2(-1, 0),  # left
-				Vector2(0, 1),   # down
-				Vector2(0, -1)   # up
+				Vector2(1, 0),   
+				Vector2(-1, 0),  
+				Vector2(0, 1),  
+				Vector2(0, -1)   
 			]
 			
 			for dir in directions:
@@ -219,14 +219,14 @@ func get_valid_moves(from_pos: Vector2, unit_type: String, max_distance: int = 1
 						
 		"armoured":
 			var directions = [
-				Vector2(1, 0),    # right
-				Vector2(-1, 0),   # left
-				Vector2(0, 1),    # down
-				Vector2(0, -1),   # up
-				Vector2(1, 1),    # diagonal down-right
-				Vector2(-1, 1),   # diagonal down-left
-				Vector2(1, -1),   # diagonal up-right
-				Vector2(-1, -1)   # diagonal up-left
+				Vector2(1, 0),    
+				Vector2(-1, 0),   
+				Vector2(0, 1),    
+				Vector2(0, -1),   
+				Vector2(1, 1),    
+				Vector2(-1, 1),   
+				Vector2(1, -1),   
+				Vector2(-1, -1)   
 			]
 			
 			for dir in directions:
@@ -378,11 +378,9 @@ func move_combat_units():
 				# Check if position is within grid bounds
 				if test_pos.x >= 0 and test_pos.x < grid.grid_size.x and \
 				   test_pos.y >= 0 and test_pos.y < grid.grid_size.y:
-					# For non-armoured units, only allow orthogonal and diagonal moves
 					if unit_type != "armoured" and abs(x) + abs(y) > 1:
 						continue
 					
-					# For armoured units, make sure movement is in straight lines
 					if unit_type == "armoured" and x != 0 and y != 0 and abs(x) != abs(y):
 						continue
 						

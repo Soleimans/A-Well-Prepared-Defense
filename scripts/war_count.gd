@@ -5,10 +5,8 @@ signal turn_changed(current_turn)
 const WAR_START_TURN = 30
 
 func _ready():
-	# Set initial text
 	text = "War starts in: " + str(WAR_START_TURN)
 	
-	# Connect to turn count label
 	var turn_count = get_node("/root/Main/UILayer/TurnCount")
 	if turn_count:
 		turn_count.connect("turn_changed", _on_turn_count_changed)
@@ -20,7 +18,6 @@ func _on_turn_count_changed(current_turn: int):
 		text = "WAR HAS BEGUN!"
 		emit_signal("turn_changed", current_turn)
 		
-		# Update unit highlights when war starts
 		var grid = get_node("/root/Main/Grid")
 		if grid:
 			var unit_manager = grid.get_node("UnitManager")

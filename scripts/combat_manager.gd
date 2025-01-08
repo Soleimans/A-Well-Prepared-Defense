@@ -68,7 +68,7 @@ func has_adjacent_enemies(pos: Vector2, unit: Node2D) -> bool:
 	return false
 
 func find_attack_position(from_pos: Vector2, target_pos: Vector2) -> Vector2:
-	# If we are adjacent, use current 
+	# If we are next to enemy, use current 
 	if is_adjacent(from_pos, target_pos):
 		return from_pos
 	
@@ -223,7 +223,6 @@ func initiate_combat(attacker_pos: Vector2, defender_pos: Vector2):
 		
 		await get_tree().create_timer(0.2).timeout
 		
-		# Reset colors if units still exist
 		if is_instance_valid(attacker) and !attacker.is_queued_for_deletion() and attacker.has_node("Sprite2D"):
 			attacker.get_node("Sprite2D").modulate = Color.WHITE if !attacker.is_enemy else Color.RED
 		if is_instance_valid(defender) and !defender.is_queued_for_deletion() and defender.has_node("Sprite2D"):

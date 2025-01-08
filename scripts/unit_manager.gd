@@ -1,6 +1,5 @@
 extends Node
 
-# Core grid components
 @onready var grid = get_parent()
 @onready var resource_manager = get_parent().get_node("ResourceManager")
 @onready var building_manager = get_parent().get_node("BuildingManager")
@@ -8,7 +7,6 @@ extends Node
 @onready var movement_handler = $UnitMovementHandler
 @onready var selection_handler = $UnitSelectionHandler
 
-# Constants
 const MAX_UNITS_PER_CELL = 3
 const UNIT_COSTS = {
 	"infantry": 1000,
@@ -21,14 +19,12 @@ const MANPOWER_COSTS = {
 	"garrison": 500
 }
 
-# Preloaded scenes
 var unit_scenes = {
 	"infantry": preload("res://scenes/infantry.tscn"),
 	"armoured": preload("res://scenes/armoured.tscn"),
 	"garrison": preload("res://scenes/garrison.tscn")
 }
 
-# State variables
 var units_in_cells = {}
 var selected_unit_type: String = ""
 var selected_unit = null
@@ -36,10 +32,8 @@ var valid_move_tiles: Array = []
 var unit_start_pos = null
 var placing_enemy: bool = false
 
-# In unit_manager.gd, update _ready:
 func _ready():
 	print("UnitManager: Initializing...")
-	# Explicitly get references to handlers
 	movement_handler = get_node_or_null("UnitMovementHandler")
 	selection_handler = get_node_or_null("UnitSelectionHandler")
 	
@@ -47,7 +41,6 @@ func _ready():
 		push_error("UnitManager: Failed to find required handlers!")
 		return
 		
-	# Also make sure handlers have their references
 	movement_handler.unit_manager = self
 	movement_handler.grid = grid
 
@@ -160,7 +153,7 @@ func try_place_unit(grid_pos: Vector2) -> bool:
 	
 	print("UnitManager: Unit placed successfully")
 	
-	# Update unit highlights after placing new unit with a slight delay
+	# Update unit highlights after placing new unit 
 	if selection_handler:
 		get_tree().create_timer(0.1).timeout.connect(func():
 			selection_handler.update_unit_highlights()
@@ -175,7 +168,6 @@ func execute_move(to_pos: Vector2) -> bool:
 	print("Selected unit: ", selected_unit.scene_file_path if selected_unit else "null")
 	print("Start position: ", unit_start_pos)
 	
-	# Changed the validation logic to properly check Vector2
 	if unit_start_pos == null or unit_start_pos == Vector2(-1, -1):
 		print("ERROR: No start position!")
 		return false

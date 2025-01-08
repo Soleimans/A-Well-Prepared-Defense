@@ -1,8 +1,8 @@
 extends Node2D
 
-var unit_manager: Node  # Reference to parent UnitManager
-var grid: Node2D       # Reference to Grid
-var territory_manager: Node  # Reference to TerritoryManager
+var unit_manager: Node  
+var grid: Node2D       
+var territory_manager: Node  
 
 func _ready():
 	unit_manager = get_parent()
@@ -21,13 +21,11 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 	if !unit:
 		return valid_moves
 
-	# Get unit type from scene path
 	var unit_type = ""
 	var max_distance = 1
 	
 	if unit.scene_file_path.contains("armoured"):
 		unit_type = "armoured"
-		# Important: Set max_distance based on remaining movement points
 		max_distance = unit.movement_points
 	elif unit.scene_file_path.contains("infantry"):
 		unit_type = "infantry"
@@ -40,12 +38,11 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 	
 	match unit_type:
 		"garrison":
-			# Garrison moves only up, down, left, right (no diagonals)
 			var directions = [
-				Vector2(1, 0),   # right
-				Vector2(-1, 0),  # left
-				Vector2(0, 1),   # down
-				Vector2(0, -1)   # up
+				Vector2(1, 0),  
+				Vector2(-1, 0),  
+				Vector2(0, 1),   
+				Vector2(0, -1)   
 			]
 			
 			for dir in directions:
@@ -54,7 +51,6 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 					valid_moves.append(test_pos)
 					
 		"infantry":
-			# Infantry can move in any direction within 1 tile radius
 			for x in range(-1, 2):
 				for y in range(-1, 2):
 					if x == 0 and y == 0:
@@ -64,16 +60,15 @@ func get_valid_moves(from_pos: Vector2, unit: Node2D) -> Array:
 						valid_moves.append(test_pos)
 						
 		"armoured":
-			# Armoured moves like a queen in chess with range based on movement points
 			var directions = [
-				Vector2(1, 0),    # right
-				Vector2(-1, 0),   # left
-				Vector2(0, 1),    # down
-				Vector2(0, -1),   # up
-				Vector2(1, 1),    # diagonal down-right
-				Vector2(-1, 1),   # diagonal down-left
-				Vector2(1, -1),   # diagonal up-right
-				Vector2(-1, -1)   # diagonal up-left
+				Vector2(1, 0),    
+				Vector2(-1, 0),   
+				Vector2(0, 1),    
+				Vector2(0, -1),   
+				Vector2(1, 1),    
+				Vector2(-1, 1),   
+				Vector2(1, -1),   
+				Vector2(-1, -1)   
 			]
 			
 			for dir in directions:
@@ -225,7 +220,7 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 	if territory_manager:
 		territory_manager.check_territory_capture(from_pos, to_pos, unit)
 	
-	# Deduct movement points
+	# Remove movement points
 	unit.movement_points -= movement_cost
 	print("Movement points after move: ", unit.movement_points)
 	
@@ -247,7 +242,7 @@ func execute_move(to_pos: Vector2, unit: Node2D, from_pos: Vector2) -> bool:
 	unit_manager.units_in_cells[to_pos].append(unit)
 	print("Added unit to new position")
 	
-	# Reposition ALL units in the destination stack with proper offsets
+	# Reposition all units in the destination stack with proper offsets
 	var world_pos = grid.grid_to_world(to_pos)
 	for i in range(unit_manager.units_in_cells[to_pos].size()):
 		var stacked_unit = unit_manager.units_in_cells[to_pos][i]
