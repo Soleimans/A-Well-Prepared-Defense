@@ -14,30 +14,17 @@ func get_movable_units_at_position(grid_pos: Vector2) -> Array:
 	
 	if grid_pos in unit_manager.units_in_cells:
 		var units = unit_manager.units_in_cells[grid_pos]
-		var found_attacked_unit = false
 		
-		# First pass: check if any unit has attacked
-		for unit in units:
-			if unit and is_instance_valid(unit) and !unit.is_enemy and unit.in_combat_this_turn:
-				found_attacked_unit = true
-				break
-		
-		# Second pass: collect selectable units based on conditions
+		# Check each unit individually for available actions
 		for unit in units:
 			if unit and is_instance_valid(unit):
 				# Skip enemy units
 				if unit.is_enemy:
 					continue
 					
-				# If a unit has attacked on this tile
-				if found_attacked_unit:
-					# Only include units that can still act (haven't attacked)
-					if !unit.in_combat_this_turn and (unit.can_move() or has_valid_attacks(grid_pos, unit)):
-						selectable_units.append(unit)
-				else:
-					# Normal selection behavior when no unit has attacked
-					if unit.can_move() or has_valid_attacks(grid_pos, unit):
-						selectable_units.append(unit)
+				# Unit can be selected if it can move OR can attack
+				if unit.can_move() or has_valid_attacks(grid_pos, unit):
+					selectable_units.append(unit)
 	
 	print("Total selectable units found: ", selectable_units.size())
 	return selectable_units
@@ -47,8 +34,12 @@ func has_valid_attacks(pos: Vector2, unit: Node2D) -> bool:
 	if unit.is_enemy:
 		return false
 		
+	# If unit has already attacked this turn, it can't attack again
+	if unit.in_combat_this_turn:
+		return false
+		
 	var combat_manager = grid.get_node("CombatManager")
-	if combat_manager and !unit.in_combat_this_turn:
+	if combat_manager:
 		return combat_manager.has_adjacent_enemies(pos, unit)
 	return false
 
@@ -70,11 +61,6 @@ func try_select_unit(grid_pos: Vector2):
 					combat_manager.initiate_combat(unit_manager.unit_start_pos, grid_pos)
 					deselect_current_unit()
 					return
-
-	# If we've already attacked this turn, can't do anything else with this unit
-	if unit_manager.selected_unit and unit_manager.selected_unit.in_combat_this_turn:
-		deselect_current_unit()
-		return
 	
 	# Check if clicking outside valid moves
 	if unit_manager.selected_unit and !unit_manager.is_valid_move(grid_pos) and grid_pos != last_clicked_pos:
@@ -156,11 +142,12 @@ func highlight_valid_moves(from_pos: Vector2):
 	if !unit_manager.selected_unit:
 		return
 	
-	# Get possible moves from movement handler
-	if movement_handler:
-		unit_manager.valid_move_tiles = movement_handler.get_valid_moves(from_pos, unit_manager.selected_unit)
-		
-	# Add adjacent positions with enemies that can be attacked
+	# Add movement tiles if unit can still move
+	if unit_manager.selected_unit.can_move():
+		if movement_handler:
+			unit_manager.valid_move_tiles = movement_handler.get_valid_moves(from_pos, unit_manager.selected_unit)
+	
+	# Add attack tiles if unit hasn't attacked yet
 	if !unit_manager.selected_unit.in_combat_this_turn:
 		var combat_manager = grid.get_node("CombatManager")
 		if combat_manager:
