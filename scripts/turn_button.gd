@@ -118,21 +118,22 @@ func _on_button_pressed():
 		resource_manager.enemy_political_power += enemy_political_power_gain
 		print("Generated enemy political power: ", enemy_political_power_gain)
 		
-		# Reset unit movements
-		print("\n=== RESETTING UNIT MOVEMENTS ===")
+		# Reset unit movements and combat flags
+		print("\n=== RESETTING UNIT MOVEMENTS AND COMBAT FLAGS ===")
 		for pos in unit_manager.units_in_cells:
 			for unit in unit_manager.units_in_cells[pos]:
 				if unit.has_method("reset_movement"):
 					unit.reset_movement()
-					print("Reset movement for unit at position ", pos, " - Can move: ", unit.can_move())
-					
+					print("Reset unit at position ", pos)
+					print("- Can move: ", unit.can_move())
+					print("- In combat this turn: ", unit.in_combat_this_turn)
 		# Update unit highlighting using selection handler
 		if unit_manager.selection_handler:
 			print("Calling selection handler update_unit_highlights")
 			unit_manager.selection_handler.update_unit_highlights()
 		else:
 			print("WARNING: Selection handler not found!")
-		print("=== MOVEMENT RESET COMPLETE ===\n")
+		print("=== MOVEMENT AND COMBAT RESET COMPLETE ===\n")
 		
 		# Process construction progress
 		building_manager.process_construction()

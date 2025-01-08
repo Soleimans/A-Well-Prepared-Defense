@@ -15,16 +15,19 @@ func get_movable_units_at_position(grid_pos: Vector2) -> Array:
 	if grid_pos in unit_manager.units_in_cells:
 		for unit in unit_manager.units_in_cells[grid_pos]:
 			if unit and is_instance_valid(unit):
-				# Check if unit hasn't been in combat this turn
-				if !unit.in_combat_this_turn:
-					# If it can move OR there are adjacent enemies it can attack
-					var combat_manager = grid.get_node("CombatManager")
-					if unit.can_move() or (combat_manager and combat_manager.has_adjacent_enemies(grid_pos, unit)):
-						print("Found selectable unit: ", unit.scene_file_path)
-						selectable_units.append(unit)
+				# Check if unit can move OR has valid attacks
+				if unit.can_move() or has_valid_attacks(grid_pos, unit):
+					print("Found selectable unit: ", unit.scene_file_path)
+					selectable_units.append(unit)
 	
 	print("Total selectable units found: ", selectable_units.size())
 	return selectable_units
+
+func has_valid_attacks(pos: Vector2, unit: Node2D) -> bool:
+	var combat_manager = grid.get_node("CombatManager")
+	if combat_manager and !unit.in_combat_this_turn:
+		return combat_manager.has_adjacent_enemies(pos, unit)
+	return false
 
 func try_select_unit(grid_pos: Vector2):
 	print("\nAttempting to select unit at position: ", grid_pos)
@@ -50,7 +53,6 @@ func try_select_unit(grid_pos: Vector2):
 		deselect_current_unit()
 		return
 	
-	# Only allow selecting units that haven't attacked this turn
 	var movable_units = get_movable_units_at_position(grid_pos)
 	
 	# Handle unit cycling
@@ -184,7 +186,7 @@ func update_unit_highlights():
 						has_available_action = true
 						print("- Has valid moves")
 				
-				# Check if unit can attack (even if it can't move)
+				# Check if unit can attack
 				if !unit.in_combat_this_turn:
 					var combat_manager = grid.get_node("CombatManager")
 					if combat_manager:
