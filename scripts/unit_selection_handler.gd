@@ -13,16 +13,31 @@ func get_movable_units_at_position(grid_pos: Vector2) -> Array:
 	print("\nChecking movable units at position: ", grid_pos)
 	
 	if grid_pos in unit_manager.units_in_cells:
-		for unit in unit_manager.units_in_cells[grid_pos]:
+		var units = unit_manager.units_in_cells[grid_pos]
+		var found_attacked_unit = false
+		
+		# First pass: check if any unit has attacked
+		for unit in units:
+			if unit and is_instance_valid(unit) and !unit.is_enemy and unit.in_combat_this_turn:
+				found_attacked_unit = true
+				break
+		
+		# Second pass: collect selectable units based on conditions
+		for unit in units:
 			if unit and is_instance_valid(unit):
-				# Add check to prevent enemy unit selection
+				# Skip enemy units
 				if unit.is_enemy:
 					continue
 					
-				# Check if unit can move OR has valid attacks
-				if unit.can_move() or has_valid_attacks(grid_pos, unit):
-					print("Found selectable unit: ", unit.scene_file_path)
-					selectable_units.append(unit)
+				# If a unit has attacked on this tile
+				if found_attacked_unit:
+					# Only include units that can still act (haven't attacked)
+					if !unit.in_combat_this_turn and (unit.can_move() or has_valid_attacks(grid_pos, unit)):
+						selectable_units.append(unit)
+				else:
+					# Normal selection behavior when no unit has attacked
+					if unit.can_move() or has_valid_attacks(grid_pos, unit):
+						selectable_units.append(unit)
 	
 	print("Total selectable units found: ", selectable_units.size())
 	return selectable_units
